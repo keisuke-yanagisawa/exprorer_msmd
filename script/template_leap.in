@@ -1,0 +1,29 @@
+source leaprc.protein.ff14SB
+source leaprc.water.tip3p
+source {{ LIGAND_PARAM }}
+
+{% for COSOLV_FRCMOD in COSOLV_FRCMODS %}
+loadamberparams {{ COSOLV_FRCMOD }}
+{% endfor %}
+
+{% for COSOLVENT in COSOLVENTS %}
+{{ COSOLVENT.ID }} = loadMol2 {{ COSOLVENT.PATH }}
+{% endfor %}
+
+system = loadPDB {{ SYSTEM_PATH }}
+set system box { {{ SIZE }}, {{ SIZE }}, {{ SIZE }} }
+
+# SS-BOND
+{% for SS_BOND in SS_BONDS %}
+bond system.{{ SS_BOND[0] }}.SG system.{{ SS_BOND[1] }}.SG
+{% endfor %}
+
+addIons2 system Na+ 0
+addIons2 system Cl- 0
+solvateBox system TIP3PBOX 0
+
+charge system
+
+saveAmberParm system {{ OUTPUT }}.parm7 {{ OUTPUT }}.rst7
+
+quit
