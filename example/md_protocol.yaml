@@ -1,0 +1,161 @@
+title    : EXPRORER protocol
+general  :
+  dt          : 0.002
+  temperature : 300
+  pressure    : 1.0
+  seed        : 42
+  pbc         : xyz
+
+input :
+  pdb          : 
+  gro          :
+  top          :
+
+sequence :
+  - name   : min1
+    title  : Energy minimization with position restraints
+    type   : minimization
+    define : -DPOSRES1000
+    nsteps : 200
+    nstlog : 1
+
+  - name   : min2
+    title  : Energy minimization without position restraints
+    type   : minimization
+    define : 
+    nsteps : 200
+    nstlog : 1
+
+  - name          : heat
+    title         : Heating system from 0 K to 300 K
+    type          : heating
+    define        : -DPOSRES1000
+    nsteps        : 100000
+    nstxtcout     : 500
+    nstlog        : 500
+    nstenergy     : 500
+    # initial_temp : 0
+    # target_temp   : 300
+    pcoupl        : no # NVT-ensemble
+    # ref_p       : 1
+
+  - name      : equil1
+    title     : Equilibration stage 1 - 10 kcal/mol/A^2 constraints
+    type      : equilibration
+    define    : -DPOSRES1000
+    nsteps    : 50000
+    nstxtcout : 500
+    nstlog    : 500
+    nstenergy : 500
+    # ref_t     : 300
+    pcoupl    : berendsen
+    # ref_p     : 1
+
+  - name      : equil2
+    title     : Equilibration stage 2 - 5.0 kcal/mol/A^2 constraints
+    type      : equilibration
+    define    : -DPOSRES500
+    nsteps    : 50000
+    nstxtcout : 500
+    nstlog    : 500
+    nstenergy : 500
+    # ref_t     : 300
+    pcoupl    : berendsen
+    # ref_p     : 1
+
+  - name      : equil3
+    title     : Equilibration stage 3 - 2.0 kcal/mol/A^2 constraints
+    type      : equilibration
+    define    : -DPOSRES200
+    nsteps    : 50000
+    nstxtcout : 500
+    nstlog    : 500
+    nstenergy : 500
+    # ref_t     : 300
+    pcoupl    : berendsen
+    # ref_p     : 1
+
+  - name      : equil4
+    title     : Equilibration stage 4 - 1.0 kcal/mol/A^2 constraints
+    type      : equilibration
+    define    : -DPOSRES100
+    nsteps    : 50000
+    nstxtcout : 500
+    nstlog    : 500
+    nstenergy : 500
+    # ref_t     : 300
+    pcoupl    : berendsen
+    # ref_p     : 1
+
+  - name      : equil5
+    title     : Equilibration stage 5 - 0.5 kcal/mol/A^2 constraints
+    type      : equilibration
+    define    : -DPOSRES50
+    nsteps    : 50000
+    nstxtcout : 500
+    nstlog    : 500
+    nstenergy : 500
+    # ref_t     : 300
+    pcoupl    : berendsen
+    # ref_p     : 1
+
+  - name      : equil6
+    title     : Equilibration stage 6 - 0.2 kcal/mol/A^2 constraints
+    type      : equilibration
+    define    : -DPOSRES20
+    nsteps    : 50000
+    nstxtcout : 500
+    nstlog    : 500
+    nstenergy : 500
+    # ref_t     : 300
+    pcoupl    : berendsen
+    # ref_p     : 1
+
+  - name      : equil7
+    title     : Equilibration stage 7 - 0.1 kcal/mol/A^2 constraints
+    type      : equilibration
+    define    : -DPOSRES10
+    nsteps    : 50000
+    nstxtcout : 500
+    nstlog    : 500
+    nstenergy : 500
+    # ref_t     : 300
+    pcoupl    : berendsen
+    # ref_p     : 1
+
+  - name      : equil8
+    title     : Equilibration stage 8 - no constraints
+    type      : equilibration
+    define    : 
+    nsteps    : 50000
+    nstxtcout : 500
+    nstlog    : 500
+    nstenergy : 500
+    # ref_t     : 300
+    pcoupl    : berendsen
+    # ref_p     : 1
+
+  - name      : pr
+    title     : Production Run
+    type      : production
+    define    : 
+    nsteps    : 30000000
+    nstxtcout : 5000
+    nstenergy : 2500
+    # ref_t     : 300
+    pcoupl    : Parrinello-Rahman
+    # ref_p     : 1.0
+
+  - name       : cpptraj_pmap1
+    title      : PMAP generation - 20-40ns
+    type       : cpptraj_pmap
+    input_name : pr
+    traj_from  : 2001
+    traj_to    : 4000
+
+  - name       : cpptraj_pmap2
+    title      : PMAP generation - 40-60ns
+    type       : cpptraj_pmap
+    input_name : pr
+    traj_from  : 4001
+    traj_to    : 6000
