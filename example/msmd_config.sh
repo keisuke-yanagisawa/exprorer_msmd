@@ -5,6 +5,7 @@ OUTPUTDIR=`pwd`/output/test
 map_prefix=PMAP
 protein_param_file=example/protein.conf
 probe_param_file=example/probe.conf
+md_protocol_file=example/md_protocol.yaml
 TARGET_NAME=TEST_PROJECT
 steps_pr=20000000          # 40 ns (timestep: 2fs)
 snapshot_interval=5000     # 10 ps per snapshot

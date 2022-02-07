@@ -27,6 +27,7 @@ preparation(){
 
     cp $protein_param_file $OUTPUTDIR/prep$i/input/protein.conf
     cp $probe_param_file   $OUTPUTDIR/prep$i/input/probe.conf
+    cp $md_protocol_file   $OUTPUTDIR/prep$i/input/md_protocol.yaml
     cp `dirname $protein_param_file`/`get_ini_variable $protein_param_file Protein pdb` $OUTPUTDIR/prep$i/input
     cp `dirname $probe_param_file`/`get_ini_variable $probe_param_file Cosolvent mol2` $OUTPUTDIR/prep$i/input
     cp `dirname $probe_param_file`/`get_ini_variable $probe_param_file Cosolvent pdb` $OUTPUTDIR/prep$i/input

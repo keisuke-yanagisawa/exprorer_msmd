@@ -29,12 +29,13 @@ preparation(){
 q
 EOF
 
-    $PYTHON $WORKDIR/script/gromacs_preparation.py \
+    $PYTHON $WORKDIR/script/mdrun.py \
 	DUMMY.conf \
-	$WORKDIR/script/template_mdrun.sh \
+	$WORKDIR/script/mdrun.sh \
 	-v General:input_dir=$OUTPUTDIR/prep$i \
 	-v General:output_dir=$OUTPUTDIR/system$i \
 	-v General:name=$TARGET_NAME \
+    -v General:protocol_yaml=$OUTPUTDIR/prep$i/input/md_protocol.yaml \
 	-v ProductionRun:steps_pr=$steps_pr \
 	-v ProductionRun:snapshot_interval=$snapshot_interval
 }
@@ -51,24 +52,6 @@ start_mdrun(){
 
     cd $OUTPUTDIR/system$i
     GMX=$GMX bash mdrun.sh $ncpus
-    echo $PYTHON $WORKDIR/script/gen_pmap.py \
-	-p top/$TARGET_NAME.top \
-	-y pr/$TARGET_NAME.xtc \
-	-c top/$TARGET_NAME.gro \
-	--start $begin_snapshot_for_pr \
-	--cpptraj $CPPTRAJ \
-        --outprefix $map_prefix \
-	$OUTPUTDIR/prep$i/input/protein.conf \
-	$OUTPUTDIR/prep$i/input/probe.conf
-    $PYTHON $WORKDIR/script/gen_pmap.py \
-	-p top/$TARGET_NAME.top \
-	-y pr/$TARGET_NAME.xtc \
-	-c top/$TARGET_NAME.gro \
-	--start $begin_snapshot_for_pr \
-	--cpptraj $CPPTRAJ \
-        --outprefix $map_prefix \
-	$OUTPUTDIR/prep$i/input/protein.conf \
-	$OUTPUTDIR/prep$i/input/probe.conf
 }
 
 
