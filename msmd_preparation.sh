@@ -39,7 +39,7 @@ preparation(){
 	-cosolv_param $OUTPUTDIR/prep$i/input/probe.conf \
 	-tin   $WORKDIR/script/template_leap.in \
 	-oprefix $OUTPUTDIR/prep$i/$TARGET_NAME \
-        --packmol $PACKMOL \
+    --packmol $PACKMOL \
 	--tleap   $TLEAP \
 	-seed $i \
 	-no-rm-temp
