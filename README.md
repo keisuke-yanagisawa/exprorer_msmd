@@ -21,6 +21,8 @@ Below requirements are based on our environment
 
 ## Preparation
 
+It can be used with Docker. Below instruction is for user who will not use Docker.
+
 ### Construction of Python3 environment with Conda
 
 ```sh
