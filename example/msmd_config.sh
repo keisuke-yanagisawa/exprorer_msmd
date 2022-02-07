@@ -1,4 +1,4 @@
-iter=20
+iter=1
 iter_st=0
 INPUTDIR=`pwd`
 OUTPUTDIR=`pwd`/output/test

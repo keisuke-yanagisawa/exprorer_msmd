@@ -97,10 +97,11 @@ NCPUS=${NCPUS:-`get_ncpus`}
 gpus=( `get_gpu_list` )
 echo $gpus
 if [ ${#gpus[@]} == "0" ]; then
-    logging_error "There is no available GPU according to the CUDA_VISIBLE_DEVICES variable."
-    logging_error "This code assume at least 1 GPU. Please set the variable correctly."
-    logging_error "Exit."
-    exit 1
+    gpus=0 # dummy information
+    # logging_error "There is no available GPU according to the CUDA_VISIBLE_DEVICES variable."
+    # logging_error "This code assume at least 1 GPU. Please set the variable correctly."
+    # logging_error "Exit."
+    # exit 1
 fi
 
 NCPUS_PER_GPU=$(( $NCPUS / ${#gpus[@]} ))

@@ -27,6 +27,10 @@ preparation(){
 
     cp $protein_param_file $OUTPUTDIR/prep$i/input/protein.conf
     cp $probe_param_file   $OUTPUTDIR/prep$i/input/probe.conf
+    cp `dirname $protein_param_file`/`get_ini_variable $protein_param_file Protein pdb` $OUTPUTDIR/prep$i/input
+    cp `dirname $probe_param_file`/`get_ini_variable $probe_param_file Cosolvent mol2` $OUTPUTDIR/prep$i/input
+    cp `dirname $probe_param_file`/`get_ini_variable $probe_param_file Cosolvent pdb` $OUTPUTDIR/prep$i/input
+    
     cd $OUTPUTDIR/prep$i
 
     cosolvent_ID=`get_ini_variable $OUTPUTDIR/prep$i/input/probe.conf Cosolvent cid`
