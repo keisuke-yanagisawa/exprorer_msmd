@@ -11,8 +11,8 @@ from scipy import constants
 import jinja2
 
 from utilities.util import expandpath
-from utilities.Executable import Parmchk, Packmol, TLeap
-from utilities import Const
+from utilities.executable import Parmchk, Packmol, TLeap
+from utilities import const
 
 
 VERSION = "2.0.0"
@@ -39,14 +39,14 @@ quit
 tmpdir = tempfile.mkdtemp()
 
 def protein_pdb_preparation(pdbfile):
-    _, tmp1 = tempfile.mkstemp(prefix=Const.TMP_PREFIX, suffix=Const.EXT_PDB)
-    _, tmp2 = tempfile.mkstemp(prefix=Const.TMP_PREFIX, suffix=Const.EXT_PDB)
+    _, tmp1 = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)
+    _, tmp2 = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)
     gop(f"grep -v OXT {pdbfile} > {tmp1}")
     gop(f"grep -v ANISOU {tmp1} > {tmp2}")
     return tmp2
 
 def calculate_boxsize(pdbfile):
-    tmp_prefix=f"{tmpdir}/{Const.TMP_PREFIX}"
+    tmp_prefix=f"{tmpdir}/{const.TMP_PREFIX}"
     with open(f"{tmp_prefix}.in", "w") as fout:
         fout.write(tmp_leap.format(pdbfile=pdbfile, tmp_prefix=tmp_prefix))
     print(gop(f"tleap -f {tmp_prefix}.in | tee {tmp_prefix}.in.result"))
