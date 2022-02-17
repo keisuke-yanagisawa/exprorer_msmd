@@ -7,6 +7,7 @@ import subprocess
 import shutil
 import jinja2
 import yaml
+import os
 
 VERSION = "1.0.0"
 
@@ -50,7 +51,7 @@ vdwtype      = cut-off
 dispcorr     = EnerPres
 ;
 tcoupl       = v-rescale
-tc_grps      = !Water_and_ions Water_and_ions
+tc_grps      = Non-Water Water
 tau_t        = 0.1 0.1
 ref_t        = {target_temp} {target_temp}
 ;
@@ -96,7 +97,7 @@ vdwtype      = cut-off
 dispcorr     = EnerPres
 ;
 tcoupl       = v-rescale
-tc_grps      = !Water_and_ions Water_and_ions
+tc_grps      = Non-Water Water
 tau_t        = 0.1 0.1
 ref_t        = {temperature} {temperature}
 ;
@@ -140,7 +141,7 @@ nstlist         = 5
 coulombtype     = PME    ; Particle Mesh Ewald for long-range electrostatics
 ;
 tcoupl    = V-rescale
-tc-grps   = !Water_and_ions Water_and_ions
+tc-grps   = Non-Water Water
 tau_t     = 0.1  0.1
 ref_t     = {temperature} {temperature}
 ; Pressure coupling is on
@@ -169,25 +170,19 @@ def copy_gromacs_files(inputdir, topdir, name):
     shutil.copy("%s/%s.top" % (inputdir, name), "%s/%s.top" % (topdir, name))
     shutil.copy("%s/index.ndx" % inputdir, "%s/index.ndx" % topdir)
 
-    # TODO#19 detect copy files automatically (from top file)
-    for i in [0, 10, 20, 50, 100, 200, 500, 1000]:
-        shutil.copy("%s/posrePROTEIN%d.itp" % (inputdir, i),
-                    "%s/posrePROTEIN%d.itp" % (topdir, i))
-    subprocess.getoutput("cp %s/*.top %s/*.itp %s" % (inputdir, inputdir, topdir))
-
 def gen_mdp(protocol_dict, MD_DIR):
-    if protocol_dict["step"] == "minimization":
+    if protocol_dict["type"] == "minimization":
         template = template_minimize
-    elif protocol_dict["step"] == "heating":
+    elif protocol_dict["type"] == "heating":
         template = template_heat
         if "target_temp" not in protocol_dict:
             protocol_dict["target_temp"] = protocol_dict["temperature"]
         if "initial_temp" not in protocol_dict:
             protocol_dict["initial_temp"] = 0
         protocol_dict["nsteps*dt"] = protocol_dict["nsteps"] * protocol_dict["dt"]
-    elif protocol_dict["step"] == "equilibration":
+    elif protocol_dict["type"] == "equilibration":
         template = template_equil
-    elif protocol_dict["step"] == "production":
+    elif protocol_dict["type"] == "production":
         template = template_pr
 
     with open(f"{MD_DIR}/{protocol_dict['name']}.mdp", "w") as fout:
@@ -200,7 +195,7 @@ def gen_mdrun_job(template_file, step_names, name, path, post_comm=""):
         "STEP_NAMES"   : " ".join(step_names)
     }
 
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader("."))
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader("/"))
     template = env.get_template(template_file)
     with open(path, "w") as fout:
         fout.write(template.render(data))
@@ -245,7 +240,7 @@ if __name__ == "__main__":
     validate_config(dat)
     # print(dat["General"]["name"])
 
-    with open("/gs/hs0/tga-pharma/yanagisawa/workspace/9999_git_repositories/exprorer/cmd_calculation/example/md_protocol.yaml") as fin:
+    with open(dat["General"]["protocol_yaml"]) as fin:
         protocol = yaml.safe_load(fin)
 
     # 1. make directories
@@ -256,7 +251,7 @@ if __name__ == "__main__":
         if "name" not in step:
             step["name"] = f"step{i+1}"
 
-        if step["define"] is None:
+        if (not "define" in step) or (step["define"] is None):
             step["define"] = ""
         
         step.update(protocol["general"])

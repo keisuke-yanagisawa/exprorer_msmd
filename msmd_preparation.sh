@@ -27,6 +27,11 @@ preparation(){
 
     cp $protein_param_file $OUTPUTDIR/prep$i/input/protein.conf
     cp $probe_param_file   $OUTPUTDIR/prep$i/input/probe.conf
+    cp $md_protocol_file   $OUTPUTDIR/prep$i/input/md_protocol.yaml
+    cp `dirname $protein_param_file`/`get_ini_variable $protein_param_file Protein pdb` $OUTPUTDIR/prep$i/input
+    cp `dirname $probe_param_file`/`get_ini_variable $probe_param_file Cosolvent mol2` $OUTPUTDIR/prep$i/input
+    cp `dirname $probe_param_file`/`get_ini_variable $probe_param_file Cosolvent pdb` $OUTPUTDIR/prep$i/input
+    
     cd $OUTPUTDIR/prep$i
 
     cosolvent_ID=`get_ini_variable $OUTPUTDIR/prep$i/input/probe.conf Cosolvent cid`
@@ -35,7 +40,7 @@ preparation(){
 	-cosolv_param $OUTPUTDIR/prep$i/input/probe.conf \
 	-tin   $WORKDIR/script/template_leap.in \
 	-oprefix $OUTPUTDIR/prep$i/$TARGET_NAME \
-        --packmol $PACKMOL \
+    --packmol $PACKMOL \
 	--tleap   $TLEAP \
 	-seed $i \
 	-no-rm-temp
