@@ -95,22 +95,27 @@ class Parmchk(object):
     def set(self, mol2, at):
         self.at_id = self.at_indices[at]
         self.mol2 = mol2
+        return self
         
     def run(self, frcmod=None):
         self.frcmod=frcmod
         if self.frcmod is None:
             _, self.frcmod = tempfile.mkstemp(prefix=TMP_PREFIX, suffix=EXT_FRCMOD)
         print(gop(f"{self.exe} -i {self.mol2} -f mol2 -o {frcmod} -s {self.at_id}"))
+        return self
 
 class Packmol(object):
     def __init__(self, exe="packmol"):
         self.exe = exe
         None
+
     def set(self, protein_pdb, cosolv_pdbs, box_size, molar):
         self.protein_pdb = protein_pdb
         self.cosolv_pdbs = cosolv_pdbs
         self.box_size = box_size
         self.molar = molar
+        return self
+
     def run(self, box_pdb=None, seed=-1):
         self.box_pdb = box_pdb if not box_pdb is None \
                                else tempfile.mkstemp(prefix=TMP_PREFIX, suffix=EXT_PDB)[1]
@@ -135,6 +140,7 @@ class Packmol(object):
                 fout.write(TEMPLATE_PACKMOL_STRUCT.format(cosolv=pdb, num=num, size=self.box_size/2))
                 fout.write("\n")
         print(gop(f"{self.exe} < {inp}"))
+        return self
 
     def __del__(self):
         os.remove(self.box_pdb)
@@ -142,6 +148,7 @@ class Packmol(object):
 class TLeap(object):
     def __init__(self, exe="tleap"):
         self.exe = exe
+
     def set(self, template_file, cids, cosolv_paths, frcmods, box_path, size, ssbonds, at):
         self.template_file = template_file
         self.cids = cids
@@ -151,6 +158,7 @@ class TLeap(object):
         self.size = size
         self.ssbonds = ssbonds
         self.at = at
+        return self
 
     def run(self, oprefix):
         self.oprefix = oprefix
@@ -179,6 +187,7 @@ class TLeap(object):
         final_charge_info = [s.strip() for s in output.split("\n")
                             if s.strip().startswith("Total unperturbed charge")][0]
         self._final_charge_value = float(final_charge_info.split()[-1])
+        return self
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -232,6 +241,13 @@ if __name__ == "__main__":
     cfrcmods = [f"{tmpdir}/.temp_cosolvent_{cid}.frcmod" for cid in cids]
     if "frcmod" in params["Cosolvent"] and params["Cosolvent"]["frcmod"] != "":
         cfrcmods = params["Cosolvent"]["frcmod"].split()
+    else:
+        cfrcmods = []
+        for mol2 in cmols:
+            parmchk = Parmchk(args.parmchk)
+            parmchk.set(mol2, params["Cosolvent"]["atomtype"]).run()
+            cfrcmods.append(parmchk.frcmod)
+
     packmol_obj = Packmol(args.packmol)
     packmol_obj.set(
         params["Protein"]["pdb"], 
@@ -242,20 +258,13 @@ if __name__ == "__main__":
     while True:
         packmol_obj.run()
 
-        if "frcmod" not in params["Cosolvent"] or params["Cosolvent"]["frcmod"] == "":
-            for mol2, frcmod in zip(cmols, cfrcmods):
-                parmchk = Parmchk(args.parmchk)
-                parmchk.set(mol2, params["Cosolvent"]["atomtype"])
-                parmchk.run(frcmod)
-
         # 2. amber tleap
         tleap_obj = TLeap(exe=args.tleap)
         tleap_obj.set(
             args.tleap_input, cids, cmols, cfrcmods,
             packmol_obj.box_pdb, boxsize, ssbonds,
             params["Cosolvent"]["atomtype"]
-        )
-        tleap_obj.run(args.output_prefix)
+        ).run(args.output_prefix)
         system_charge = tleap_obj._final_charge_value
 
         if system_charge == 0:
