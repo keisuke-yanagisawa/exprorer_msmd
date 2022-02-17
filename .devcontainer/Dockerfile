@@ -20,7 +20,7 @@ RUN conda --version
 RUN conda install -c conda-forge mamba
 RUN mamba create -n exprorer
 RUN mamba install -n exprorer -c conda-forge python=3.7 rdkit ambertools=20.15 \
-    pandas numpy biopython jinja2 griddataformats parmed openbabel==2.4.1 git
+    pandas numpy biopython jinja2 griddataformats parmed openbabel==2.4.1 git pyyaml
 
 RUN conda init \
     && echo "conda activate exprorer" >> ~/.bashrc
