@@ -4,6 +4,7 @@ import argparse
 import configparser
 import tempfile
 from os.path import expanduser, expandvars, basename, dirname
+import os
 from subprocess import getoutput as gop
 
 from scipy import constants
@@ -13,6 +14,11 @@ from utilities.util import expandpath
 
 
 VERSION = "2.0.0"
+
+TMP_PREFIX=".tmp"
+EXT_FRCMOD=".frcmod"
+EXT_PDB=".pdb"
+EXT_INP=".in"
 
 tmp_leap = """
 source leaprc.protein.ff14SB
@@ -53,8 +59,15 @@ end structure
 
 tmpdir = tempfile.mkdtemp()
 
-def calculate_boxsize(pdbfile, tmp_prefix=".tmp"):
-    tmp_prefix=f"{tmpdir}/{tmp_prefix}"
+def protein_pdb_preparation(pdbfile):
+    _, tmp1 = tempfile.mkstemp(prefix=TMP_PREFIX, suffix=EXT_PDB)
+    _, tmp2 = tempfile.mkstemp(prefix=TMP_PREFIX, suffix=EXT_PDB)
+    gop(f"grep -v OXT {pdbfile} > {tmp1}")
+    gop(f"grep -v ANISOU {tmp1} > {tmp2}")
+    return tmp2
+
+def calculate_boxsize(pdbfile):
+    tmp_prefix=f"{tmpdir}/{TMP_PREFIX}"
     with open(f"{tmp_prefix}.in", "w") as fout:
         fout.write(tmp_leap.format(pdbfile=pdbfile, tmp_prefix=tmp_prefix))
     print(gop(f"tleap -f {tmp_prefix}.in | tee {tmp_prefix}.in.result"))
@@ -74,59 +87,98 @@ def calculate_boxsize(pdbfile, tmp_prefix=".tmp"):
     return box_size
 
 
-def run_parmchk(mol2, frcmod, at):
-    at_id = {"gaff": 1, "gaff2": 2}[at]
-    print(gop(f"parmchk2 -i {mol2} -f mol2 -o {frcmod} -s {at_id}"))
+class Parmchk(object):
+    def __init__(self, exe="parmchk2"):
+        self.at_indices = {"gaff": 1, "gaff2": 2}
+        self.exe = exe
+    
+    def set(self, mol2, at):
+        self.at_id = self.at_indices[at]
+        self.mol2 = mol2
+        
+    def run(self, frcmod=None):
+        self.frcmod=frcmod
+        if self.frcmod is None:
+            _, self.frcmod = tempfile.mkstemp(prefix=TMP_PREFIX, suffix=EXT_FRCMOD)
+        print(gop(f"{self.exe} -i {self.mol2} -f mol2 -o {frcmod} -s {self.at_id}"))
 
+class Packmol(object):
+    def __init__(self, exe="packmol"):
+        self.exe = exe
+        None
+    def set(self, protein_pdb, cosolv_pdbs, box_size, molar):
+        self.protein_pdb = protein_pdb
+        self.cosolv_pdbs = cosolv_pdbs
+        self.box_size = box_size
+        self.molar = molar
+    def run(self, box_pdb=None, seed=-1):
+        self.box_pdb = box_pdb if not box_pdb is None \
+                               else tempfile.mkstemp(prefix=TMP_PREFIX, suffix=EXT_PDB)[1]
+        self.seed = seed
 
-def gen_packmol_input(protein_pdb, cosolv_pdbs, box_pdb, inp, box_size, molar, seed=-1):
-    # shorten path length to pdb file
-    # too long path cannot be treated by packmol
-    temp_protein_pdb = f"{tmpdir}/.temp_protein.pdb"
-    print(gop(f"cp {protein_pdb} {temp_protein_pdb}"))
+        # shorten path length to pdb file
+        # too long path cannot be treated by packmol
+        _, tmp_prot_pdb =  tempfile.mkstemp(prefix=TMP_PREFIX, suffix=EXT_PDB)
+        print(gop(f"cp {self.protein_pdb} {tmp_prot_pdb}"))
 
-    temp_pdbs = [f"{tmpdir}/.temp_{i}.pdb" for i in range(len(cosolv_pdbs))]
-    [gop(f"cp {src} {dst}") for src, dst in zip(cosolv_pdbs, temp_pdbs)]
+        tmp_pdbs = [tempfile.mkstemp(prefix=TMP_PREFIX, suffix=EXT_PDB)[1] 
+                    for _ in self.cosolv_pdbs]
+        [print(gop(f"cp {src} {dst}")) for src, dst in zip(self.cosolv_pdbs, tmp_pdbs)]
 
-    num = int(constants.N_A * molar * (box_size**3) * (10**-27))
-    with open(inp, "w") as fout:
-        fout.write(TEMPLATE_PACKMOL_HEADER.format(output=box_pdb, prot=temp_protein_pdb, seed=seed))
-        fout.write("\n")
-        for pdb in temp_pdbs:
-            fout.write(TEMPLATE_PACKMOL_STRUCT.format(cosolv=pdb, num=num, size=box_size/2))
+        num = int(constants.N_A * self.molar * (self.box_size**3) * (10**-27))
+
+        _, inp = tempfile.mkstemp(prefix=TMP_PREFIX, suffix=EXT_INP)
+        with open(inp, "w") as fout:
+            fout.write(TEMPLATE_PACKMOL_HEADER.format(output=self.box_pdb, prot=tmp_prot_pdb, seed=self.seed))
             fout.write("\n")
+            for pdb in tmp_pdbs:
+                fout.write(TEMPLATE_PACKMOL_STRUCT.format(cosolv=pdb, num=num, size=self.box_size/2))
+                fout.write("\n")
+        print(gop(f"{self.exe} < {inp}"))
 
+    def __del__(self):
+        os.remove(self.box_pdb)
 
-def run_packmol(packmol_path, inp):
-    print(gop("%s < %s" % (packmol_path, inp)))
+class TLeap(object):
+    def __init__(self, exe="tleap"):
+        self.exe = exe
+    def set(self, template_file, cids, cosolv_paths, frcmods, box_path, size, ssbonds, at):
+        self.template_file = template_file
+        self.cids = cids
+        self.cosolv_paths = cosolv_paths
+        self.frcmods = frcmods
+        self.box_path = box_path
+        self.size = size
+        self.ssbonds = ssbonds
+        self.at = at
 
+    def run(self, oprefix):
+        self.oprefix = oprefix
+        self.parm7 = self.oprefix + ".parm7"
+        self.rst7 = self.oprefix + ".rst7"
 
-def gen_tleap_input(template_file, inputfile, cids, cosolv_paths, frcmods, box_path, size, oprefix, ssbonds, at):
-    data = {
-        "LIGAND_PARAM": f"leaprc.{at}",
-        "SS_BONDS": zip(ssbonds[0::2], ssbonds[1::2]),
-        "COSOLVENTS": [{"ID": cid, "PATH": cpath}
-                       for cid, cpath in zip(cids, cosolv_paths)],
-        "SIZE": size,
-        "OUTPUT": oprefix,
-        "SYSTEM_PATH": box_path,
-        "COSOLV_FRCMODS": frcmods,
-        "SIZE": size
-    }
+        _, inputfile = tempfile.mkstemp(prefix=TMP_PREFIX, suffix=EXT_INP)
+        data = {
+            "LIGAND_PARAM": f"leaprc.{self.at}",
+            "SS_BONDS": zip(self.ssbonds[0::2], self.ssbonds[1::2]),
+            "COSOLVENTS": [{"ID": cid, "PATH": cpath}
+                        for cid, cpath in zip(self.cids, self.cosolv_paths)],
+            "OUTPUT": self.oprefix,
+            "SYSTEM_PATH": self.box_path,
+            "COSOLV_FRCMODS": self.frcmods,
+            "SIZE": self.size
+        }
 
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader("/"))
-    template = env.get_template(template_file)
-    with open(inputfile, "w") as fout:
-        fout.write(template.render(data))
-    print(inputfile)
+        env = jinja2.Environment(loader=jinja2.FileSystemLoader("/"))
+        template = env.get_template(self.template_file)
+        with open(inputfile, "w") as fout:
+            fout.write(template.render(data))
 
-def run_tleap(tleap_path, inp):
-    output = gop("%s -f %s" % (tleap_path, inp))
-    print(output)
-    final_charge_info = [s.strip() for s in output.split("\n")
-                         if s.strip().startswith("Total unperturbed charge")][0]
-    final_charge_value = float(final_charge_info.split()[-1])
-    return final_charge_value
+        output = gop(f"{self.exe} -f {inputfile}")
+        print(output)
+        final_charge_info = [s.strip() for s in output.split("\n")
+                            if s.strip().startswith("Total unperturbed charge")][0]
+        self._final_charge_value = float(final_charge_info.split()[-1])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -138,6 +190,7 @@ if __name__ == "__main__":
     parser.add_argument("-oprefix", dest="output_prefix", required=True)
     parser.add_argument("--packmol", dest="packmol", default="packmol", help="path to packmol")
     parser.add_argument("--tleap", dest="tleap", default="tleap", help="path to tleap")
+    parser.add_argument("--parmchk", dest="parmchk", default="parmchk2", help="path to parmchk")
     parser.add_argument("-tin", dest="tleap_input", required=True,
                         help="input file for tleap")
     parser.add_argument("-wat-ion-lst", dest="wat_ion_list", default="WAT,Na+,Cl-",
@@ -148,6 +201,10 @@ if __name__ == "__main__":
     parser.add_argument("--version", action="version", version=VERSION)
     args = parser.parse_args()
 
+    # TODO: このファイルに対する相対パスでハードコーディングしてしまいたい。
+    args.tleap_input = expandpath(args.tleap_input)
+
+
     params = configparser.ConfigParser()
     params.read(expandpath(args.prot_param), "UTF-8")
     params.read(expandpath(args.cosolv_param), "UTF-8")
@@ -155,6 +212,9 @@ if __name__ == "__main__":
     params["Protein"]["pdb"]    = dirname(expandpath(args.prot_param))+"/"+basename(params["Protein"]["pdb"])
     params["Cosolvent"]["mol2"] = dirname(expandpath(args.cosolv_param))+"/"+basename(params["Cosolvent"]["mol2"])
     params["Cosolvent"]["pdb"]  = dirname(expandpath(args.cosolv_param))+"/"+basename(params["Cosolvent"]["pdb"])
+
+    params["Protein"]["pdb"] = protein_pdb_preparation(params["Protein"]["pdb"])
+
 
     ssbonds = params["Protein"]["ssbond"].split()
     cmols = params["Cosolvent"]["mol2"].split()
@@ -169,38 +229,35 @@ if __name__ == "__main__":
                        * 1e-27)**(-1/3.0)  # /L -> /A^3 : 1e-27
 
     # 1. generate cosolvent box with packmol
-    packmol_input = f"{tmpdir}/.temp_packmol.input"
-    packmol_box_pdb = f"{tmpdir}/.temp_box.pdb"
     cfrcmods = [f"{tmpdir}/.temp_cosolvent_{cid}.frcmod" for cid in cids]
     if "frcmod" in params["Cosolvent"] and params["Cosolvent"]["frcmod"] != "":
         cfrcmods = params["Cosolvent"]["frcmod"].split()
-    gen_packmol_input(params["Protein"]["pdb"], cpdbs,
-                      packmol_box_pdb,
-                      packmol_input,
-                      boxsize,
-                      float(params["Cosolvent"]["molar"]),
-                      args.seed)
+    packmol_obj = Packmol(args.packmol)
+    packmol_obj.set(
+        params["Protein"]["pdb"], 
+        cpdbs,
+        boxsize,
+        float(params["Cosolvent"]["molar"])
+    )
     while True:
-        run_packmol(args.packmol, packmol_input)  # -> output: packmol_box_pdb
-        temp_box = f"{tmpdir}/.temp_packmol_box_2.pdb"
-        gop("grep -v OXT {} > {}".format(packmol_box_pdb, temp_box))
+        packmol_obj.run()
 
         if "frcmod" not in params["Cosolvent"] or params["Cosolvent"]["frcmod"] == "":
             for mol2, frcmod in zip(cmols, cfrcmods):
-                run_parmchk(mol2, frcmod, params["Cosolvent"]["atomtype"])
-
+                parmchk = Parmchk(args.parmchk)
+                parmchk.set(mol2, params["Cosolvent"]["atomtype"])
+                parmchk.run(frcmod)
 
         # 2. amber tleap
-        tleap_input = f"{tmpdir}/.temp_tleap.in"
-        gen_tleap_input(expandpath(args.tleap_input), tleap_input,
-                        cids, cmols,
-                        cfrcmods,
-                        temp_box,
-                        boxsize,
-                        args.output_prefix,
-                        ssbonds,
-                        params["Cosolvent"]["atomtype"])
-        system_charge = run_tleap(args.tleap, tleap_input)
+        tleap_obj = TLeap(exe=args.tleap)
+        tleap_obj.set(
+            args.tleap_input, cids, cmols, cfrcmods,
+            packmol_obj.box_pdb, boxsize, ssbonds,
+            params["Cosolvent"]["atomtype"]
+        )
+        tleap_obj.run(args.output_prefix)
+        system_charge = tleap_obj._final_charge_value
+
         if system_charge == 0:
             break
         else:
