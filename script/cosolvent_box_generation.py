@@ -3,7 +3,7 @@
 import argparse
 import configparser
 import tempfile
-from os.path import expanduser, expandvars
+from os.path import expanduser, expandvars, basename, dirname
 from subprocess import getoutput as gop
 
 from scipy import constants
@@ -152,9 +152,9 @@ if __name__ == "__main__":
     params.read(expandpath(args.prot_param), "UTF-8")
     params.read(expandpath(args.cosolv_param), "UTF-8")
     #print(expandpath(args.prot_param), dir(params))
-    params["Protein"]["pdb"]    = expandpath(params["Protein"]["pdb"])
-    params["Cosolvent"]["mol2"] = expandpath(params["Cosolvent"]["mol2"])
-    params["Cosolvent"]["pdb"]  = expandpath(params["Cosolvent"]["pdb"])
+    params["Protein"]["pdb"]    = dirname(expandpath(args.prot_param))+"/"+basename(params["Protein"]["pdb"])
+    params["Cosolvent"]["mol2"] = dirname(expandpath(args.cosolv_param))+"/"+basename(params["Cosolvent"]["mol2"])
+    params["Cosolvent"]["pdb"]  = dirname(expandpath(args.cosolv_param))+"/"+basename(params["Cosolvent"]["pdb"])
 
     ssbonds = params["Protein"]["ssbond"].split()
     cmols = params["Cosolvent"]["mol2"].split()

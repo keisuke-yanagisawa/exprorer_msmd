@@ -36,7 +36,7 @@ sequence :
     nstenergy     : 500
     # initial_temp : 0
     # target_temp   : 300
-    pcoupl        : no # NVT-ensemble
+    pcoupl        : "no" # NVT-ensemble
     # ref_p       : 1
 
   - name      : equil1
@@ -115,7 +115,7 @@ sequence :
     title     : Equilibration stage 7 - 0.1 kcal/mol/A^2 constraints
     type      : equilibration
     define    : -DPOSRES10
-    nsteps    : 50000
+    nsteps    : 500
     nstxtcout : 500
     nstlog    : 500
     nstenergy : 500
@@ -142,20 +142,21 @@ sequence :
     nsteps    : 30000000
     nstxtcout : 5000
     nstenergy : 2500
+    nstlog    : 5000
     # ref_t     : 300
     pcoupl    : Parrinello-Rahman
     # ref_p     : 1.0
 
-  - name       : cpptraj_pmap1
-    title      : PMAP generation - 20-40ns
-    type       : cpptraj_pmap
-    input_name : pr
-    traj_from  : 2001
-    traj_to    : 4000
+  # - name       : cpptraj_pmap1
+  #   title      : PMAP generation - 20-40ns
+  #   type       : cpptraj_pmap
+  #   input_name : pr
+  #   traj_from  : 2001
+  #   traj_to    : 4000
 
-  - name       : cpptraj_pmap2
-    title      : PMAP generation - 40-60ns
-    type       : cpptraj_pmap
-    input_name : pr
-    traj_from  : 4001
-    traj_to    : 6000
+  # - name       : cpptraj_pmap2
+  #   title      : PMAP generation - 40-60ns
+  #   type       : cpptraj_pmap
+  #   input_name : pr
+  #   traj_from  : 4001
+  #   traj_to    : 6000

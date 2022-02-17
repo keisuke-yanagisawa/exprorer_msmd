@@ -1,0 +1,4 @@
+{
+    "name": "exprorer",
+    "dockerFile": "Dockerfile",
+}
