@@ -1,4 +1,5 @@
 {
+    "runArgs": ["--gpus", "all", "--shm-size", "8gb"],
     "name": "exprorer",
     "dockerFile": "Dockerfile",
 }
