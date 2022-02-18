@@ -1,0 +1,17 @@
+seed {{ seed }}
+tolerance 2.0
+output {{ output }}
+add_amber_ter
+filetype pdb
+structure {{ prot }}
+  number 1
+  fixed 0. 0. 0. 0. 0. 0.
+  centerofmass
+end structure
+
+{% for cosolv in cosolvs %}
+structure {{ cosolv }}
+  number {{ num }}
+  inside box -{{ size }} -{{ size }} -{{ size }} {{ size }} {{ size }} {{ size }}
+end structure
+{% endfor %}
