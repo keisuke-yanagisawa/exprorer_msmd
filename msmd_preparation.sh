@@ -35,19 +35,16 @@ preparation(){
     cd $OUTPUTDIR/prep$i
 
     cosolvent_ID=`get_ini_variable $OUTPUTDIR/prep$i/input/probe.conf Cosolvent cid`
-    $PYTHON $WORKDIR/script/cosolvent_box_generation.py \
+    $PYTHON $WORKDIR/script/generate_msmd_system.py \
 	-prot_param $OUTPUTDIR/prep$i/input/protein.conf \
 	-cosolv_param $OUTPUTDIR/prep$i/input/probe.conf \
-	-tin   $WORKDIR/script/template_leap.in \
-	-oprefix $OUTPUTDIR/prep$i/$TARGET_NAME \
-    --packmol $PACKMOL \
-	--tleap   $TLEAP \
-	-seed $i \
-	-no-rm-temp
+	-oprefix $OUTPUTDIR/prep$i/${TARGET_NAME}_GMX \
+	--seed $i \
+	--no-rm-temp
 
-    $PYTHON $WORKDIR/script/convert_amber_to_gromacs.py \
-	   -iprefix $OUTPUTDIR/prep$i/${TARGET_NAME} \
-	   -oprefix $OUTPUTDIR/prep$i/${TARGET_NAME}_GMX
+    # $PYTHON $WORKDIR/script/convert_amber_to_gromacs.py \
+	#    -iprefix $OUTPUTDIR/prep$i/${TARGET_NAME} \
+	#    -oprefix $OUTPUTDIR/prep$i/${TARGET_NAME}_GMX
 
     # add virtual interaction between cosolvents
     $PYTHON $WORKDIR/script/addvirtatom2top.py \

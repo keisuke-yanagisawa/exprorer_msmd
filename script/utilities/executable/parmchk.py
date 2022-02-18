@@ -4,9 +4,9 @@ from utilities.executable.execute import Command
 from utilities import const
 
 class Parmchk(object):
-  def __init__(self, exe="parmchk2", debug=False):
+  def __init__(self, debug=False):
     self.at_indices = {"gaff": 1, "gaff2": 2}
-    self.exe = exe
+    self.exe = os.getenv("PARMCHK", "parmchk2")
     self.debug = debug
   
   def set(self, mol2, at):
