@@ -7,27 +7,6 @@ from utilities.executable.execute import Command
 import shutil
 import jinja2
 
-TEMPLATE_PACKMOL_HEADER = """
-seed {seed}
-tolerance 2.0
-output {output}
-add_amber_ter
-filetype pdb
-structure {prot}
-  number 1
-  fixed 0. 0. 0. 0. 0. 0.
-  centerofmass
-end structure
-"""
-
-TEMPLATE_PACKMOL_STRUCT = """
-structure {cosolv}
-  number {num}
-  inside box -{size} -{size} -{size} {size} {size} {size}
-end structure
-"""
-
-
 class Packmol(object):
     def __init__(self, exe="packmol", debug=False):
         self.exe = os.getenv("PACKMOL", "packmol")
