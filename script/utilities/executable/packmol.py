@@ -30,7 +30,7 @@ end structure
 
 class Packmol(object):
     def __init__(self, exe="packmol", debug=False):
-        self.exe = exe
+        self.exe = os.getenv("PACKMOL", "packmol")
         self.debug = debug
 
     def set(self, protein_pdb, cosolv_pdbs, box_size, molar):
@@ -72,7 +72,6 @@ class Packmol(object):
         }
 
         env = jinja2.Environment(loader=jinja2.FileSystemLoader(f"{os.path.dirname(__file__)}/template"))
-        print(env)
         template = env.get_template("packmol.in")
         with open(inp, "w") as fout:
             fout.write(template.render(data))
@@ -83,4 +82,5 @@ class Packmol(object):
         return self
 
     def __del__(self):
+      if not self.debug:
         os.remove(self.box_pdb)

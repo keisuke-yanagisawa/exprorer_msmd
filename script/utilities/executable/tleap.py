@@ -7,12 +7,11 @@ from utilities.executable.execute import Command
 
 
 class TLeap(object):
-    def __init__(self, exe="tleap", debug=False):
-        self.exe = exe
+    def __init__(self, debug=False):
+        self.exe = os.getenv("TLEAP", "tleap")
         self.debug = debug
 
-    def set(self, template_file, cids, cosolv_paths, frcmods, box_path, size, ssbonds, at):
-        self.template_file = template_file
+    def set(self, cids, cosolv_paths, frcmods, box_path, size, ssbonds, at):
         self.cids = cids
         self.cosolv_paths = cosolv_paths
         self.frcmods = frcmods
@@ -40,7 +39,6 @@ class TLeap(object):
         }
 
         env = jinja2.Environment(loader=jinja2.FileSystemLoader(f"{os.path.dirname(__file__)}/template"))
-        print(env)
         template = env.get_template("leap.in")
         with open(inputfile, "w") as fout:
             fout.write(template.render(data))

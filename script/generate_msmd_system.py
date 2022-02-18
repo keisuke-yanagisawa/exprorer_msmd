@@ -9,6 +9,7 @@ from subprocess import getoutput as gop
 
 from scipy import constants
 import jinja2
+import parmed as pmd
 
 from utilities.util import expandpath
 from utilities.executable import Parmchk, Packmol, TLeap
@@ -70,23 +71,15 @@ if __name__ == "__main__":
     parser.add_argument("-cosolv_param", required=True,
                         help="parameter file of cosolvent")
     parser.add_argument("-oprefix", dest="output_prefix", required=True)
-    parser.add_argument("--packmol", dest="packmol", default="packmol", help="path to packmol")
-    parser.add_argument("--tleap", dest="tleap", default="tleap", help="path to tleap")
-    parser.add_argument("--parmchk", dest="parmchk", default="parmchk2", help="path to parmchk")
-    parser.add_argument("-tin", dest="tleap_input", required=True,
-                        help="input file for tleap")
-    parser.add_argument("-wat-ion-lst", dest="wat_ion_list", default="WAT,Na+,Cl-",
-                        help="comma-separated water and ion list to be put on last in pdb entry")
-    parser.add_argument("-no-rm-temp", action="store_true", dest="no_rm_temp_flag",
+
+    parser.add_argument("--seed", default=-1, type=int)
+    parser.add_argument("--no-rm-temp", action="store_true", dest="no_rm_temp_flag",
                         help="the flag not to remove all temporal files")
-    parser.add_argument("-seed", default=-1, type=int)
+    parser.add_argument("--wat-ion-lst", dest="wat_ion_list", default="WAT,Na+,Cl-,CA,MG,ZN,CU",
+                        help="comma-separated water and ion list to be put on last in pdb entry")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--version", action="version", version=VERSION)
     args = parser.parse_args()
-
-    # TODO: このファイルに対する相対パスでハードコーディングしてしまいたい。
-    args.tleap_input = expandpath(args.tleap_input)
-
 
     params = configparser.ConfigParser()
     params.read(expandpath(args.prot_param), "UTF-8")
@@ -117,24 +110,24 @@ if __name__ == "__main__":
         cfrcmods = params["Cosolvent"]["frcmod"].split()
     else:
         for mol2 in cmols:
-            parmchk = Parmchk(args.parmchk, debug=args.debug)
+            parmchk = Parmchk(debug=args.debug)
             parmchk.set(mol2, params["Cosolvent"]["atomtype"]).run()
             cfrcmods.append(parmchk.frcmod)
 
-    packmol_obj = Packmol(args.packmol, debug=args.debug)
+    packmol_obj = Packmol(debug=args.debug)
     packmol_obj.set(
         params["Protein"]["pdb"], 
-        cpdbs,
-        boxsize,
+        cpdbs, boxsize,
         float(params["Cosolvent"]["molar"])
     )
+
+    tleap_obj = TLeap(debug=args.debug)
     while True:
         packmol_obj.run()
 
         # 2. amber tleap
-        tleap_obj = TLeap(exe=args.tleap, debug=args.debug)
         tleap_obj.set(
-            args.tleap_input, cids, cmols, cfrcmods,
+            cids, cmols, cfrcmods,
             packmol_obj.box_pdb, boxsize, ssbonds,
             params["Cosolvent"]["atomtype"]
         ).run(args.output_prefix)
@@ -144,6 +137,10 @@ if __name__ == "__main__":
             break
         else:
             print("the system is not neutral. generate system again")
+
+    msmd_system = pmd.load_file(tleap_obj.parm7, xyz=tleap_obj.rst7)
+    msmd_system.save(f"{args.output_prefix}.top", overwrite=True)
+    msmd_system.save(f"{args.output_prefix}.gro", overwrite=True)
 
     # 5. remove temporal files
     if not args.no_rm_temp_flag:
