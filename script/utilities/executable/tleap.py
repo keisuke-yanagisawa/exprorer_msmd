@@ -3,11 +3,13 @@ import os
 from subprocess import getoutput as gop
 import jinja2
 from utilities import const
+from utilities.executable.execute import Command
 
 
 class TLeap(object):
-    def __init__(self, exe="tleap"):
+    def __init__(self, exe="tleap", debug=False):
         self.exe = exe
+        self.debug = debug
 
     def set(self, template_file, cids, cosolv_paths, frcmods, box_path, size, ssbonds, at):
         self.template_file = template_file
@@ -37,12 +39,16 @@ class TLeap(object):
             "SIZE": self.size
         }
 
-        env = jinja2.Environment(loader=jinja2.FileSystemLoader("/"))
-        template = env.get_template(self.template_file)
+        env = jinja2.Environment(loader=jinja2.FileSystemLoader(f"{os.path.dirname(__file__)}/template"))
+        print(env)
+        template = env.get_template("leap.in")
         with open(inputfile, "w") as fout:
             fout.write(template.render(data))
 
-        output = gop(f"{self.exe} -f {inputfile}")
+        command = Command(f"{self.exe} -f {inputfile}")
+        if self.debug:
+          print(command)
+        output = command.run()
         print(output)
         final_charge_info = [s.strip() for s in output.split("\n")
                             if s.strip().startswith("Total unperturbed charge")][0]

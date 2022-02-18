@@ -34,10 +34,6 @@ saveAmberParm prot {tmp_prefix}.parm7 {tmp_prefix}.rst7
 quit
 """
 
-
-
-tmpdir = tempfile.mkdtemp()
-
 def protein_pdb_preparation(pdbfile):
     _, tmp1 = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)
     _, tmp2 = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)
@@ -46,6 +42,7 @@ def protein_pdb_preparation(pdbfile):
     return tmp2
 
 def calculate_boxsize(pdbfile):
+    tmpdir = tempfile.mkdtemp()
     tmp_prefix=f"{tmpdir}/{const.TMP_PREFIX}"
     with open(f"{tmp_prefix}.in", "w") as fout:
         fout.write(tmp_leap.format(pdbfile=pdbfile, tmp_prefix=tmp_prefix))
@@ -83,6 +80,7 @@ if __name__ == "__main__":
     parser.add_argument("-no-rm-temp", action="store_true", dest="no_rm_temp_flag",
                         help="the flag not to remove all temporal files")
     parser.add_argument("-seed", default=-1, type=int)
+    parser.add_argument("--debug", action="store_true")
     parser.add_argument("--version", action="version", version=VERSION)
     args = parser.parse_args()
 
@@ -114,17 +112,16 @@ if __name__ == "__main__":
                        * 1e-27)**(-1/3.0)  # /L -> /A^3 : 1e-27
 
     # 1. generate cosolvent box with packmol
-    cfrcmods = [f"{tmpdir}/.temp_cosolvent_{cid}.frcmod" for cid in cids]
+    cfrcmods = []
     if "frcmod" in params["Cosolvent"] and params["Cosolvent"]["frcmod"] != "":
         cfrcmods = params["Cosolvent"]["frcmod"].split()
     else:
-        cfrcmods = []
         for mol2 in cmols:
-            parmchk = Parmchk(args.parmchk)
+            parmchk = Parmchk(args.parmchk, debug=args.debug)
             parmchk.set(mol2, params["Cosolvent"]["atomtype"]).run()
             cfrcmods.append(parmchk.frcmod)
 
-    packmol_obj = Packmol(args.packmol)
+    packmol_obj = Packmol(args.packmol, debug=args.debug)
     packmol_obj.set(
         params["Protein"]["pdb"], 
         cpdbs,
@@ -135,7 +132,7 @@ if __name__ == "__main__":
         packmol_obj.run()
 
         # 2. amber tleap
-        tleap_obj = TLeap(exe=args.tleap)
+        tleap_obj = TLeap(exe=args.tleap, debug=args.debug)
         tleap_obj.set(
             args.tleap_input, cids, cmols, cfrcmods,
             packmol_obj.box_pdb, boxsize, ssbonds,
@@ -150,4 +147,4 @@ if __name__ == "__main__":
 
     # 5. remove temporal files
     if not args.no_rm_temp_flag:
-        print(gop(f"rm -r {tmpdir}"))
+        None # TODO:
