@@ -9,12 +9,11 @@ from subprocess import getoutput as gop
 
 from scipy import constants
 import jinja2
-import parmed as pmd
 
 from utilities.util import expandpath
 from utilities.executable import Parmchk, Packmol, TLeap
 from utilities import const
-
+from utilities.pmd import convert as pmd_convert
 
 VERSION = "2.0.0"
 
@@ -138,9 +137,8 @@ if __name__ == "__main__":
         else:
             print("the system is not neutral. generate system again")
 
-    msmd_system = pmd.load_file(tleap_obj.parm7, xyz=tleap_obj.rst7)
-    msmd_system.save(f"{args.output_prefix}.top", overwrite=True)
-    msmd_system.save(f"{args.output_prefix}.gro", overwrite=True)
+    pmd_convert(tleap_obj.parm7, f"{args.output_prefix}.top",
+                inxyz=tleap_obj.rst7, outxyz=f"{args.output_prefix}.gro")
 
     # 5. remove temporal files
     if not args.no_rm_temp_flag:
