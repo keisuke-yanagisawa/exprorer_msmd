@@ -132,3 +132,6 @@ dmypy.json
 /output
 **~
 \#**
+
+**test**
+**rmsd.dat
