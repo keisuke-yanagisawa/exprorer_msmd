@@ -2,6 +2,7 @@ iter=1
 iter_st=0
 INPUTDIR=`pwd`
 OUTPUTDIR=`pwd`/output/test
+ANALYSISDIR=`pwd`/example/analysis
 map_prefix=PMAP
 protein_param_file=example/protein.conf
 probe_param_file=example/probe.conf
