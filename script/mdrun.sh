@@ -35,3 +35,5 @@ done
 
 # trr -> cpt
 # -t ${prev_cpt} trr? cpt?
+
+ln -s $name.xtc simulation/{{ NAME }}.xtc 
