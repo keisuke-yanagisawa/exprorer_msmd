@@ -29,7 +29,7 @@ class Cpptraj(object):
         self.probe_id = probe_id
         return self
 
-    def run(self, basedir, prefix, box_size=200, interval=1, 
+    def run(self, basedir, prefix, box_size=80, interval=1, 
             traj_start=1, traj_stop="last", traj_offset=1):
         self.basedir = basedir
         self.prefix = prefix
@@ -59,6 +59,14 @@ class Cpptraj(object):
         if self.debug:
           print(command)
         print(command.run())
+
+        self.grids = [
+            f"{self.basedir}/map_{self.prefix}_nV.dx",
+            f"{self.basedir}/map_{self.prefix}_nVH.dx",
+            f"{self.basedir}/map_{self.prefix}_V.dx",
+            f"{self.basedir}/map_{self.prefix}_O.dx",
+        ]
+
         return self
 
     def __del__(self):
