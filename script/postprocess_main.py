@@ -17,6 +17,25 @@ from utilities import const
 
 VERSION = "1.0.0"
 
+def run_gen_pmap(basedir, prot_param, cosolv_param, debug=False):
+    params = configparser.ConfigParser()
+    params.read(expandpath(prot_param), "UTF-8")
+    params.read(expandpath(cosolv_param), "UTF-8")
+    if "ReferenceStructure" not in params:
+        params["ReferenceStructure"] = params["Protein"]
+
+    trajectory = expandpath(basedir) + "/" + "simulation" + "/" + "TEST_PROJECT.xtc" # TODO: TEST_PROJECT should be "PREFIX"
+    topology   = expandpath(basedir) + "/" + "top" + "/" + "TEST_PROJECT.top" # TODO: TEST_PROJECT should be "PREFIX"
+    ref_struct = dirname(expandpath(prot_param))+"/"+basename(params["ReferenceStructure"]["pdb"])
+    probe_id   = params["Cosolvent"]["cid"]
+
+    cpptraj_obj = Cpptraj(debug=debug)
+    cpptraj_obj.set(topology, trajectory, ref_struct, probe_id)
+    cpptraj_obj.run(
+        basedir=basedir, 
+        prefix="test"
+    )
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -25,6 +44,22 @@ if __name__ == "__main__":
                         help="objective directory")
     parser.add_argument("prot_param")
     parser.add_argument("cosolv_param")
+
+    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--version", action="version", version=VERSION)
+    args = parser.parse_args()
+
+    run_gen_pmap(args.basedir, args.prot_param, args.cosolv_param, args.debug)
+
+    # PMAPを各runに対して作成 - gen_pmap.sh
+    #  この時点で当然probabilityになっているべき。
+    # max-PMAPを作成 - max_pmap.sh
+    # cpptrajでほげほげする - cpptraj.py
+    # environmentを全列挙する - extract_environment.sh
+    #   このあたりは計算時間がトンデモなくかかるので、1つのスクリプトにまとめない方が良い気がする
+    # 構造の重ね合わせ - superimpose.sh
+    # meshの描画 - make_meshes.py / environments_visualization.sh
+
 
     # parser.add_argument("-prot_param", required=True,
     #                     help="parameter file of protein")
@@ -37,39 +72,7 @@ if __name__ == "__main__":
     #                     help="the flag not to remove all temporal files")
     # parser.add_argument("--wat-ion-lst", dest="wat_ion_list", default="WAT,Na+,Cl-,CA,MG,ZN,CU",
     #                     help="comma-separated water and ion list to be put on last in pdb entry")
-    parser.add_argument("--debug", action="store_true")
-    parser.add_argument("--version", action="version", version=VERSION)
-    args = parser.parse_args()
 
-    params = configparser.ConfigParser()
-    params.read(expandpath(args.prot_param), "UTF-8")
-    params.read(expandpath(args.cosolv_param), "UTF-8")
-    if "ReferenceStructure" not in params:
-        params["ReferenceStructure"] = params["Protein"]
-    print({section: dict(params[section]) for section in params.sections()})
-
-
-
-    # PMAPを各runに対して作成 - gen_pmap.sh
-    #  この時点で当然probabilityになっているべき。
-    # max-PMAPを作成 - max_pmap.sh
-    # cpptrajでほげほげする - cpptraj.py
-    # environmentを全列挙する - extract_environment.sh
-    #   このあたりは計算時間がトンデモなくかかるので、1つのスクリプトにまとめない方が良い気がする
-    # 構造の重ね合わせ - superimpose.sh
-    # meshの描画 - make_meshes.py / environments_visualization.sh
-
-    trajectory = expandpath(args.basedir) + "/" + "simulation" + "/" + "TEST_PROJECT.xtc" # TODO: TEST_PROJECT should be "PREFIX"
-    topology   = expandpath(args.basedir) + "/" + "top" + "/" + "TEST_PROJECT.top" # TODO: TEST_PROJECT should be "PREFIX"
-    ref_struct = dirname(expandpath(args.prot_param))+"/"+basename(params["ReferenceStructure"]["pdb"])
-    probe_id   = params["Cosolvent"]["cid"]
-
-    cpptraj_obj = Cpptraj(debug=args.debug)
-    cpptraj_obj.set(topology, trajectory, ref_struct, probe_id)
-    cpptraj_obj.run(
-        basedir=args.basedir, 
-        prefix="test"
-    )
 # import argparse
 # import configparser
 # from subprocess import getoutput as gop
