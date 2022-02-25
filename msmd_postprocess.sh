@@ -18,14 +18,26 @@ genpmap(){
 
 maxpmap(){
     #TODO: map_test_**.dx_pmap.dx is terrible hard-coding
-    $PYTHON $WORKDIR/script/maxpmap_main.py $ANALYSISDIR/system*/map_test_nV.dx_pmap.dx \
-        $ANALYSISDIR/maxPMAP_nV.dx
+    # $PYTHON $WORKDIR/script/maxpmap_main.py $ANALYSISDIR/system*/map_test_nV.dx_pmap.dx \
+    #     $ANALYSISDIR/maxPMAP_nV.dx
     $PYTHON $WORKDIR/script/maxpmap_main.py $ANALYSISDIR/system*/map_test_nVH.dx_pmap.dx \
         $ANALYSISDIR/maxPMAP_nVH.dx
-    $PYTHON $WORKDIR/script/maxpmap_main.py $ANALYSISDIR/system*/map_test_O.dx_pmap.dx \
-        $ANALYSISDIR/maxPMAP_V.dx
-    $PYTHON $WORKDIR/script/maxpmap_main.py $ANALYSISDIR/system*/map_test_V.dx_pmap.dx \
-        $ANALYSISDIR/maxPMAP_O.dx
+    # $PYTHON $WORKDIR/script/maxpmap_main.py $ANALYSISDIR/system*/map_test_O.dx_pmap.dx \
+    #     $ANALYSISDIR/maxPMAP_V.dx
+    # $PYTHON $WORKDIR/script/maxpmap_main.py $ANALYSISDIR/system*/map_test_V.dx_pmap.dx \
+    #     $ANALYSISDIR/maxPMAP_O.dx
+}
+
+resenv(){
+    local i=$1
+    cosolvent_ID=`get_ini_variable $OUTPUTDIR/prep$i/input/probe.conf Cosolvent cid` #TODO: should not refer to prep directory
+    $PYTHON $WORKDIR/script/resenv_main.py \
+        -grid $ANALYSISDIR/maxPMAP_nVH.dx \
+        -ipdb $ANALYSISDIR/system$i/test_woWAT_10ps.pdb \
+        -resn $cosolvent_ID \
+        -opdb $ANALYSISDIR/system$i/residue_environment.pdb \
+        -v
+    #TODO: terrible hard coding
 }
 
 #### output environments ####
@@ -50,10 +62,16 @@ WORKDIR=`pwd`
 
 iter_ed=$(( $iter + $iter_st ))
 
+# for i in `seq $iter_st $(( $iter_ed - 1 ))`
+# do
+#     genpmap $i &
+# done
+# wait
+
+# maxpmap
+
 for i in `seq $iter_st $(( $iter_ed - 1 ))`
 do
-    genpmap $i &
+    resenv $i &
 done
 wait
-
-maxpmap

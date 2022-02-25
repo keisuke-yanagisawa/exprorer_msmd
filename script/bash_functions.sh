@@ -41,7 +41,7 @@ get_ini_variable(){
     local ini_variable=$3
 
     if [ ! -f $ini_file ];then
-	echo "ini file does not found" 1>&2
+	echo "ini file does not found: $ini_file" 1>&2
 	exit 1
     fi
 
