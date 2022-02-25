@@ -18,5 +18,10 @@ grid {{ basedir }}/map_{{ prefix }}_O.dx {{ map_voxel }} :{{ cid }}@O*
 trajout {{ basedir }}/{{ prefix }}_position_check.pdb start 1 stop 1 offset 1
 trajout {{ basedir }}/{{ prefix }}_position_check2.pdb offset 100
 trajout {{ basedir }}/{{ prefix }}_last_frame.pdb start 2001
+
+strip :WAT,:HOH
+trajout {{ basedir }}/{{ prefix }}_woWAT_500ps.pdb offset 50
+trajout {{ basedir }}/{{ prefix }}_woWAT_10ps.pdb 
+
 go
 exit
