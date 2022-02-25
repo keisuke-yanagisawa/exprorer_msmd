@@ -49,6 +49,15 @@ alignresenv(){
         -v
 }
 
+res_int_profile(){
+    cosolvent_ID=`get_ini_variable $OUTPUTDIR/prep0/input/probe.conf Cosolvent cid` #TODO: should not refer to prep directory
+    $PYTHON $WORKDIR/script/profile_main.py \
+        -ipdb $ANALYSISDIR/aligned_resenv.pdb \
+        -oprefix $ANALYSISDIR/${cosolvent_ID}_mesh \
+        -v
+
+}
+
 #### output environments ####
 
 logging_info "which $PYTHON: `which $PYTHON`"
@@ -86,3 +95,4 @@ iter_ed=$(( $iter + $iter_st ))
 # wait
 
 alignresenv
+res_int_profile
