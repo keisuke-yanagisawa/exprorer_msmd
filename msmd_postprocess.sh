@@ -40,6 +40,15 @@ resenv(){
     #TODO: terrible hard coding
 }
 
+alignresenv(){
+    cosolvent_ID=`get_ini_variable $OUTPUTDIR/prep0/input/probe.conf Cosolvent cid` #TODO: should not refer to prep directory
+    $PYTHON $WORKDIR/script/alignresenv_main.py \
+        -ipdb $ANALYSISDIR/system*/residue_environment.pdb \
+        -resn $cosolvent_ID \
+        -opdb $ANALYSISDIR/aligned_resenv.pdb \
+        -v
+}
+
 #### output environments ####
 
 logging_info "which $PYTHON: `which $PYTHON`"
@@ -67,11 +76,13 @@ iter_ed=$(( $iter + $iter_st ))
 #     genpmap $i &
 # done
 # wait
-
+#
 # maxpmap
+# 
+# for i in `seq $iter_st $(( $iter_ed - 1 ))`
+# do
+#     resenv $i &
+# done
+# wait
 
-for i in `seq $iter_st $(( $iter_ed - 1 ))`
-do
-    resenv $i &
-done
-wait
+alignresenv
