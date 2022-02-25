@@ -13,7 +13,7 @@ VERSION = "0.3.0"
 DESCRIPTION = """
 Extract probe which is on high-probability region 
 with its environment
-Output: aligned residue environments
+Output: residue environments
 """
 
 
