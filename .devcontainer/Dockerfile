@@ -24,3 +24,6 @@ RUN mamba install -n exprorer -c conda-forge python=3.7 rdkit ambertools=20.15 \
 
 RUN conda init \
     && echo "conda activate exprorer" >> ~/.bashrc
+
+
+RUN mamba install -y tqdm scikit-learn
