@@ -35,9 +35,7 @@ EOF
 	-v General:input_dir=$OUTPUTDIR/prep$i \
 	-v General:output_dir=$OUTPUTDIR/system$i \
 	-v General:name=$TARGET_NAME \
-    -v General:protocol_yaml=$OUTPUTDIR/prep$i/input/md_protocol.yaml \
-	-v ProductionRun:steps_pr=$steps_pr \
-	-v ProductionRun:snapshot_interval=$snapshot_interval
+    -v General:protocol_yaml=$OUTPUTDIR/prep$i/input/md_protocol.yaml
 }
 
 start_mdrun(){
