@@ -20,7 +20,7 @@ preparation(){
     local do_reorder=$2 # Y or otherwise (N)
     cd $OUTPUTDIR/prep$i
 
-    if [ `is_calculated $OUTPUTDIR $i ${map_prefix}_nVH.dx` == 1 ]; then
+    if [ `is_calculated $OUTPUTDIR $i PMAP_nVH.dx` == 1 ]; then
         logging_info "$TARGET_NAME $i : skipped because it has been already calculated"
         continue
     fi
@@ -43,7 +43,7 @@ start_mdrun(){
     local i=$2
     local ncpus=$3
     
-    if [ `is_calculated $OUTPUTDIR $i ${map_prefix}_nVH.dx` == 1 ]; then
+    if [ `is_calculated $OUTPUTDIR $i PMAP_nVH.dx` == 1 ]; then
         logging_info "$TARGET_NAME $i : skipped because it has been already calculated"
         return 0
     fi

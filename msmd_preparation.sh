@@ -14,7 +14,7 @@ preparation(){
 
     local i=$1
 
-    if [ `is_calculated $OUTPUTDIR $i ${map_prefix}_nVH.dx` == 1 ]; then
+    if [ `is_calculated $OUTPUTDIR $i PMAP_nVH.dx` == 1 ]; then
         logging_info "$TARGET_NAME $i : skipped because it has been already calculated"
         continue
     fi
