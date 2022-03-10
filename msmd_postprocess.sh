@@ -80,19 +80,19 @@ WORKDIR=`pwd`
 
 iter_ed=$(( $iter + $iter_st ))
 
-# for i in `seq $iter_st $(( $iter_ed - 1 ))`
-# do
-#     genpmap $i &
-# done
-# wait
-#
-# maxpmap
-# 
-# for i in `seq $iter_st $(( $iter_ed - 1 ))`
-# do
-#     resenv $i &
-# done
-# wait
+for i in `seq $iter_st $(( $iter_ed - 1 ))`
+do
+    genpmap $i &
+done
+wait
+
+maxpmap
+
+for i in `seq $iter_st $(( $iter_ed - 1 ))`
+do
+    resenv $i &
+done
+wait
 
 alignresenv
 res_int_profile
