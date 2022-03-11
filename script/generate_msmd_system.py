@@ -10,7 +10,7 @@ from subprocess import getoutput as gop
 from scipy import constants
 import jinja2
 
-from utilities.util import expandpath
+from utilities import util
 from utilities.executable import Parmchk, Packmol, TLeap
 from utilities import const
 from utilities.pmd import convert as pmd_convert
@@ -65,60 +65,53 @@ def calculate_boxsize(pdbfile):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="generate .parm7 and .rst7 files with cosolvent box")
-    parser.add_argument("-prot_param", required=True,
-                        help="parameter file of protein")
-    parser.add_argument("-cosolv_param", required=True,
-                        help="parameter file of cosolvent")
+    parser.add_argument("-setting-yaml", help="yaml file for the MSMD")
     parser.add_argument("-oprefix", dest="output_prefix", required=True)
 
     parser.add_argument("--seed", default=-1, type=int)
     parser.add_argument("--no-rm-temp", action="store_true", dest="no_rm_temp_flag",
                         help="the flag not to remove all temporal files")
-    parser.add_argument("--wat-ion-lst", dest="wat_ion_list", default="WAT,Na+,Cl-,CA,MG,ZN,CU",
-                        help="comma-separated water and ion list to be put on last in pdb entry")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--version", action="version", version=VERSION)
     args = parser.parse_args()
 
-    params = configparser.ConfigParser()
-    params.read(expandpath(args.prot_param), "UTF-8")
-    params.read(expandpath(args.cosolv_param), "UTF-8")
-    #print(expandpath(args.prot_param), dir(params))
-    params["Protein"]["pdb"]    = dirname(expandpath(args.prot_param))+"/"+basename(params["Protein"]["pdb"])
-    params["Cosolvent"]["mol2"] = dirname(expandpath(args.cosolv_param))+"/"+basename(params["Cosolvent"]["mol2"])
-    params["Cosolvent"]["pdb"]  = dirname(expandpath(args.cosolv_param))+"/"+basename(params["Cosolvent"]["pdb"])
+    setting = util.parse_yaml(args.setting_yaml)
 
-    params["Protein"]["pdb"] = protein_pdb_preparation(params["Protein"]["pdb"])
+    # params = configparser.ConfigParser()
+    # params.read(expandpath(args.prot_param), "UTF-8")
+    # params.read(expandpath(args.cosolv_param), "UTF-8")
+    # #print(expandpath(args.prot_param), dir(params))
+    # params["Protein"]["pdb"]    = dirname(expandpath(args.prot_param))+"/"+basename(params["Protein"]["pdb"])
+    # params["Cosolvent"]["mol2"] = dirname(expandpath(args.cosolv_param))+"/"+basename(params["Cosolvent"]["mol2"])
+    # params["Cosolvent"]["pdb"]  = dirname(expandpath(args.cosolv_param))+"/"+basename(params["Cosolvent"]["pdb"])
 
+    pdbpath = protein_pdb_preparation(setting["input"]["protein"]["pdb"])
+    probemolar = setting["input"]["probe"]["molar"]
 
-    ssbonds = params["Protein"]["ssbond"].split()
-    cmols = params["Cosolvent"]["mol2"].split()
-    cpdbs = params["Cosolvent"]["pdb"].split()
-    cids = params["Cosolvent"]["cid"].split()
+    ssbonds = setting["input"]["protein"]["ssbond"]
+    cmols = setting["input"]["probe"]["mol2"].split()
+    cpdbs = setting["input"]["probe"]["pdb"].split()
+    cids = setting["input"]["probe"]["cid"].split()
 
-    boxsize = calculate_boxsize(params["Protein"]["pdb"])
+    boxsize = calculate_boxsize(pdbpath)
 
 
     # 0. preparation
-    cosolv_box_size = ((constants.N_A * float(params["Cosolvent"]["molar"]))
+    cosolv_box_size = ((constants.N_A * float(probemolar))
                        * 1e-27)**(-1/3.0)  # /L -> /A^3 : 1e-27
 
     # 1. generate cosolvent box with packmol
     cfrcmods = []
-    if "frcmod" in params["Cosolvent"] and params["Cosolvent"]["frcmod"] != "":
-        cfrcmods = params["Cosolvent"]["frcmod"].split()
+    if "frcmod" in setting["input"]["probe"] and setting["input"]["probe"]["frcmod"] != "":
+        cfrcmods = setting["input"]["probe"]["frcmod"].split()
     else:
         for mol2 in cmols:
             parmchk = Parmchk(debug=args.debug)
-            parmchk.set(mol2, params["Cosolvent"]["atomtype"]).run()
+            parmchk.set(mol2, setting["input"]["probe"]["atomtype"]).run()
             cfrcmods.append(parmchk.frcmod)
 
     packmol_obj = Packmol(debug=args.debug)
-    packmol_obj.set(
-        params["Protein"]["pdb"], 
-        cpdbs, boxsize,
-        float(params["Cosolvent"]["molar"])
-    )
+    packmol_obj.set(pdbpath, cpdbs, boxsize, float(probemolar))
 
     tleap_obj = TLeap(debug=args.debug)
     while True:
@@ -128,7 +121,7 @@ if __name__ == "__main__":
         tleap_obj.set(
             cids, cmols, cfrcmods,
             packmol_obj.box_pdb, boxsize, ssbonds,
-            params["Cosolvent"]["atomtype"]
+            setting["input"]["probe"]["atomtype"]
         ).run(args.output_prefix)
         system_charge = tleap_obj._final_charge_value
 

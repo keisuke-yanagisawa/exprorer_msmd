@@ -29,7 +29,7 @@ class TLeap(object):
         _, inputfile = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_INP)
         data = {
             "LIGAND_PARAM": f"leaprc.{self.at}",
-            "SS_BONDS": zip(self.ssbonds[0::2], self.ssbonds[1::2]),
+            "SS_BONDS": self.ssbonds,
             "COSOLVENTS": [{"ID": cid, "PATH": cpath}
                         for cid, cpath in zip(self.cids, self.cosolv_paths)],
             "OUTPUT": self.oprefix,
