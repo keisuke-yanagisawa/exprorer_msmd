@@ -63,7 +63,7 @@ The command will construct PMAP in accordance with input map files.
 1. Prepare the protein `.pdb` file
   - Residue IDs must be 1-origin and must not any jump of residue IDs.
   - The protein should be centered.
-2. Make new protein config file (example: `example/protein.conf`). You have to write down an absolute path to protein PDB file and the residue numbers which make disulfide bonds (The record `binding_site_residues` is not used so far). 
+2. Make new protein config file (example: `example/protein.conf`). You have to write down an absolute path to protein PDB file and the residue numbers which make disulfide bonds. 
 3．Make new MSMD config file like `example/msmd_config.sh`. Please make sure to use new protein config file.
 
 ### To do CMD with a different probe (cosolvent)
