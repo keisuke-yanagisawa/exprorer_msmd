@@ -41,10 +41,6 @@ preparation(){
 	--seed $i \
 	--no-rm-temp
 
-    # $PYTHON $WORKDIR/script/convert_amber_to_gromacs.py \
-	#    -iprefix $OUTPUTDIR/prep$i/${TARGET_NAME} \
-	#    -oprefix $OUTPUTDIR/prep$i/${TARGET_NAME}_GMX
-
     # add virtual interaction between cosolvents
     $PYTHON $WORKDIR/script/addvirtatom2top.py \
 	-i $OUTPUTDIR/prep$i/${TARGET_NAME}_GMX.top \

@@ -4,6 +4,10 @@ general:
   workdir: ../output/test # output directory / relative path from THIS YAML FILE
   name: TEST_PROJECT
   # loglevel: debug # not implemented
+  executables:
+    python: python
+    gromacs: gmx
+
 
 input:
   protein:
