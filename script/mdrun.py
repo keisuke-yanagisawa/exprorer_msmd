@@ -195,7 +195,7 @@ def gen_mdrun_job(template_file, step_names, name, path, post_comm=""):
         "STEP_NAMES"   : " ".join(step_names)
     }
 
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader("/"))
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader("."))
     template = env.get_template(template_file)
     with open(path, "w") as fout:
         fout.write(template.render(data))
