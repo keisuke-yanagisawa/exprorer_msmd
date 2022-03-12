@@ -2,10 +2,10 @@
 from logging import Formatter, handlers, StreamHandler, getLogger, DEBUG
 
 class Logger:
-    def __init__(self, name=__name__, path=""):
-        self.logger = getLogger(name)
+    def __init__(self, path=""):
+        self.logger = getLogger()
         self.logger.setLevel(DEBUG)
-        formatter = Formatter("[%(asctime)s] [%(process)d] [%(name)s] [%(levelname)s] %(message)s")
+        formatter = Formatter("[%(asctime)s] [%(levelname)s] %(message)s")
 
         # stdout
         handler = StreamHandler()
@@ -36,3 +36,5 @@ class Logger:
 
     def critical(self, msg):
         self.logger.critical(msg)
+
+logger = Logger()
