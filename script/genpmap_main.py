@@ -12,6 +12,7 @@ import jinja2
 
 from utilities.pmd import convert as pmd_convert
 from utilities.util import expandpath
+from utilities import util
 from utilities.executable import Cpptraj
 from utilities import const, GridUtil
 import gridData
@@ -49,17 +50,14 @@ def convert_to_pmap(grid_path, ref_struct, valid_distance):
     return pmap_path
 
 
-def gen_pmap(basedir, prot_param, cosolv_param, valid_distance, debug=False):
-    params = configparser.ConfigParser()
-    params.read(expandpath(prot_param), "UTF-8")
-    params.read(expandpath(cosolv_param), "UTF-8")
-    if "ReferenceStructure" not in params:
-        params["ReferenceStructure"] = params["Protein"]
+def gen_pmap(basedir, setting, valid_distance, debug=False):
 
-    trajectory = expandpath(basedir) + "/" + "simulation" + "/" + "TEST_PROJECT.xtc" # TODO: TEST_PROJECT should be "PREFIX"
-    topology   = expandpath(basedir) + "/" + "top" + "/" + "TEST_PROJECT.top" # TODO: TEST_PROJECT should be "PREFIX"
-    ref_struct = dirname(expandpath(prot_param))+"/"+basename(params["ReferenceStructure"]["pdb"])
-    probe_id   = params["Cosolvent"]["cid"]
+    name = setting["general"]["name"]
+
+    trajectory = util.getabsolutepath(basedir) + f"/simulation/{name}.xtc"
+    topology   = util.getabsolutepath(basedir) + f"/top/{name}.top" # TODO: TEST_PROJECT should be "PREFIX"
+    ref_struct = setting["input"]["protein"]["pdb"]
+    probe_id   = setting["input"]["probe"]["cid"]
 
     cpptraj_obj = Cpptraj(debug=debug)
     cpptraj_obj.set(topology, trajectory, ref_struct, probe_id)
@@ -80,8 +78,9 @@ if __name__ == "__main__":
         description="generate PMAPs")
     parser.add_argument("-basedir", required=True,
                         help="objective directory")
-    parser.add_argument("prot_param")
-    parser.add_argument("cosolv_param")
+    parser.add_argument("setting_yaml", help="yaml file for the MSMD")
+    # parser.add_argument("prot_param")
+    # parser.add_argument("cosolv_param")
 
     parser.add_argument("-d,--distance-threshold", dest="d", metavar="d", default=5, type=int,
                         help="distance from protein atoms.")
@@ -89,4 +88,5 @@ if __name__ == "__main__":
     parser.add_argument("--version", action="version", version=VERSION)
     args = parser.parse_args()
 
-    pmap_paths = gen_pmap(args.basedir, args.prot_param, args.cosolv_param, args.d, args.debug)
+    setting = util.parse_yaml(args.setting_yaml)
+    pmap_paths = gen_pmap(args.basedir, setting, args.d, args.debug)

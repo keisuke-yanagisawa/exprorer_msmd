@@ -13,7 +13,7 @@
 genpmap(){
     local i=$1
     $PYTHON $WORKDIR/script/genpmap_main.py -basedir $ANALYSISDIR/system$i \
-        $protein_param_file $probe_param_file --debug
+        $md_protocol_file --debug
 }
 
 maxpmap(){
