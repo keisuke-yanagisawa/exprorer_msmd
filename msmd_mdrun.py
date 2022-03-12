@@ -69,7 +69,7 @@ if __name__ == "__main__":
     )# global variable
 
     setting = util.parse_yaml(args.setting_yaml)
-    indices = util.expand_index(setting["general"]["index"])
+    indices = util.expand_index(setting["general"]["iter_index"])
     name = setting["general"]["name"]
 
     gpuids = GPUtil.getAvailable()
