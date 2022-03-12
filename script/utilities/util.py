@@ -52,10 +52,9 @@ def expand_index(ind_info):
     return ret
 
 def parse_yaml(yamlpath):
-    YAML_DIR_PATH = os.path.dirname(
-        getabsolutepath(yamlpath) 
-    )
-    with open(yamlpath) as fin:
+    YAML_PATH = getabsolutepath(yamlpath) 
+    YAML_DIR_PATH = os.path.dirname(YAML_PATH)
+    with open(YAML_PATH) as fin:
         setting = yaml.safe_load(fin)
     if not "mol2" in setting["input"]["probe"] \
        or setting["input"]["probe"]["mol2"] is None:
@@ -81,5 +80,7 @@ def parse_yaml(yamlpath):
 
     if setting["input"]["protein"]["ssbond"] is None:
         setting["input"]["protein"]["ssbond"] = []
+
+    setting["general"]["yaml"] = YAML_PATH
 
     return setting

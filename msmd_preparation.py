@@ -19,14 +19,14 @@ def wrapper(index, name, setting_general, setting_input):
     tmp_name = "tmp"
     exe_python  = setting_general["executables"]["python"]
     exe_gromacs = setting_general["executables"]["gromacs"]
-    # TODO: args.setting_yaml is globally referred
+  
     os.system(f"""
     {exe_python} script/generate_msmd_system.py \
-    -setting-yaml {args.setting_yaml} \
+    -setting-yaml {setting["general"]["yaml"]} \
     -oprefix {basedirpath}/{tmp_name}_GMX \
     --seed {index}
     """)
-    os.system(f"cp {args.setting_yaml} {inputdirpath}")
+    os.system(f"cp {setting['general']['yaml']} {inputdirpath}")
     
     os.system(f"""
     {exe_python} script/addvirtatom2top.py \
