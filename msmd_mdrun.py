@@ -30,7 +30,6 @@ def wrapper(index, name, setting, gpuid, ncpus):
     exe_python  = setting["general"]["executables"]["python"]
     exe_gromacs = setting["general"]["executables"]["gromacs"]
 
-    # TODO: args.setting_yaml is globally referred
     os.system(f"""
     {exe_python} script/mdrun.py \
 	DUMMY.conf \
@@ -38,7 +37,7 @@ def wrapper(index, name, setting, gpuid, ncpus):
 	-v General:input_dir={prepdirpath} \
 	-v General:output_dir={sysdirpath} \
 	-v General:name={setting["general"]["name"]} \
-    -v General:protocol_yaml={args.setting_yaml}
+    -v General:protocol_yaml={setting["general"]["yaml"]}
     # """)
 
     os.system(f"""
@@ -54,8 +53,13 @@ def wrapper(index, name, setting, gpuid, ncpus):
     cd {sysdirpath} && \
     GMX={exe_gromacs} bash mdrun.sh {ncpus}
     """)
-        
-YAML_DIR_PATH_global = None
+
+    os.system(f"""
+    {exe_python} script/genpmap_main.py \
+        -basedir {sysdirpath} \
+        {setting["general"]["yaml"]} --debug
+    # """)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Run MSMD simulation")
@@ -64,9 +68,6 @@ if __name__ == "__main__":
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--version", action="version", version=VERSION)
     args = parser.parse_args()
-    YAML_DIR_PATH_global = os.path.dirname(
-        util.getabsolutepath(args.setting_yaml) 
-    )# global variable
 
     setting = util.parse_yaml(args.setting_yaml)
     indices = util.expand_index(setting["general"]["iter_index"])
