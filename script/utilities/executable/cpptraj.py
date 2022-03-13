@@ -61,10 +61,10 @@ class Cpptraj(object):
         print(command.run())
 
         self.grids = [
-            f"{self.basedir}/map_{self.prefix}_nV.dx",
-            f"{self.basedir}/map_{self.prefix}_nVH.dx",
-            f"{self.basedir}/map_{self.prefix}_V.dx",
-            f"{self.basedir}/map_{self.prefix}_O.dx",
+            f"{self.basedir}/{self.prefix}_nV.dx",
+            f"{self.basedir}/{self.prefix}_nVH.dx",
+            f"{self.basedir}/{self.prefix}_V.dx",
+            f"{self.basedir}/{self.prefix}_O.dx",
         ]
 
         return self

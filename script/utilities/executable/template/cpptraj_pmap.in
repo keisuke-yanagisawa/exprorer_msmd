@@ -10,10 +10,10 @@ autoimage
 
 rms ToREF ref [REF] @CA&(!:CA)&(!:{{ cid }}) @CA&(!:CA)&(!:{{ cid }}) out rmsd.dat
 
-grid {{ basedir }}/map_{{ prefix }}_nV.dx {{ map_voxel }} :{{ cid }}&(!@VIS)
-grid {{ basedir }}/map_{{ prefix }}_nVH.dx {{ map_voxel }} :{{ cid }}&(!@VIS)&(!@H*)
-grid {{ basedir }}/map_{{ prefix }}_V.dx {{ map_voxel }} :{{ cid }}@VIS
-grid {{ basedir }}/map_{{ prefix }}_O.dx {{ map_voxel }} :{{ cid }}@O*
+grid {{ basedir }}/{{ prefix }}_nV.dx {{ map_voxel }} :{{ cid }}&(!@VIS)
+grid {{ basedir }}/{{ prefix }}_nVH.dx {{ map_voxel }} :{{ cid }}&(!@VIS)&(!@H*)
+grid {{ basedir }}/{{ prefix }}_V.dx {{ map_voxel }} :{{ cid }}@VIS
+grid {{ basedir }}/{{ prefix }}_O.dx {{ map_voxel }} :{{ cid }}@O*
 
 trajout {{ basedir }}/{{ prefix }}_position_check.pdb start 1 stop 1 offset 1
 trajout {{ basedir }}/{{ prefix }}_position_check2.pdb offset 100

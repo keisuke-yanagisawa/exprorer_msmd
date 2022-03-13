@@ -46,7 +46,8 @@ def convert_to_pmap(grid_path, ref_struct, valid_distance):
     mask = mask_generator(ref_struct, grid, valid_distance)
     pmap = convert_to_proba(grid, mask.grid)
     
-    pmap_path = grid_path + "_pmap.dx" # TODO: terrible naming
+    pmap_path = os.path.dirname(grid_path) + "/" \
+                + "PMAP" + "_" + os.path.basename(grid_path)
     pmap.export(pmap_path, type="double")
     return pmap_path
 
@@ -64,7 +65,7 @@ def gen_pmap(basedir, setting, valid_distance, debug=False):
     cpptraj_obj.set(topology, trajectory, ref_struct, probe_id)
     cpptraj_obj.run(
         basedir=basedir, 
-        prefix="test"
+        prefix=name
     )
     
     pmap_paths = []
