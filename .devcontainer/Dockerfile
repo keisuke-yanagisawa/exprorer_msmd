@@ -10,21 +10,17 @@ RUN apt-get update
 RUN apt-get install -y wget && rm -rf /var/lib/apt/lists/*
 
 RUN wget \
-    https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+    https://repo.anaconda.com/miniconda/Miniconda3-py39_4.11.0-Linux-x86_64.sh \
     && mkdir /root/.conda \
-    && bash Miniconda3-latest-Linux-x86_64.sh -b \
-    && rm -f Miniconda3-latest-Linux-x86_64.sh 
+    && bash Miniconda3-py39_4.11.0-Linux-x86_64.sh -b \
+    && rm -f Miniconda3-py39_4.11.0-Linux-x86_64.sh 
 RUN conda --version
 
 # install packages
-RUN conda install -c conda-forge mamba
-RUN mamba create -n exprorer
-RUN mamba install -n exprorer -c conda-forge python=3.7 rdkit ambertools=20.15 \
-    pandas numpy biopython jinja2 griddataformats parmed openbabel==2.4.1 git pyyaml
-
-RUN conda init \
-    && echo "conda activate exprorer" >> ~/.bashrc
-
-
-RUN mamba install -y tqdm scikit-learn
-RUN mamba install -y -c conda-forge gputil
+RUN conda install -y -c conda-forge mamba
+RUN mamba update conda
+RUN mamba install -y -c conda-forge \
+    ambertools=20.15 numpy=1.22.3 biopython=1.79 \
+    jinja2=3.0.3 griddataformats=0.7.0 \
+    parmed=3.4.3 git=2.35.1 pyyaml=6.0 \
+    tqdm=4.62.3 scikit-learn=1.0.2 gputil=1.4.0
