@@ -1,5 +1,6 @@
 # https://qiita.com/yopya/items/63155923602bf97dec53
-from logging import Formatter, handlers, StreamHandler, getLogger, DEBUG
+from logging import Formatter, handlers, StreamHandler, getLogger
+from logging import DEBUG, ERROR, WARN, INFO, CRITICAL
 
 class Logger:
     def __init__(self, path=""):
@@ -36,5 +37,21 @@ class Logger:
 
     def critical(self, msg):
         self.logger.critical(msg)
+
+    def setLevel(self, level):
+        if level.lower() == "debug":
+            self.logger.setLevel(DEBUG)
+        elif level.lower() == "info":
+            self.logger.setLevel(INFO)
+        elif level.lower() == "warn" \
+            or level.lower() == "warning":
+            self.logger.setLevel(WARN)
+        elif level.lower() == "error":
+            self.logger.setLevel(ERROR)
+        elif level.lower() == "critical":
+            self.logger.setLevel(CRITICAL)
+        else:
+            self.warn(f"level '{level}' is invalid.")
+            self.warn(f"logger level has not been changed.")
 
 logger = Logger()
