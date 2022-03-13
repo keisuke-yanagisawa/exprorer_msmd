@@ -141,6 +141,7 @@ if __name__ == "__main__":
 
     logger.setLevel("info" if args.verbose else "warn")
 
+    logger.info(f"read yaml: {args.setting_yaml}")
     setting = util.parse_yaml(args.setting_yaml)
     indices = util.expand_index(setting["general"]["iter_index"])
 
