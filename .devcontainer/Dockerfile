@@ -27,3 +27,4 @@ RUN conda init \
 
 
 RUN mamba install -y tqdm scikit-learn
+RUN mamba install -y -c conda-forge gputil
