@@ -25,12 +25,11 @@ def wrapper(index, name, setting):
     exe_python  = setting["general"]["executables"]["python"]
     exe_gromacs = setting["general"]["executables"]["gromacs"]
 
-    # TODO: args.setting_yaml is globally referred
     os.system(f"""
     {exe_python} script/genpmap_main.py \
         -basedir {sysdirpath} \
         {setting['general']['yaml']} --debug
-    # """)
+    """)
 
         
 if __name__ == "__main__":

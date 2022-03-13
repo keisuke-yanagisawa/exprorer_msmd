@@ -77,14 +77,6 @@ if __name__ == "__main__":
 
     setting = util.parse_yaml(args.setting_yaml)
 
-    # params = configparser.ConfigParser()
-    # params.read(expandpath(args.prot_param), "UTF-8")
-    # params.read(expandpath(args.cosolv_param), "UTF-8")
-    # #print(expandpath(args.prot_param), dir(params))
-    # params["Protein"]["pdb"]    = dirname(expandpath(args.prot_param))+"/"+basename(params["Protein"]["pdb"])
-    # params["Cosolvent"]["mol2"] = dirname(expandpath(args.cosolv_param))+"/"+basename(params["Cosolvent"]["mol2"])
-    # params["Cosolvent"]["pdb"]  = dirname(expandpath(args.cosolv_param))+"/"+basename(params["Cosolvent"]["pdb"])
-
     pdbpath = protein_pdb_preparation(setting["input"]["protein"]["pdb"])
     probemolar = setting["input"]["probe"]["molar"]
 

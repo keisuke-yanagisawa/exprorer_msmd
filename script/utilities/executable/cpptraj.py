@@ -8,10 +8,6 @@ import shutil
 import jinja2
 from utilities.pmd import convert as pmd_convert
 from ..logger import logger
-# def do_cpptraj(top, traj, ref, cid, prefix, 
-# n=100, d=1, traj_start=1, traj_stop="last", traj_offset=1):
-#     traj = util.expandpath(traj)
-#     ref = util.expandpath(ref)
 
 class Cpptraj(object):
     def __init__(self, debug=False):

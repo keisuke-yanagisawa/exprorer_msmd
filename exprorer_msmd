@@ -93,7 +93,7 @@ def wrapper(index, setting, gpuid, ncpus):
 	-v General:output_dir={sysdirpath} \
 	-v General:name={JOB_NAME} \
     -v General:protocol_yaml={YAML_PATH}
-    # """)
+    """)
 
     os.system(f"""
     unset OMP_NUM_THREADS
@@ -106,7 +106,7 @@ def wrapper(index, setting, gpuid, ncpus):
     {exe_python} {WORK_DIR}/script/genpmap_main.py \
         -basedir {sysdirpath} \
         {YAML_PATH} --debug
-    # """)
+    """)
 
 def get_gpuids():
     gpuids = set(GPUtil.getAvailable())
