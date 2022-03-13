@@ -15,6 +15,7 @@ from utilities.util import expandpath
 from utilities import util
 from utilities.executable import Cpptraj
 from utilities import const, GridUtil
+from utilities.logger import logger
 import gridData
 import numpy as np
 
@@ -79,14 +80,20 @@ if __name__ == "__main__":
     parser.add_argument("-basedir", required=True,
                         help="objective directory")
     parser.add_argument("setting_yaml", help="yaml file for the MSMD")
-    # parser.add_argument("prot_param")
-    # parser.add_argument("cosolv_param")
 
     parser.add_argument("-d,--distance-threshold", dest="d", metavar="d", default=5, type=int,
                         help="distance from protein atoms.")
+    parser.add_argument("-v,--verbose", dest="verbose", action="store_true")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--version", action="version", version=VERSION)
     args = parser.parse_args()
 
+    if args.debug:
+        logger.setLevel("debug")
+    elif args.verbose:
+        logger.setLevel("info")
+    # else: logger level is "warn"
+
     setting = util.parse_yaml(args.setting_yaml)
+    logger.info("PMAP generation")
     pmap_paths = gen_pmap(args.basedir, setting, args.d, args.debug)

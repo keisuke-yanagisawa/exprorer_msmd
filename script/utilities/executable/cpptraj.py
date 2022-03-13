@@ -7,7 +7,7 @@ from utilities.executable.execute import Command
 import shutil
 import jinja2
 from utilities.pmd import convert as pmd_convert
-
+from ..logger import logger
 # def do_cpptraj(top, traj, ref, cid, prefix, 
 # n=100, d=1, traj_start=1, traj_stop="last", traj_offset=1):
 #     traj = util.expandpath(traj)
@@ -70,13 +70,11 @@ class Cpptraj(object):
         return self
 
     def __del__(self):
+      logger.debug(f"Cpptraj.inp: {self.inp}")
+      logger.debug(f"Cpptraj.parm7: {self.parm7}")
       if hasattr(self, "inp"):
         if not self.debug:
           os.remove(self.inp)
-        else:
-          print("Cpptraj.inp", self.inp)
       if hasattr(self, "parm7"):
         if not self.debug:
           os.remove(self.parm7)
-        else:
-          print("Cpptraj.parm7", self.parm7)
