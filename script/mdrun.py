@@ -241,7 +241,7 @@ if __name__ == "__main__":
     # print(dat["General"]["name"])
 
     with open(dat["General"]["protocol_yaml"]) as fin:
-        protocol = yaml.safe_load(fin)["simulation"]
+        protocol = yaml.safe_load(fin)["exprorer_msmd"]
 
     # 1. make directories
     PARENT_DIR, TOP_DIR, MD_DIR = make_gromacs_directories(dat["General"]["output_dir"])
