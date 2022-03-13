@@ -1,13 +1,15 @@
 general:
-  iter_index: 1-3
+  iter_index: 0
   # iter_index: 1-2,4,5-9:2 # MSMD indices to be calculated / Notation 1-2 => 1,2  5-9:2 => 5,7,9
   workdir: ../output/test # output directory / relative path from THIS YAML FILE
   name: TEST_PROJECT
   # loglevel: debug # not implemented
   executables:
-    python: python
-    gromacs: gmx
-
+    python  : python
+    gromacs : gmx
+    packmol : packmol
+    tleap   : tleap
+    cpptraj : cpptraj
 
 input:
   protein:
@@ -24,7 +26,7 @@ input:
     atomtype: gaff2
     molar: 0.25
 
-simulation:
+exprorer_msmd:
   title    : EXPRORER protocol
   general  :
     dt          : 0.002
@@ -162,7 +164,7 @@ simulation:
       title     : Production Run
       type      : production
       define    :
-      nsteps    : 30000000
+      nsteps    : 30000
       nstxtcout : 5000 # steps
       nstenergy : 2500 # steps
       nstlog    : 5000 # steps
@@ -170,18 +172,19 @@ simulation:
       pcoupl    : Parrinello-Rahman
       # ref_p     : 1.0
 
-postprocess:
-  general:
-    valid_dist: 5 # PMAP valid distance from protein atoms
   pmap: # PMAP generation
+    valid_dist: 5 # PMAP valid distance from protein atoms
     snapshots: pr|2001-4001:1 # steps / "NAME" trajectory will be used with "NAME|" 
     # map: nVH-map will be only generated
     #   - suffix : nVH
     #     selector : (!@VIS)&(!@H*)
 
-  pmap_aggregation: max # max is only the option
 
-# below settings are for generation of RESIDUE INTERACTION PROFILE
+protein_hotspot:
+  pmap_aggregation: max # max is only the option so far
+
+probe_profile:
+  pmap_aggregation: max # max is only the option
   resenv: # Extract residue environments around probe molecules
     threshold: 0.2 # probability threshold of "preferred" residue environment
     env_dist: 4    # residue environment distance from a probe molecule
