@@ -128,7 +128,7 @@ def get_gpuids():
         gpuids = [-1]
         ngpus = 1
     
-    return gpuids
+    return list(gpuids)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
