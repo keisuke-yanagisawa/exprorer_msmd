@@ -2,15 +2,17 @@
 from logging import Formatter, handlers, StreamHandler, getLogger
 from logging import DEBUG, ERROR, WARN, INFO, CRITICAL
 
+__DEFAULT_LOG_LEVEL__ = INFO
+
 class Logger:
     def __init__(self, path=""):
         self.logger = getLogger()
-        self.logger.setLevel(DEBUG)
+        self.logger.setLevel(__DEFAULT__LOG_LEVEL__)
         formatter = Formatter("[%(asctime)s] [%(levelname)s] %(message)s")
 
         # stdout
         handler = StreamHandler()
-        handler.setLevel(DEBUG)
+        handler.setLevel(__DEFAULT__LOG_LEVEL__)
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
@@ -19,7 +21,7 @@ class Logger:
             handler = handlers.RotatingFileHandler(filename = path,
                                                    maxBytes = 1048576,
                                                    backupCount = 3)
-            handler.setLevel(DEBUG)
+            handler.setLevel(__DEFAULT__LOG_LEVEL__)
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)
 
