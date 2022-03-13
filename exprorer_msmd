@@ -20,6 +20,7 @@ def wrapper(index, setting, gpuid, ncpus):
     PROBE_ID = setting["input"]["probe"]["cid"]
     YAML_PATH = setting["general"]["yaml"]
     JOB_NAME = setting["general"]["name"]
+    WORK_DIR = os.path.dirname(util.getabsolutepath(__file__))
 
     if not os.path.exists(prepdirpath):
         logger.info(f"make {prepdirpath}")
@@ -36,14 +37,14 @@ def wrapper(index, setting, gpuid, ncpus):
     exe_gromacs = setting["general"]["executables"]["gromacs"]
   
     os.system(f"""
-    {exe_python} script/generate_msmd_system.py \
+    {exe_python} {WORK_DIR}/script/generate_msmd_system.py \
     -setting-yaml {YAML_PATH} \
     -oprefix {prepdirpath}/{tmp_name}_GMX \
     --seed {index}
     """)
 
     os.system(f"""
-    {exe_python} script/addvirtatom2top.py \
+    {exe_python} {WORK_DIR}/script/addvirtatom2top.py \
 	-i {prepdirpath}/{tmp_name}_GMX.top \
 	-o {prepdirpath}/{tmp_name}_tmp.top \
 	-cname {PROBE_ID} \
@@ -51,7 +52,7 @@ def wrapper(index, setting, gpuid, ncpus):
     """)
 
     os.system(f"""
-    {exe_python} script/addvirtatom2gro.py \
+    {exe_python} {WORK_DIR}/script/addvirtatom2gro.py \
 	-i {prepdirpath}/{tmp_name}_GMX.gro \
 	-o {prepdirpath}/{JOB_NAME}.gro \
 	-cname {PROBE_ID} \
@@ -60,7 +61,7 @@ def wrapper(index, setting, gpuid, ncpus):
 
     # gen position restraint files
     os.system(f"""
-    {exe_python} script/add_posredefine2top.py \
+    {exe_python} {WORK_DIR}/script/add_posredefine2top.py \
 	-v -res WAT Na+ Cl- CA MG ZN CU {PROBE_ID} \
 	-target protein \
 	-gro {prepdirpath}/{JOB_NAME}.gro \
@@ -78,22 +79,22 @@ def wrapper(index, setting, gpuid, ncpus):
     """)
 
     os.system(f"""
-    {exe_python} script/mdrun.py \
+    cd {prepdirpath} &&
+    {exe_gromacs} make_ndx -f {prepdirpath}/{JOB_NAME}.gro << EOF
+    q
+    EOF
+    """)
+    
+    os.system(f"""
+    {exe_python} {WORK_DIR}/script/mdrun.py \
 	DUMMY.conf \
-	script/mdrun.sh \
+	{WORK_DIR}/script/mdrun.sh \
 	-v General:input_dir={prepdirpath} \
 	-v General:output_dir={sysdirpath} \
 	-v General:name={JOB_NAME} \
     -v General:protocol_yaml={YAML_PATH}
     # """)
 
-    os.system(f"""
-    cd {topdirpath} &&
-    {exe_gromacs} make_ndx -f {prepdirpath}/{JOB_NAME}.gro << EOF
-    q
-    EOF
-    """)
-    
     os.system(f"""
     unset OMP_NUM_THREADS
     export CUDA_VISIBLE_DEVICES="{gpuid}"
@@ -102,7 +103,7 @@ def wrapper(index, setting, gpuid, ncpus):
     """)
 
     os.system(f"""
-    {exe_python} script/genpmap_main.py \
+    {exe_python} {WORK_DIR}/script/genpmap_main.py \
         -basedir {sysdirpath} \
         {YAML_PATH} --debug
     # """)
