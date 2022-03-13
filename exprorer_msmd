@@ -12,12 +12,18 @@ VERSION = "0.1.0"
 
 from script.utilities.logger import logger
 
-def wrapper(index, name, setting, gpuid, ncpus):
+def wrapper(index, setting, gpuid, ncpus):
     prepdirpath = f'{setting["general"]["workdir"]}/prep{index}'
-    inputdirpath = f'{setting["general"]["workdir"]}/prep{index}/input'
     sysdirpath = f'{setting["general"]["workdir"]}/system{index}'
     topdirpath = f'{sysdirpath}/top'
     
+    PROBE_ID = setting["input"]["probe"]["cid"]
+    YAML_PATH = setting["general"]["yaml"]
+    JOB_NAME = setting["general"]["name"]
+
+    if not os.path.exists(prepdirpath):
+        logger.info(f"make {prepdirpath}")
+        os.system(f"mkdir -p {prepdirpath}")
     if not os.path.exists(sysdirpath):
         logger.info(f"make {sysdirpath}")
         os.system(f"mkdir -p {sysdirpath}")
@@ -28,47 +34,45 @@ def wrapper(index, name, setting, gpuid, ncpus):
     tmp_name = "tmp"
     exe_python  = setting["general"]["executables"]["python"]
     exe_gromacs = setting["general"]["executables"]["gromacs"]
-    os.system(f"mkdir -p {inputdirpath}")
   
     os.system(f"""
     {exe_python} script/generate_msmd_system.py \
-    -setting-yaml {setting["general"]["yaml"]} \
+    -setting-yaml {YAML_PATH} \
     -oprefix {prepdirpath}/{tmp_name}_GMX \
     --seed {index}
     """)
-    os.system(f"cp {setting['general']['yaml']} {inputdirpath}")
-    
+
     os.system(f"""
     {exe_python} script/addvirtatom2top.py \
 	-i {prepdirpath}/{tmp_name}_GMX.top \
 	-o {prepdirpath}/{tmp_name}_tmp.top \
-	-cname {setting["input"]["probe"]["cid"]} \
+	-cname {PROBE_ID} \
 	-ovis {prepdirpath}/virtual_repulsion.top
     """)
 
     os.system(f"""
     {exe_python} script/addvirtatom2gro.py \
 	-i {prepdirpath}/{tmp_name}_GMX.gro \
-	-o {prepdirpath}/{setting["general"]["name"]}.gro \
-	-cname {setting["input"]["probe"]["cid"]} \
+	-o {prepdirpath}/{JOB_NAME}.gro \
+	-cname {PROBE_ID} \
 	-vname "VIS"
     """)
 
     # gen position restraint files
     os.system(f"""
     {exe_python} script/add_posredefine2top.py \
-	-v -res WAT Na+ Cl- CA MG ZN CU {setting["input"]["probe"]["cid"]} \
+	-v -res WAT Na+ Cl- CA MG ZN CU {PROBE_ID} \
 	-target protein \
-	-gro {prepdirpath}/{setting["general"]["name"]}.gro \
+	-gro {prepdirpath}/{JOB_NAME}.gro \
 	-i {prepdirpath}/{tmp_name}_tmp.top \
-	-o {prepdirpath}/{setting["general"]["name"]}.top 
+	-o {prepdirpath}/{JOB_NAME}.top 
     """)
 
 
     os.system(f"""
-    {exe_gromacs} trjconv -s {prepdirpath}/{setting["general"]["name"]}.gro \
-    -f {prepdirpath}/{setting["general"]["name"]}.gro \
-    -o {prepdirpath}/{setting["general"]["name"]}.pdb <<EOF
+    {exe_gromacs} trjconv -s {prepdirpath}/{JOB_NAME}.gro \
+    -f {prepdirpath}/{JOB_NAME}.gro \
+    -o {prepdirpath}/{JOB_NAME}.pdb <<EOF
     0
     EOF
     """)
@@ -79,13 +83,13 @@ def wrapper(index, name, setting, gpuid, ncpus):
 	script/mdrun.sh \
 	-v General:input_dir={prepdirpath} \
 	-v General:output_dir={sysdirpath} \
-	-v General:name={setting["general"]["name"]} \
-    -v General:protocol_yaml={setting["general"]["yaml"]}
+	-v General:name={JOB_NAME} \
+    -v General:protocol_yaml={YAML_PATH}
     # """)
 
     os.system(f"""
     cd {topdirpath} &&
-    {exe_gromacs} make_ndx -f {prepdirpath}/{setting["general"]["name"]}.gro << EOF
+    {exe_gromacs} make_ndx -f {prepdirpath}/{JOB_NAME}.gro << EOF
     q
     EOF
     """)
@@ -100,33 +104,59 @@ def wrapper(index, name, setting, gpuid, ncpus):
     os.system(f"""
     {exe_python} script/genpmap_main.py \
         -basedir {sysdirpath} \
-        {setting["general"]["yaml"]} --debug
+        {YAML_PATH} --debug
     # """)
+
+def get_gpuids():
+    gpuids = set(GPUtil.getAvailable())
+    logger.info(f"{len(gpuids)} GPUs are detected")
+    if os.getenv("CUDA_VISIBLE_DEVICES") is not None:
+        logger.info(f"CUDA_VISIBLE_DEVICES detected")
+        cvd = [int(s) for s in os.getenv("CUDA_VISIBLE_DEVICES", default="").split(",")]
+        gpuids &= set(cvd)
+        gpuids = list(gpuids)
+
+    if len(gpuids) == 0:
+        logger.warn(f"No GPU is allowed/existed to use")
+        logger.warn(f"Switch to CPU-only mode, it greatly decreases the simulation speed")
+    else:
+        logger.info(f"GPU IDs of {gpuids} will be used")
+    
+    ngpus = len(gpuids)
+    if ngpus == 0: # there is only CPU
+        gpuids = [-1]
+        ngpus = 1
+    
+    return gpuids
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Run MSMD simulation")
     parser.add_argument("setting_yaml")
-
+    parser.add_argument("-v,--verbose", dest="verbose", action="store_true")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--version", action="version", version=VERSION)
     args = parser.parse_args()
 
+    logger.setLevel("info" if args.verbose else "warn")
+
     setting = util.parse_yaml(args.setting_yaml)
     indices = util.expand_index(setting["general"]["iter_index"])
-    name = setting["general"]["name"]
 
-    gpuids = GPUtil.getAvailable()
+    gpuids = get_gpuids()
     ngpus = len(gpuids)
-    if ngpus == 0: # there is only CPU
-        gpuids = [-1]
-        ngpus = 1
     ncpus = os.cpu_count()
     ncpus_per_gpu = ncpus // ngpus
+    if ncpus_per_gpu == 0:
+        raise EnvironmentError("The number of CPU threads must be "
+        "equal to or greater than the number of available GPUs")
 
+    logger.info(f"{ncpus} threads are detected")
+    logger.info(f"{ngpus} parallel execution with {ncpus_per_gpu} CPU threads per process")
+
+    # execute individual MSMD
     gpuids = (gpuids * len(indices))[:len(indices)]
-
     Parallel(n_jobs=ngpus)(
-        delayed(wrapper)(idx, name, setting, gpuid, ncpus_per_gpu) 
+        delayed(wrapper)(idx, setting, gpuid, ncpus_per_gpu) 
         for idx, gpuid in zip(indices, gpuids)
     )
