@@ -1,0 +1,105 @@
+#!/usr/bin/env python
+
+import argparse
+import os 
+
+import GPUtil
+from joblib import Parallel, delayed
+import yaml
+
+from script.utilities import util
+VERSION = "0.1.0"
+
+from script.utilities.logger import logger
+
+def gen_maxpmap(setting):
+    basedirpath = setting["general"]["workdir"]
+    JOB_NAME = setting["general"]["name"]
+    WORK_DIR = os.path.dirname(util.getabsolutepath(__file__))
+    exe_python  = setting["general"]["executables"]["python"]
+
+    logger.info("PMAP aggregation: mapPMAP")
+    os.system(f"""
+    {exe_python} {WORK_DIR}/script/maxpmap_main.py \
+    {basedirpath}/system*/PMAP_{JOB_NAME}_nVH.dx \
+    {basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx
+    """)
+    logger.info(f"Output file: {basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx")
+
+
+def extract_residue_environment(index, setting):
+    exe_python  = setting["general"]["executables"]["python"]
+    basedirpath = setting["general"]["workdir"]
+    sysdirpath = f'{basedirpath}/system{index}'
+    PROBE_ID = setting["input"]["probe"]["cid"]
+    JOB_NAME = setting["general"]["name"]
+    WORK_DIR = os.path.dirname(util.getabsolutepath(__file__))
+
+    os.system(f"""
+    {exe_python} {WORK_DIR}/script/resenv_main.py \
+    -grid {basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx \
+    -ipdb {sysdirpath}/test_woWAT_10ps.pdb \
+    -resn {PROBE_ID} \
+    -opdb {sysdirpath}/resenv_{JOB_NAME}.pdb \
+    -v
+    """)
+
+def align_residue_environment(setting):
+    exe_python  = setting["general"]["executables"]["python"]
+    basedirpath = setting["general"]["workdir"]
+    PROBE_ID = setting["input"]["probe"]["cid"]
+    WORK_DIR = os.path.dirname(util.getabsolutepath(__file__))
+    JOB_NAME = setting["general"]["name"]
+
+    os.system(f"""
+    {exe_python} {WORK_DIR}/script/alignresenv_main.py \
+    -ipdb {basedirpath}/system*/resenv_{JOB_NAME}.pdb \
+    -resn {PROBE_ID} \
+    -opdb {basedirpath}/alignedresenv_{JOB_NAME}.pdb \
+    -v    
+    """)
+
+def gen_residue_interaction_profile(setting):
+    exe_python  = setting["general"]["executables"]["python"]
+    basedirpath = setting["general"]["workdir"]
+    PROBE_ID = setting["input"]["probe"]["cid"]
+    WORK_DIR = os.path.dirname(util.getabsolutepath(__file__))
+    JOB_NAME = setting["general"]["name"]
+
+    os.system(f"""
+    {exe_python} {WORK_DIR}/script/profile_main.py \
+    -ipdb {basedirpath}/alignedresenv_{JOB_NAME}.pdb \
+    -oprefix {basedirpath}/{JOB_NAME}_{PROBE_ID}_mesh \
+    -v    
+    """)
+
+def probe_profile(setting):
+    indices = util.expand_index(setting["general"]["iter_index"])
+
+    gen_maxpmap(setting)
+    Parallel(n_jobs=-1)(
+        delayed(extract_residue_environment)(idx, setting)
+        for idx in indices
+    )
+    align_residue_environment(setting)
+    gen_residue_interaction_profile(setting)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Calculate residue interaction profile around probe")
+    parser.add_argument("setting_yaml")
+    parser.add_argument("-v,--verbose", dest="verbose", action="store_true")
+    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--version", action="version", version=VERSION)
+    args = parser.parse_args()
+
+    if args.debug:
+        logger.setLevel("debug")
+    elif args.verbose:
+        logger.setLevel("info")
+    # else: logger level is "warn"
+
+    logger.info(f"read yaml: {args.setting_yaml}")
+    setting = util.parse_yaml(args.setting_yaml)
+
+    probe_profile(setting)
