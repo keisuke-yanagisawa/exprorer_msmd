@@ -20,41 +20,45 @@ if __name__ == "__main__":
     parser.add_argument("-ovis", required=True, help="output topology file for virtual repulsion")
     parser.add_argument("-cname", required=True, nargs="+", help="cosolvent name")
     parser.add_argument("-sigma", type=float, default=2,
-                        help="sigma for virtual repulsion")
+                        help="sigma for virtual repulsion [nm]")
     parser.add_argument("-epsilon", type=float, default=4.184e-6,
-                        help="epsilon for virtual repulsion")
+                        help="epsilon for virtual repulsion ")
     args = parser.parse_args()
 
     cosolvent_names = args.cname
-    POSITION_RESTRAINT = True
 
     with open(args.i) as fin:
-        with open(args.o, "w") as fout:
-            curr_section = None
-            now_mol = None
-            natoms = 0
-            for line in fin:
-                l = line.split(";")[0].strip()
-                if l.startswith("["):
-                    prev_section = curr_section
-                    if prev_section == "atomtypes":
-                        fout.write(
-                            VIS_INFO.format(sigma=args.sigma, epsilon=args.epsilon)
-                        )
-                    elif prev_section == "atoms":
-                        if now_mol in cosolvent_names:  # TODO
-                            fout.write("""{aid: 5d}        VIS      1    {cosolvname}    VIS  {aid: 5d} 0.00000000   0.000000
+        lines = fin.readlines()
+        
+    ret = []
+    curr_section = None
+    now_mol = None
+    natoms = 0
+    for line in lines:
+        l = line.split(";")[0].strip()
+        if l.startswith("["):
+            prev_section = curr_section
+            if prev_section == "atomtypes":
+                ret.append(
+                    VIS_INFO.format(sigma=args.sigma, epsilon=args.epsilon)
+                )
+            elif prev_section == "atoms":
+                if now_mol in cosolvent_names:  # TODO
+                    ret.append(f"""
+                    {natoms+1: 5d}        VIS      1    {now_mol}    VIS  {natoms+1: 5d} 0.00000000   0.000000
+                    [ virtual_sitesn ]
+                    {natoms+1: 5d}   2  {' '.join([str(x) for x in range(1, natoms+1)])}
+                    """)
+                natoms = 0
+            curr_section = l[l.find("[")+1:l.find("]")].strip()
+            if curr_section == "moleculetype":
+                now_mol = None
+        elif curr_section == "atoms" and l != "":
+            natoms += 1
+        elif curr_section == "moleculetype" and now_mol is None and l != "":
+            now_mol = l.split()[0].strip()
 
-[ virtual_sitesn ]
-{aid: 5d}   2  {lst}
-""".format(aid=natoms+1, cosolvname=now_mol, lst=" ".join([str(x) for x in range(1, natoms+1)])))
-                        natoms = 0
-                    curr_section = l[l.find("[")+1:l.find("]")].strip()
-                    if curr_section == "moleculetype":
-                        now_mol = None
-                elif curr_section == "atoms" and l != "":
-                    natoms += 1
-                elif curr_section == "moleculetype" and now_mol is None and l != "":
-                    now_mol = l.split()[0].strip()
-
-                fout.write(line)
+        ret.append(line)
+    
+    with open(args.o, "w") as fout:
+        fout.write("".join(ret))
