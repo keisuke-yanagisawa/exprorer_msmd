@@ -1,5 +1,9 @@
 import argparse
+import os
+import tempfile
+
 from scipy import constants
+import parmed as pmd
 
 VERSION = "2.0.0"
 
@@ -17,54 +21,46 @@ def position_restraint(atom_id_list):
         ret_str += '#endif\n'
     return "\n"+ret_str+"\n"
 
-def gen_atom_id_list(gro, target, RES, INV):
-    atom_id_list = []
+def gen_protein_heavyatom_id_list(top_path):
+    top = pmd.load_file(top_path)
 
-    MOLECULE = target == "molecule"
-    
-    mol_resi = -1
-    mol_first_atom = -1 if MOLECULE else 1
-    gro_strings = open(gro).readlines()[2:-2]
-    for line in gro_strings:
-        resi = int(line[:5])
-        resn = line[5:10].strip()
-        atom = line[10:15].strip()
-        nr = int(line[15:20])
-        if MOLECULE and (resn in RES) != INV:
-            if mol_resi == -1:
-                mol_resi = resi
-                mol_first_atom = nr
-            if mol_resi != resi:
-                break
-        if not atom.strip().startswith("H"):
-            if (resn in RES) != INV:
-                atom_id_list.append(nr-mol_first_atom+1)
+    protein_resis = set(r.idx for r in top["@CA"].residues)
+    atom_id_list = []
+    for atom in top.atoms:
+        if atom.element_name == "H":
+            continue
+        if atom.residue.idx not in protein_resis:
+            continue
+        atom_id_list.append(atom.idx+1)
     return atom_id_list
+
+def add_posredefine2top(top_string):
+    _, tmp = tempfile.mkstemp(suffix=".top")
+    open(tmp, "w").write(top_string)
+    atom_id_list = gen_protein_heavyatom_id_list(tmp)
+    os.system(f"rm {tmp}")
+
+    ret = []
+    curr_section = None
+    mol_count = 0
+    for line in top_string.split("\n"):
+        if line.startswith("["):
+            curr_section = line[line.find("[")+1:line.find("]")].strip()
+            if curr_section == "moleculetype":
+                if mol_count == 1:
+                    ret.append(position_restraint(atom_id_list))
+                mol_count += 1
+        ret.append(line+"\n")
+    return "".join(ret)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="add position restraints for topology file")
-    parser.add_argument("-v", action="store_true", help="invert selection")
-    parser.add_argument("-res", required=True, nargs="+", help="residue names focused on")
-    parser.add_argument("-target", choices=["protein", "molecule"], default="protein",
-                        help="protein or molecule")
-    parser.add_argument("-gro", required=True, help="input .gro file")
     parser.add_argument("-i", required=True, help="input topology file")
     parser.add_argument("-o", required=True, help="output topology file")
     parser.add_argument("--version", action="version", version=VERSION)
     args = parser.parse_args()
 
-    atom_id_list = gen_atom_id_list(args.gro, args.target,
-                                    args.res, args.v)
-    with open(args.i) as fin:
-        with open(args.o, "w") as fout:
-            curr_section = None
-            mol_count = 0
-            for line in fin:
-                if line.startswith("["):
-                    curr_section = line[line.find("[")+1:line.find("]")].strip()
-                    if curr_section == "moleculetype":
-                        if mol_count == 1:
-                            fout.write(position_restraint(atom_id_list))
-                        mol_count += 1
-
-                fout.write(line)
+    top_string = open(args.i).read()
+    ret = add_posredefine2top(top_string)
+    open(args.o, "w").write(ret)
+    
