@@ -15,6 +15,7 @@ from script.utilities.pmd import convert as pmd_convert
 from script.generate_msmd_system import generate_msmd_system
 from script.addvirtatom2top import addvirtatom2top
 from script.addvirtatom2gro import addvirtatom2gro
+from script.add_posredefine2top import add_posredefine2top
 VERSION = "0.1.0"
 
 from script.utilities.logger import logger
@@ -29,6 +30,9 @@ def wrapper(index, setting, gpuid, ncpus, debug=False):
     JOB_NAME = setting["general"]["name"]
     WORK_DIR = os.path.dirname(util.getabsolutepath(__file__))
 
+    exe_python  = setting["general"]["executables"]["python"]
+    exe_gromacs = setting["general"]["executables"]["gromacs"]
+ 
     if not os.path.exists(prepdirpath):
         logger.info(f"make {prepdirpath}")
         os.system(f"mkdir -p {prepdirpath}")
@@ -39,42 +43,21 @@ def wrapper(index, setting, gpuid, ncpus, debug=False):
         logger.info(f"make {topdirpath}")
         os.system(f"mkdir -p {topdirpath}")
 
-    tmp_name = "tmp"
-    exe_python  = setting["general"]["executables"]["python"]
-    exe_gromacs = setting["general"]["executables"]["gromacs"]
- 
+
 
     _, tmptop = tempfile.mkstemp(suffix=".top")
     _, tmpgro = tempfile.mkstemp(suffix=".gro")
     parm7, rst7 = generate_msmd_system(setting, debug=debug)
     pmd_convert(parm7, tmptop, inxyz=rst7, outxyz=tmpgro)    
 
-    _, tmptop2 = tempfile.mkstemp(suffix=".top")
-    top_string = open(tmptop).read()
-    top_string = addvirtatom2top(top_string, PROBE_ID)
-    open(tmptop2, "w").write(top_string)
-
     gro_string = open(tmpgro).read()
     gro_string = addvirtatom2gro(gro_string, PROBE_ID)
     open(f"{prepdirpath}/{JOB_NAME}.gro", "w").write(gro_string)
 
-    # gen position restraint files
-    os.system(f"""
-    {exe_python} {WORK_DIR}/script/add_posredefine2top.py \
-	-v -res WAT Na+ Cl- CA MG ZN CU {PROBE_ID} \
-	-target protein \
-	-gro {prepdirpath}/{JOB_NAME}.gro \
-	-i {tmptop2} \
-	-o {prepdirpath}/{JOB_NAME}.top 
-    """)
-
-    os.system(f"""
-    {exe_gromacs} trjconv -s {prepdirpath}/{JOB_NAME}.gro \
-    -f {prepdirpath}/{JOB_NAME}.gro \
-    -o {prepdirpath}/{JOB_NAME}.pdb <<EOF
-    0
-    EOF
-    """)
+    top_string = open(tmptop).read()
+    top_string = addvirtatom2top(top_string, PROBE_ID) # virtual site of probes
+    top_string = add_posredefine2top(top_string)       # position restraints for protein heavy atoms
+    open(f"{prepdirpath}/{JOB_NAME}.top", "w").write(top_string)
 
     os.system(f"""
     cd {prepdirpath} &&
