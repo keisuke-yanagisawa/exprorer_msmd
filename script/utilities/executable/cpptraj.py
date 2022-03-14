@@ -26,24 +26,27 @@ class Cpptraj(object):
         return self
 
     def run(self, basedir, prefix, box_size=80, interval=1, 
-            traj_start=1, traj_stop="last", traj_offset=1):
+            traj_start=1, traj_stop="last", traj_offset=1,
+            maps=[{"suffix":"nVH", "selector":"(!@VIS)&(!@H*)"}]):
         self.basedir = basedir
         self.prefix = prefix
         self.voxel = [box_size, interval] * 3 # x, y, z
         self.frame_info = [traj_start, traj_stop, traj_offset]
+        self.maps = maps
 
         self._gen_parm7()
 
         _, self.inp = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_INP)
         data = {
-          "basedir": self.basedir,
-          "top" : self.parm7,
-          "traj": self.trajectory,
-          "cid": self.probe_id,
-          "frame_info": " ".join([str(n) for n in self.frame_info]),
-          "ref": self.ref_struct,
-          "map_voxel": " ".join([str(n) for n in self.voxel]),
-          "prefix": self.prefix
+          "basedir"    : self.basedir,
+          "top"        : self.parm7,
+          "traj"       : self.trajectory,
+          "cid"        : self.probe_id,
+          "frame_info" : " ".join([str(n) for n in self.frame_info]),
+          "ref"        : self.ref_struct,
+          "map_voxel"  : " ".join([str(n) for n in self.voxel]),
+          "prefix"     : self.prefix,
+          "maps"       : self.maps,
         }
 
         env = jinja2.Environment(loader=jinja2.FileSystemLoader(f"{os.path.dirname(__file__)}/template"))
@@ -57,7 +60,8 @@ class Cpptraj(object):
         print(command.run())
 
         self.grids = [
-            f"{self.basedir}/{self.prefix}_nVH.dx",
+            f"{self.basedir}/{self.prefix}_{map['suffix']}.dx"
+            for map in maps
         ]
 
         return self
