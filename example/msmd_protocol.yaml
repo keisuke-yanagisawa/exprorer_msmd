@@ -175,9 +175,7 @@ exprorer_msmd:
   pmap: # PMAP generation
     valid_dist: 5 # PMAP valid distance from protein atoms
     snapshots: pr|2001-4001:1 # steps / "NAME" trajectory will be used with "NAME|" 
-    # map: nVH-map will be only generated
-    #   - suffix : nVH
-    #     selector : (!@VIS)&(!@H*)
+
 
 
 protein_hotspot:
