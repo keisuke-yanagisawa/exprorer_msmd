@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import math
 import os 
 
 import GPUtil
@@ -96,8 +97,8 @@ def wrapper(index, setting, gpuid, ncpus):
     """)
 
     os.system(f"""
-    unset OMP_NUM_THREADS
-    export CUDA_VISIBLE_DEVICES="{gpuid}"
+    unset OMP_NUM_THREADS ; \
+    export CUDA_VISIBLE_DEVICES="{gpuid}" ; \
     cd {sysdirpath} && \
     GMX={exe_gromacs} bash mdrun.sh {ncpus}
     """)
@@ -109,7 +110,7 @@ def wrapper(index, setting, gpuid, ncpus):
     """)
 
 def get_gpuids():
-    gpuids = set(GPUtil.getAvailable())
+    gpuids = set(GPUtil.getAvailable(limit=math.inf))
     logger.info(f"{len(gpuids)} GPUs are detected")
     if os.getenv("CUDA_VISIBLE_DEVICES") is not None:
         logger.info(f"CUDA_VISIBLE_DEVICES detected")
@@ -162,7 +163,7 @@ if __name__ == "__main__":
 
     # execute individual MSMD
     gpuids = (gpuids * len(indices))[:len(indices)]
-    Parallel(n_jobs=ngpus)(
+    Parallel(n_jobs=ngpus, backend='threading')(
         delayed(wrapper)(idx, setting, gpuid, ncpus_per_gpu) 
         for idx, gpuid in zip(indices, gpuids)
     )
