@@ -72,12 +72,14 @@ def gen_pmap(index, setting_general, setting_input, setting_pmap, debug=False):
     ref_struct = setting_input["protein"]["pdb"]
     probe_id   = setting_input["probe"]["cid"]
     maps       = setting_pmap["maps"]
+    box_size  = setting_pmap["map_size"]
 
     cpptraj_obj = Cpptraj(debug=debug)
     cpptraj_obj.set(topology, trajectory, ref_struct, probe_id)
     cpptraj_obj.run(
         basedir=syspathdir, 
         prefix=name,
+        box_size=box_size,
         traj_start=traj_start, 
         traj_stop=traj_stop, 
         traj_offset=traj_offset,
