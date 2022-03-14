@@ -9,9 +9,7 @@ structure {{ prot }}
   centerofmass
 end structure
 
-{% for cosolv in cosolvs %}
-structure {{ cosolv }}
+structure {{ probe }}
   number {{ num }}
   inside box -{{ size }} -{{ size }} -{{ size }} {{ size }} {{ size }} {{ size }}
 end structure
-{% endfor %}

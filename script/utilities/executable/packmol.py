@@ -12,9 +12,9 @@ class Packmol(object):
         self.exe = os.getenv("PACKMOL", "packmol")
         self.debug = debug
 
-    def set(self, protein_pdb, cosolv_pdbs, box_size, molar):
+    def set(self, protein_pdb, cosolv_pdb, box_size, molar):
         self.protein_pdb = protein_pdb
-        self.cosolv_pdbs = cosolv_pdbs
+        self.cosolv_pdb = cosolv_pdb
         self.box_size = box_size
         self.molar = molar
         return self
@@ -22,6 +22,7 @@ class Packmol(object):
     def run(self, box_pdb=None, seed=-1):
         self.box_pdb = box_pdb if not box_pdb is None \
                                else tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)[1]
+        self.box_pdb_user_define = box_pdb is not None
         self.seed = seed
 
         # shorten path length to pdb file
@@ -30,11 +31,8 @@ class Packmol(object):
 
         shutil.copy2(self.protein_pdb, tmp_prot_pdb)
 
-        tmp_pdbs = []
-        for cosolv_pdb in self.cosolv_pdbs:
-          _, tmp_pdb = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)
-          shutil.copy2(cosolv_pdb, tmp_pdb)
-          tmp_pdbs.append(tmp_pdb)
+        _, tmp_pdb = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)
+        shutil.copy2(self.cosolv_pdb, tmp_pdb)
 
         num = int(constants.N_A * self.molar * (self.box_size**3) * (10**-27))
 
@@ -42,12 +40,12 @@ class Packmol(object):
 
         _, inp = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_INP)
         data = {
-          "output":  self.box_pdb,
-          "prot":    tmp_prot_pdb,
-          "seed":    self.seed,
-          "cosolvs": tmp_pdbs,
-          "num":     num,
-          "size":    self.box_size/2
+          "output": self.box_pdb,
+          "prot":   tmp_prot_pdb,
+          "seed":   self.seed,
+          "probe":  tmp_pdb,
+          "num":    num,
+          "size":   self.box_size/2
         }
 
         env = jinja2.Environment(loader=jinja2.FileSystemLoader(f"{os.path.dirname(__file__)}/template"))
@@ -62,4 +60,5 @@ class Packmol(object):
 
     def __del__(self):
       if not self.debug:
-        os.remove(self.box_pdb)
+        if not self.box_pdb_user_define:
+          os.remove(self.box_pdb)

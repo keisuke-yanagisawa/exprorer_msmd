@@ -11,10 +11,10 @@ class TLeap(object):
         self.exe = os.getenv("TLEAP", "tleap")
         self.debug = debug
 
-    def set(self, cids, cosolv_paths, frcmods, box_path, size, ssbonds, at):
-        self.cids = cids
-        self.cosolv_paths = cosolv_paths
-        self.frcmods = frcmods
+    def set(self, cid, probe_path, frcmod, box_path, size, ssbonds, at):
+        self.cid = cid
+        self.probe_path = probe_path
+        self.frcmod = frcmod
         self.box_path = box_path
         self.size = size
         self.ssbonds = ssbonds
@@ -29,13 +29,13 @@ class TLeap(object):
         _, inputfile = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_INP)
         data = {
             "LIGAND_PARAM": f"leaprc.{self.at}",
-            "SS_BONDS": self.ssbonds,
-            "COSOLVENTS": [{"ID": cid, "PATH": cpath}
-                        for cid, cpath in zip(self.cids, self.cosolv_paths)],
-            "OUTPUT": self.oprefix,
-            "SYSTEM_PATH": self.box_path,
-            "COSOLV_FRCMODS": self.frcmods,
-            "SIZE": self.size
+            "SS_BONDS":     self.ssbonds,
+            "PROBE_ID":     self.cid,
+            "PROBE_PATH":   self.probe_path,
+            "OUTPUT":       self.oprefix,
+            "SYSTEM_PATH":  self.box_path,
+            "PROBE_FRCMOD": self.frcmod,
+            "SIZE":         self.size
         }
 
         env = jinja2.Environment(loader=jinja2.FileSystemLoader(f"{os.path.dirname(__file__)}/template"))
