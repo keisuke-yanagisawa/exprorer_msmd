@@ -28,10 +28,6 @@ if __name__ == "__main__":
     cosolvent_names = args.cname
     POSITION_RESTRAINT = True
 
-    # modify topology file
-    with open(args.ovis, "w") as fout:
-        fout.write(VIS_INFO.format(sigma=args.sigma, epsilon=args.epsilon))
-
     with open(args.i) as fin:
         with open(args.o, "w") as fout:
             curr_section = None
@@ -42,7 +38,9 @@ if __name__ == "__main__":
                 if l.startswith("["):
                     prev_section = curr_section
                     if prev_section == "atomtypes":
-                        fout.write('#include "{}"\n\n'.format(args.ovis))
+                        fout.write(
+                            VIS_INFO.format(sigma=args.sigma, epsilon=args.epsilon)
+                        )
                     elif prev_section == "atoms":
                         if now_mol in cosolvent_names:  # TODO
                             fout.write("""{aid: 5d}        VIS      1    {cosolvname}    VIS  {aid: 5d} 0.00000000   0.000000
