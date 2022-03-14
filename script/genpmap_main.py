@@ -51,49 +51,43 @@ def convert_to_pmap(grid_path, ref_struct, valid_distance):
     pmap.export(pmap_path, type="double")
     return pmap_path
 
+def parse_snapshot_setting(string):
+    offset = "1" # default parameter
+    target, other = string.split("|")     # target name is mandatory
+    if len(other.split(":")) != 1:        # ofset is an option
+        other, offset = other.split(":")
+    start, stop = other.split("-")         # start and end is mandatory
+    return target, start, stop, offset
 
-def gen_pmap(index, setting, debug=False):
+def gen_pmap(index, setting_general, setting_input, setting_pmap, debug=False):
 
-    name = setting["general"]["name"]
-    syspathdir = f"{setting['general']['workdir']}/system{index}"
+    traj_target, traj_start, traj_stop, traj_offset \
+        = parse_snapshot_setting(setting_pmap["snapshot"])
 
-    trajectory = util.getabsolutepath(syspathdir) + f"/simulation/{name}.xtc"
+    name = setting_general["name"]
+    syspathdir = f"{setting_general['workdir']}/system{index}"
+
+    trajectory = util.getabsolutepath(syspathdir) + f"/simulation/{traj_target}.xtc"
     topology   = util.getabsolutepath(syspathdir) + f"/top/{name}.top" # TODO: TEST_PROJECT should be "PREFIX"
-    ref_struct = setting["input"]["protein"]["pdb"]
-    probe_id   = setting["input"]["probe"]["cid"]
+    ref_struct = setting_input["protein"]["pdb"]
+    probe_id   = setting_input["probe"]["cid"]
+    maps       = setting_pmap["maps"]
 
     cpptraj_obj = Cpptraj(debug=debug)
     cpptraj_obj.set(topology, trajectory, ref_struct, probe_id)
     cpptraj_obj.run(
         basedir=syspathdir, 
-        prefix=name
+        prefix=name,
+        traj_start=traj_start, 
+        traj_stop=traj_stop, 
+        traj_offset=traj_offset,
+        maps = maps
     )
     
     pmap_paths = []
     for grid_path in cpptraj_obj.grids:
         pmap_path = convert_to_pmap(grid_path, ref_struct, 
-            setting["exprorer_msmd"]["pmap"]["valid_dist"])
+            setting_pmap["valid_dist"])
         pmap_paths.append(pmap_path)
     
     return pmap_paths
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="generate PMAPs")
-    parser.add_argument("-index", required=True, type=int)
-    parser.add_argument("setting_yaml", help="yaml file for the MSMD")
-
-    parser.add_argument("-v,--verbose", dest="verbose", action="store_true")
-    parser.add_argument("--debug", action="store_true")
-    parser.add_argument("--version", action="version", version=VERSION)
-    args = parser.parse_args()
-
-    if args.debug:
-        logger.setLevel("debug")
-    elif args.verbose:
-        logger.setLevel("info")
-    # else: logger level is "warn"
-
-    setting = util.parse_yaml(args.setting_yaml)
-    logger.info("PMAP generation")
-    pmap_paths = gen_pmap(args.index, setting, args.debug)
