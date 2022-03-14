@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import tempfile
 import math
 import os 
 
@@ -9,11 +10,16 @@ from joblib import Parallel, delayed
 import yaml
 
 from script.utilities import util
+from script.genpmap_main import gen_pmap
+from script.utilities.pmd import convert as pmd_convert
+from script.generate_msmd_system import generate_msmd_system
+from script.addvirtatom2top import addvirtatom2top
+from script.addvirtatom2gro import addvirtatom2gro
 VERSION = "0.1.0"
 
 from script.utilities.logger import logger
 
-def wrapper(index, setting, gpuid, ncpus):
+def wrapper(index, setting, gpuid, ncpus, debug=False):
     prepdirpath = f'{setting["general"]["workdir"]}/prep{index}'
     sysdirpath = f'{setting["general"]["workdir"]}/system{index}'
     topdirpath = f'{sysdirpath}/top'
@@ -37,28 +43,26 @@ def wrapper(index, setting, gpuid, ncpus):
     exe_python  = setting["general"]["executables"]["python"]
     exe_gromacs = setting["general"]["executables"]["gromacs"]
   
-    os.system(f"""
-    {exe_python} {WORK_DIR}/script/generate_msmd_system.py \
-    -setting-yaml {YAML_PATH} \
-    -oprefix {prepdirpath}/{tmp_name}_GMX \
-    --seed {index}
-    """)
+    # os.system(f"""
+    # {exe_python} {WORK_DIR}/script/generate_msmd_system.py \
+    # -setting-yaml {YAML_PATH} \
+    # -oprefix {prepdirpath}/{tmp_name}_GMX \
+    # --seed {index}
+    # """)
 
-    os.system(f"""
-    {exe_python} {WORK_DIR}/script/addvirtatom2top.py \
-	-i {prepdirpath}/{tmp_name}_GMX.top \
-	-o {prepdirpath}/{tmp_name}_tmp.top \
-	-cname {PROBE_ID} \
-	-ovis {prepdirpath}/virtual_repulsion.top
-    """)
+    _, tmptop = tempfile.mkstemp(suffix=".top")
+    _, tmpgro = tempfile.mkstemp(suffix=".gro")
+    parm7, rst7 = generate_msmd_system(setting, debug=debug)
+    pmd_convert(parm7, tmptop, inxyz=rst7, outxyz=tmpgro)    
 
-    os.system(f"""
-    {exe_python} {WORK_DIR}/script/addvirtatom2gro.py \
-	-i {prepdirpath}/{tmp_name}_GMX.gro \
-	-o {prepdirpath}/{JOB_NAME}.gro \
-	-cname {PROBE_ID} \
-	-vname "VIS"
-    """)
+    _, tmptop2 = tempfile.mkstemp(suffix=".top")
+    top_string = open(tmptop).read()
+    top_string = addvirtatom2top(top_string, PROBE_ID)
+    open(tmptop2, "w").write(top_string)
+
+    gro_string = open(tmpgro).read()
+    gro_string = addvirtatom2gro(gro_string, PROBE_ID)
+    open(f"{prepdirpath}/{JOB_NAME}.gro", "w").write(gro_string)
 
     # gen position restraint files
     os.system(f"""
@@ -66,10 +70,9 @@ def wrapper(index, setting, gpuid, ncpus):
 	-v -res WAT Na+ Cl- CA MG ZN CU {PROBE_ID} \
 	-target protein \
 	-gro {prepdirpath}/{JOB_NAME}.gro \
-	-i {prepdirpath}/{tmp_name}_tmp.top \
+	-i {tmptop2} \
 	-o {prepdirpath}/{JOB_NAME}.top 
     """)
-
 
     os.system(f"""
     {exe_gromacs} trjconv -s {prepdirpath}/{JOB_NAME}.gro \
@@ -103,11 +106,7 @@ def wrapper(index, setting, gpuid, ncpus):
     GMX={exe_gromacs} bash mdrun.sh {ncpus}
     """)
 
-    os.system(f"""
-    {exe_python} {WORK_DIR}/script/genpmap_main.py \
-        -basedir {sysdirpath} \
-        {YAML_PATH} --debug
-    """)
+    gen_pmap(index, setting)
 
 def get_gpuids():
     gpuids = set(GPUtil.getAvailable(limit=math.inf))
@@ -164,6 +163,6 @@ if __name__ == "__main__":
     # execute individual MSMD
     gpuids = (gpuids * len(indices))[:len(indices)]
     Parallel(n_jobs=ngpus, backend='threading')(
-        delayed(wrapper)(idx, setting, gpuid, ncpus_per_gpu) 
+        delayed(wrapper)(idx, setting, gpuid, ncpus_per_gpu, debug=args.debug) 
         for idx, gpuid in zip(indices, gpuids)
     )

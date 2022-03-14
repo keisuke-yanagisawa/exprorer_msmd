@@ -1,7 +1,7 @@
 import tempfile
 import os
-from utilities.executable.execute import Command
-from utilities import const
+from .execute import Command
+from .. import const
 
 class Parmchk(object):
   def __init__(self, debug=False):
