@@ -42,13 +42,7 @@ def wrapper(index, setting, gpuid, ncpus, debug=False):
     tmp_name = "tmp"
     exe_python  = setting["general"]["executables"]["python"]
     exe_gromacs = setting["general"]["executables"]["gromacs"]
-  
-    # os.system(f"""
-    # {exe_python} {WORK_DIR}/script/generate_msmd_system.py \
-    # -setting-yaml {YAML_PATH} \
-    # -oprefix {prepdirpath}/{tmp_name}_GMX \
-    # --seed {index}
-    # """)
+ 
 
     _, tmptop = tempfile.mkstemp(suffix=".top")
     _, tmpgro = tempfile.mkstemp(suffix=".gro")
