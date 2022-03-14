@@ -10,11 +10,11 @@ from subprocess import getoutput as gop
 from scipy import constants
 import jinja2
 
-from utilities import util
-from utilities.executable import Parmchk, Packmol, TLeap
-from utilities import const
-from utilities.pmd import convert as pmd_convert
-from utilities.logger import logger
+from .utilities import util
+from .utilities.executable import Parmchk, Packmol, TLeap
+from .utilities import const
+from .utilities.pmd import convert as pmd_convert
+from .utilities.logger import logger
 
 VERSION = "2.0.0"
 
@@ -81,16 +81,18 @@ def create_system(setting_protein, setting_probe, probe_frcmod, debug=False):
     probemolar = float( setting_probe["molar"] )
 
     _, box_pdb = tempfile.mkstemp(suffix=".pdb")
-    Packmol(debug=args.debug) \
+    Packmol(debug=debug) \
         .set(pdbpath, cpdb, boxsize, probemolar) \
         .run(box_pdb)
 
-    tleap_obj = TLeap(debug=args.debug) \
-                    .set(cid, cmol, cfrcmod, box_pdb, 
+    tleap_obj = TLeap(debug=debug) \
+                    .set(cid, cmol, probe_frcmod, box_pdb, 
                         boxsize, ssbonds, atomtype)
 
     while True:
-        tleap_obj.run(args.output_prefix)
+        _, fileprefix = tempfile.mkstemp(suffix="")
+        os.system(f"rm {fileprefix}")
+        tleap_obj.run(fileprefix)
         system_charge = tleap_obj._final_charge_value
 
         if system_charge == 0:
@@ -100,6 +102,16 @@ def create_system(setting_protein, setting_probe, probe_frcmod, debug=False):
 
     return tleap_obj.parm7, tleap_obj.rst7
 
+def generate_msmd_system(setting, debug=False):
+    pdbpath = protein_pdb_preparation(setting["input"]["protein"]["pdb"])
+    probemolar = float( setting["input"]["probe"]["molar"] )
+
+    cosolv_box_size = ((constants.N_A * probemolar) * 1e-27)**(-1/3.0)  # /L -> /A^3 : 1e-27
+    cfrcmod = create_frcmod(setting["input"]["probe"], debug=debug)
+    parm7, rst7 = create_system(setting["input"]["protein"], 
+                                setting["input"]["probe"], 
+                                cfrcmod, debug=debug)
+    return parm7, rst7
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -123,14 +135,6 @@ if __name__ == "__main__":
     # else: logger level is "warn"
 
     setting = util.parse_yaml(args.setting_yaml)
-
-    pdbpath = protein_pdb_preparation(setting["input"]["protein"]["pdb"])
-    probemolar = float( setting["input"]["probe"]["molar"] )
-
-    cosolv_box_size = ((constants.N_A * probemolar) * 1e-27)**(-1/3.0)  # /L -> /A^3 : 1e-27
-    cfrcmod = create_frcmod(setting["input"]["probe"], debug=args.debug)
-    parm7, rst7 = create_system(setting["input"]["protein"], 
-                                setting["input"]["probe"], 
-                                cfrcmod, debug=args.debug)
+    parm7, rst7 = generate_msmd_system(setting, args.debug)
     pmd_convert(parm7, f"{args.output_prefix}.top",
                 inxyz=rst7, outxyz=f"{args.output_prefix}.gro")

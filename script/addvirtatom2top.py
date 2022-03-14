@@ -8,42 +8,24 @@ VIS      VIS          0.00000  0.00000   V     0.00000e+00   0.00000e+00 ; virtu
 
 [ nonbond_params ]
 ; i j func sigma epsilon
-VIS   VIS    1  {sigma:5e}   {epsilon:6e}
+VIS   VIS    1  2.000000e+00   4.184000e-06
 """
 
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="modify topology records")
-    parser.add_argument("-v,--version", action="version", version=VERSION)
-    parser.add_argument("-i", required=True, help="input topology file")
-    parser.add_argument("-o", required=True, help="output topology file")
-    parser.add_argument("-ovis", required=True, help="output topology file for virtual repulsion")
-    parser.add_argument("-cname", required=True, nargs="+", help="cosolvent name")
-    parser.add_argument("-sigma", type=float, default=2,
-                        help="sigma for virtual repulsion [nm]")
-    parser.add_argument("-epsilon", type=float, default=4.184e-6,
-                        help="epsilon for virtual repulsion ")
-    args = parser.parse_args()
-
-    cosolvent_names = args.cname
-
-    with open(args.i) as fin:
-        lines = fin.readlines()
-        
+def addvirtatom2top(top_string, probe_names, sigma=2, epsilon=4.184e-6):
     ret = []
     curr_section = None
     now_mol = None
     natoms = 0
-    for line in lines:
+    for line in top_string.split("\n"):
         l = line.split(";")[0].strip()
         if l.startswith("["):
             prev_section = curr_section
             if prev_section == "atomtypes":
                 ret.append(
-                    VIS_INFO.format(sigma=args.sigma, epsilon=args.epsilon)
+                    VIS_INFO.format(sigma=sigma, epsilon=epsilon)
                 )
             elif prev_section == "atoms":
-                if now_mol in cosolvent_names:  # TODO
+                if now_mol in probe_names:  # TODO
                     ret.append(f"""
                     {natoms+1: 5d}        VIS      1    {now_mol}    VIS  {natoms+1: 5d} 0.00000000   0.000000
                     [ virtual_sitesn ]
@@ -59,6 +41,26 @@ if __name__ == "__main__":
             now_mol = l.split()[0].strip()
 
         ret.append(line)
-    
+    ret = "\n".join(ret)
+    return ret
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="modify topology records")
+    parser.add_argument("-v,--version", action="version", version=VERSION)
+    parser.add_argument("-i", required=True, help="input topology file")
+    parser.add_argument("-o", required=True, help="output topology file")
+    parser.add_argument("-cname", required=True, nargs="+", help="cosolvent name")
+    # parser.add_argument("-sigma", type=float, default=2,
+    #                     help="sigma for virtual repulsion [nm]")
+    # parser.add_argument("-epsilon", type=float, default=4.184e-6,
+    #                     help="epsilon for virtual repulsion ")
+    args = parser.parse_args()
+
+    probe_names = args.cname
+
+    with open(args.i) as fin:
+        top_string = fin.read()
+    ret = addvirtatom2top(top_string, probe_names)
     with open(args.o, "w") as fout:
-        fout.write("".join(ret))
+        fout.write(ret)

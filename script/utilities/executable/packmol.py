@@ -2,8 +2,8 @@ import tempfile
 import os
 from subprocess import getoutput as gop
 from scipy import constants
-from utilities import const
-from utilities.executable.execute import Command
+from .. import const
+from .execute import Command
 import shutil
 import jinja2
 
