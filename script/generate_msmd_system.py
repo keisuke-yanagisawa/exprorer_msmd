@@ -14,6 +14,7 @@ from utilities import util
 from utilities.executable import Parmchk, Packmol, TLeap
 from utilities import const
 from utilities.pmd import convert as pmd_convert
+from utilities.logger import logger
 
 VERSION = "2.0.0"
 
@@ -36,10 +37,8 @@ quit
 
 def protein_pdb_preparation(pdbfile):
     _, tmp1 = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)
-    _, tmp2 = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)
-    gop(f"grep -v OXT {pdbfile} > {tmp1}")
-    gop(f"grep -v ANISOU {tmp1} > {tmp2}")
-    return tmp2
+    gop(f"grep -v OXT {pdbfile} | grep -v ANISOU > {tmp1}")
+    return tmp1
 
 def calculate_boxsize(pdbfile):
     tmpdir = tempfile.mkdtemp()
@@ -71,19 +70,29 @@ if __name__ == "__main__":
     parser.add_argument("--seed", default=-1, type=int)
     parser.add_argument("--no-rm-temp", action="store_true", dest="no_rm_temp_flag",
                         help="the flag not to remove all temporal files")
+
+    parser.add_argument("-v,--verbose", dest="verbose", action="store_true")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--version", action="version", version=VERSION)
     args = parser.parse_args()
 
+    if args.debug:
+        logger.setLevel("debug")
+    elif args.verbose:
+        logger.setLevel("info")
+    # else: logger level is "warn"
+
     setting = util.parse_yaml(args.setting_yaml)
 
     pdbpath = protein_pdb_preparation(setting["input"]["protein"]["pdb"])
-    probemolar = setting["input"]["probe"]["molar"]
+    # probemolar = setting["input"]["probe"]["molar"]
 
-    ssbonds = setting["input"]["protein"]["ssbond"]
-    cmols = setting["input"]["probe"]["mol2"].split()
-    cpdbs = setting["input"]["probe"]["pdb"].split()
-    cids = setting["input"]["probe"]["cid"].split()
+    ssbonds    = setting["input"]["protein"]["ssbond"]
+    cmol       = setting["input"]["probe"]["mol2"]
+    cpdb       = setting["input"]["probe"]["pdb"]
+    cid        = setting["input"]["probe"]["cid"]
+    atomtype   = setting["input"]["probe"]["atomtype"]
+    probemolar = float( setting["input"]["probe"]["molar"] )
 
     boxsize = calculate_boxsize(pdbpath)
 
@@ -93,34 +102,30 @@ if __name__ == "__main__":
                        * 1e-27)**(-1/3.0)  # /L -> /A^3 : 1e-27
 
     # 1. generate cosolvent box with packmol
-    cfrcmods = []
-    if "frcmod" in setting["input"]["probe"] and setting["input"]["probe"]["frcmod"] != "":
-        cfrcmods = setting["input"]["probe"]["frcmod"].split()
-    else:
-        for mol2 in cmols:
-            parmchk = Parmchk(debug=args.debug)
-            parmchk.set(mol2, setting["input"]["probe"]["atomtype"]).run()
-            cfrcmods.append(parmchk.frcmod)
+    # input: 
+    #   frcmod
+    _, cfrcmod = tempfile.mkstemp(suffix=".frcmod")
+    Parmchk(debug=args.debug) \
+        .set(cmol, atomtype) \
+        .run(frcmod=cfrcmod)
+    
+    _, box_pdb = tempfile.mkstemp(suffix=".pdb")
+    Packmol(debug=args.debug) \
+        .set(pdbpath, cpdb, boxsize, probemolar) \
+        .run(box_pdb)
 
-    packmol_obj = Packmol(debug=args.debug)
-    packmol_obj.set(pdbpath, cpdbs, boxsize, float(probemolar))
+    tleap_obj = TLeap(debug=args.debug) \
+                    .set(cid, cmol, cfrcmod, box_pdb, 
+                         boxsize, ssbonds, atomtype)
 
-    tleap_obj = TLeap(debug=args.debug)
     while True:
-        packmol_obj.run()
-
-        # 2. amber tleap
-        tleap_obj.set(
-            cids, cmols, cfrcmods,
-            packmol_obj.box_pdb, boxsize, ssbonds,
-            setting["input"]["probe"]["atomtype"]
-        ).run(args.output_prefix)
+        tleap_obj.run(args.output_prefix)
         system_charge = tleap_obj._final_charge_value
 
         if system_charge == 0:
             break
         else:
-            print("the system is not neutral. generate system again")
+            logger.warn("the system is not neutral. generate system again")
 
     pmd_convert(tleap_obj.parm7, f"{args.output_prefix}.top",
                 inxyz=tleap_obj.rst7, outxyz=f"{args.output_prefix}.gro")

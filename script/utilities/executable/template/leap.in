@@ -2,13 +2,9 @@ source leaprc.protein.ff14SB
 source leaprc.water.tip3p
 source {{ LIGAND_PARAM }}
 
-{% for COSOLV_FRCMOD in COSOLV_FRCMODS %}
-loadamberparams {{ COSOLV_FRCMOD }}
-{% endfor %}
+loadamberparams {{ PROBE_FRCMOD }}
 
-{% for COSOLVENT in COSOLVENTS %}
-{{ COSOLVENT.ID }} = loadMol2 {{ COSOLVENT.PATH }}
-{% endfor %}
+{{ PROBE_ID }} = loadMol2 {{ PROBE_PATH }}
 
 system = loadPDB {{ SYSTEM_PATH }}
 set system box { {{ SIZE }}, {{ SIZE }}, {{ SIZE }} }
