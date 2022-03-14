@@ -61,6 +61,46 @@ def calculate_boxsize(pdbfile):
 
     return box_size
 
+def create_frcmod(setting_probe, debug=False):
+    cmol = setting_probe["mol2"]
+    atomtype = setting_probe["atomtype"]
+    _, cfrcmod = tempfile.mkstemp(suffix=".frcmod")
+    Parmchk(debug=debug) \
+        .set(cmol, atomtype) \
+        .run(frcmod=cfrcmod)
+    return cfrcmod
+
+def create_system(setting_protein, setting_probe, probe_frcmod, debug=False):
+    pdbpath    = protein_pdb_preparation(setting_protein["pdb"])
+    boxsize    = calculate_boxsize(pdbpath)
+    ssbonds    = setting_protein["ssbond"]
+    cmol       = setting_probe["mol2"]
+    cpdb       = setting_probe["pdb"]
+    cid        = setting_probe["cid"]
+    atomtype   = setting_probe["atomtype"]
+    probemolar = float( setting_probe["molar"] )
+
+    _, box_pdb = tempfile.mkstemp(suffix=".pdb")
+    Packmol(debug=args.debug) \
+        .set(pdbpath, cpdb, boxsize, probemolar) \
+        .run(box_pdb)
+
+    tleap_obj = TLeap(debug=args.debug) \
+                    .set(cid, cmol, cfrcmod, box_pdb, 
+                        boxsize, ssbonds, atomtype)
+
+    while True:
+        tleap_obj.run(args.output_prefix)
+        system_charge = tleap_obj._final_charge_value
+
+        if system_charge == 0:
+            break
+        else:
+            logger.warn("the system is not neutral. generate system again")
+
+    return tleap_obj.parm7, tleap_obj.rst7
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="generate .parm7 and .rst7 files with cosolvent box")
@@ -85,51 +125,12 @@ if __name__ == "__main__":
     setting = util.parse_yaml(args.setting_yaml)
 
     pdbpath = protein_pdb_preparation(setting["input"]["protein"]["pdb"])
-    # probemolar = setting["input"]["probe"]["molar"]
-
-    ssbonds    = setting["input"]["protein"]["ssbond"]
-    cmol       = setting["input"]["probe"]["mol2"]
-    cpdb       = setting["input"]["probe"]["pdb"]
-    cid        = setting["input"]["probe"]["cid"]
-    atomtype   = setting["input"]["probe"]["atomtype"]
     probemolar = float( setting["input"]["probe"]["molar"] )
 
-    boxsize = calculate_boxsize(pdbpath)
-
-
-    # 0. preparation
-    cosolv_box_size = ((constants.N_A * float(probemolar))
-                       * 1e-27)**(-1/3.0)  # /L -> /A^3 : 1e-27
-
-    # 1. generate cosolvent box with packmol
-    # input: 
-    #   frcmod
-    _, cfrcmod = tempfile.mkstemp(suffix=".frcmod")
-    Parmchk(debug=args.debug) \
-        .set(cmol, atomtype) \
-        .run(frcmod=cfrcmod)
-    
-    _, box_pdb = tempfile.mkstemp(suffix=".pdb")
-    Packmol(debug=args.debug) \
-        .set(pdbpath, cpdb, boxsize, probemolar) \
-        .run(box_pdb)
-
-    tleap_obj = TLeap(debug=args.debug) \
-                    .set(cid, cmol, cfrcmod, box_pdb, 
-                         boxsize, ssbonds, atomtype)
-
-    while True:
-        tleap_obj.run(args.output_prefix)
-        system_charge = tleap_obj._final_charge_value
-
-        if system_charge == 0:
-            break
-        else:
-            logger.warn("the system is not neutral. generate system again")
-
-    pmd_convert(tleap_obj.parm7, f"{args.output_prefix}.top",
-                inxyz=tleap_obj.rst7, outxyz=f"{args.output_prefix}.gro")
-
-    # 5. remove temporal files
-    if not args.no_rm_temp_flag:
-        None # TODO:
+    cosolv_box_size = ((constants.N_A * probemolar) * 1e-27)**(-1/3.0)  # /L -> /A^3 : 1e-27
+    cfrcmod = create_frcmod(setting["input"]["probe"], debug=args.debug)
+    parm7, rst7 = create_system(setting["input"]["protein"], 
+                                setting["input"]["probe"], 
+                                cfrcmod, debug=args.debug)
+    pmd_convert(parm7, f"{args.output_prefix}.top",
+                inxyz=rst7, outxyz=f"{args.output_prefix}.gro")
