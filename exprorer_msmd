@@ -83,7 +83,8 @@ def wrapper(index, setting, gpuid, ncpus, debug=False):
     GMX={exe_gromacs} bash mdrun.sh {ncpus}
     """)
 
-    gen_pmap(index, setting)
+    gen_pmap(index, setting["general"], setting["input"],
+             setting["exprorer_msmd"]["pmap"])
 
 def get_gpuids():
     gpuids = set(GPUtil.getAvailable(limit=math.inf))
