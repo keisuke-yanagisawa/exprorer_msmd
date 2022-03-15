@@ -35,7 +35,7 @@ def convert_to_proba(g, mask_grid=None):
         values = g.grid[np.where(mask_grid)]
         # print(np.sum(g.grid), np.sum(values), np.where(mask_grid))
         values /= np.sum(values)
-        g.grid = np.full_like(g.grid, np.min([np.min(values), -1])) #TODO: I could not remember why it is needed...??
+        g.grid = np.full_like(g.grid, np.min([np.min(values), -1])) # assign -1 for outside of mask
         g.grid[np.where(mask_grid)] = values
     else:
         g.grid /= np.sum(g.grid)
