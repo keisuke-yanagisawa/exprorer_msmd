@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.interpolate import RegularGridInterpolator
 import argparse
 import io
 import gridData
@@ -26,9 +27,13 @@ def compute_SR_probe_resis(model, dx, resn, threshold, lt=False):
                       sele=lambda a: uPDB.get_resname(a) == resn and not uPDB.is_hydrogen(a))
     coords = uPDB.get_attr(model, "coord",
                       sele=lambda a: uPDB.get_resname(a) == resn and not uPDB.is_hydrogen(a))
-    XX, YY, ZZ = np.array(coords).T
-    # print(coords, XX, YY, ZZ)
-    values = dx.interpolated(XX, YY, ZZ)
+    ### below interpolation is "3D-spline" interpolation. It shows undesirable behavior
+    # XX, YY, ZZ = np.array(coords).T
+    # values = dx.interpolated(XX, YY, ZZ)
+
+    ### Because of the reason, we changed to "nearest" interpolation to obtain stable results
+    interp = RegularGridInterpolator(dx.midpoints, dx.grid, method="nearest", fill_value=-1, bounds_error=False)
+    values = interp(np.array(coords))
 
     if lt:
         resis = np.array(resis)[values < threshold]

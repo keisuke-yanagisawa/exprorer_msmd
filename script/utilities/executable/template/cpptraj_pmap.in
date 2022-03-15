@@ -8,7 +8,7 @@ center @CA&(!:CA)&(!:{{ cid }})
 fiximagedbonds
 autoimage
 
-rms ToREF ref [REF] @CA&(!:CA)&(!:{{ cid }}) @CA&(!:CA)&(!:{{ cid }}) out rmsd.dat
+rms ToREF ref [REF] @CA&(!:CA)&(!:{{ cid }}) @CA&(!:CA)&(!:{{ cid }}) out {{ tmp_rmsdfile }}
 
 {% for MAP in maps %}
 grid {{ basedir }}/{{ prefix }}_{{ MAP.suffix }}.dx {{ map_voxel }} :{{ cid }}&{{ MAP.selector }}
