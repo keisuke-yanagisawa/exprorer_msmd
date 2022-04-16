@@ -38,7 +38,7 @@ def extract_residue_environment(index, setting):
     os.system(f"""
     {exe_python} {WORK_DIR}/script/resenv_main.py \
     -grid {basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx \
-    -ipdb {sysdirpath}/test_woWAT_10ps.pdb \
+    -ipdb {sysdirpath}/{JOB_NAME}_woWAT_10ps.pdb \
     -resn {PROBE_ID} \
     -opdb {sysdirpath}/resenv_{JOB_NAME}.pdb \
     -v
