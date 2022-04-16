@@ -17,14 +17,14 @@ def position_restraint(atom_id_list):
         ret_str += '#endif\n'
     return "\n"+ret_str+"\n"
 
-def gen_atom_id_list(gro, target, RES, INV):
+def gen_atom_id_list(gro_string, target, RES, INV):
     atom_id_list = []
 
     MOLECULE = target == "molecule"
     
     mol_resi = -1
     mol_first_atom = -1 if MOLECULE else 1
-    gro_strings = open(gro).readlines()[2:-2]
+    gro_strings = gro_string.split("\n")[2:-2]
     for line in gro_strings:
         resi = int(line[:5])
         resn = line[5:10].strip()
@@ -41,6 +41,33 @@ def gen_atom_id_list(gro, target, RES, INV):
                 atom_id_list.append(nr-mol_first_atom+1)
     return atom_id_list
 
+def embed_posre(top_string, atom_id_list):
+    ret = []
+    curr_section = None
+    mol_count = 0
+    for line in top_string.split("\n"):
+        if line.startswith("["):
+            curr_section = line[line.find("[")+1:line.find("]")].strip()
+            if curr_section == "moleculetype":
+                if mol_count == 1:
+                    ret.append(position_restraint(atom_id_list))
+                mol_count += 1
+
+        ret.append(line)
+    ret = "\n".join(ret)
+
+    return ret
+
+def add_posredefine2top(top_string, gro_string, cid):
+    atom_id_list = gen_atom_id_list(
+        gro_string, 
+        "protein",
+        ["WAT", "Na+", "Cl-", "CA", "MG", "ZN", "CU", cid],
+        True
+    )
+    ret = embed_posre(top_string, atom_id_list)
+    return ret
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="add position restraints for topology file")
     parser.add_argument("-v", action="store_true", help="invert selection")
@@ -53,18 +80,13 @@ if __name__ == "__main__":
     parser.add_argument("--version", action="version", version=VERSION)
     args = parser.parse_args()
 
-    atom_id_list = gen_atom_id_list(args.gro, args.target,
-                                    args.res, args.v)
     with open(args.i) as fin:
-        with open(args.o, "w") as fout:
-            curr_section = None
-            mol_count = 0
-            for line in fin:
-                if line.startswith("["):
-                    curr_section = line[line.find("[")+1:line.find("]")].strip()
-                    if curr_section == "moleculetype":
-                        if mol_count == 1:
-                            fout.write(position_restraint(atom_id_list))
-                        mol_count += 1
+        top_string = fin.read()
 
-                fout.write(line)
+    with open(args.gro) as fin:
+        gro_string = fin.read()
+
+    top_string = add_posredefine2top(top_string, gro_string, cid)
+
+    with open(args.o, "w") as fout:
+        fout.write(top_string)

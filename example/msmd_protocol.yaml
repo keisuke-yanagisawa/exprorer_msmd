@@ -1,7 +1,7 @@
 general:
   iter_index: 0
   # iter_index: 1-2,4,5-9:2 # MSMD indices to be calculated / Notation 1-2 => 1,2  5-9:2 => 5,7,9
-  workdir: ../output/test # output directory / relative path from THIS YAML FILE
+  workdir: ../output/test # output directory / absolute path or relative path from THIS YAML FILE
   name: TEST_PROJECT
   # loglevel: debug # not implemented
   executables:
@@ -164,10 +164,10 @@ exprorer_msmd:
       title     : Production Run
       type      : production
       define    :
-      nsteps    : 30000
-      nstxtcout : 5000 # steps
-      nstenergy : 2500 # steps
-      nstlog    : 5000 # steps
+      nsteps    : 20000
+      nstxtcout : 5 # steps
+      nstenergy : 2 # steps
+      nstlog    : 5 # steps
       # ref_t     : 300
       pcoupl    : Parrinello-Rahman
       # ref_p     : 1.0
@@ -193,17 +193,31 @@ probe_profile:
   profile:
     types:
       - name: anionic_cb
-        resn: ["ASP", "GLU"]
-        atom: [" CB "]
+        atoms:
+          - ["ASP", " CB "]
+          - ["GLU", " CB "]
       - name: cationic_cb
-        resn: ["LYS", "HIE", "ARG"]
-        atom: [" CB "]
+        atoms:
+          - ["LYS", " CB "]
+          - ["HIE", " CB "]
+          - ["ARG", " CB "]
       - name: aromatic_cb
-        resn: ["TYR", "TRP", "PHE"] 
-        atom: [" CB "]
+        atoms:
+          - ["TYR", " CB "]
+          - ["TRP", " CB "]
+          - ["PHE", " CB "]
       - name: hydrophilic_cb
-        resn: ["ASN", "GLN", "SER", "THR", "CYS"]
-        atom: [" CB "]
+        atoms:
+          - ["ASN", " CB "]
+          - ["GLN", " CB "]
+          - ["SER", " CB "]
+          - ["THR", " CB "]
+          - ["CYS", " CB "]
       - name: hydrophobic_cb
-        resn: ["ILE", "LEU", "VAL", "ALA", "PRO", "MET"]
-        atom: [" CB "]
+        atoms:
+          - ["ILE", " CB "]
+          - ["LEU", " CB "]
+          - ["VAL", " CB "]
+          - ["ALA", " CB "]
+          - ["PRO", " CB "]
+          - ["MET", " CB "]
