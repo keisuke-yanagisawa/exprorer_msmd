@@ -73,24 +73,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="run gromacs jobs automatically")
     parser.add_argument("--version", action="version", version=VERSION)
 
-    # https://gist.github.com/vadimkantorov/37518ff88808af840884355c845049ea
-    parser.add_argument("-v", default={},
-                        action=type('', (argparse.Action, ),
-                                    dict(__call__=lambda a, p, n, v, o:
-                                         getattr(n, a.dest).update(dict([v.split('=')])))))
-
+    parser.add_argument("-input")
+    parser.add_argument("-output")
+    parser.add_argument("yaml")
     args = parser.parse_args()
 
-    dat = configparser.ConfigParser()
-    update_config(dat, args.v)
-    validate_config(dat)
-    # print(dat["General"]["name"])
-
-    with open(dat["General"]["protocol_yaml"]) as fin:
+    with open(args.yaml) as fin:
         yamldata = yaml.safe_load(fin)
 
     # 1. make directories
-    PARENT_DIR, TOP_DIR, MD_DIR = make_gromacs_directories(dat["General"]["output_dir"])
+    PARENT_DIR, TOP_DIR, MD_DIR = make_gromacs_directories(args.output)
 
     for i in range(len(yamldata["exprorer_msmd"]["sequence"])):
         step = yamldata["exprorer_msmd"]["sequence"][i]
@@ -107,10 +99,9 @@ if __name__ == "__main__":
 
     gen_mdrun_job([d["name"] for d in yamldata["exprorer_msmd"]["sequence"]],
                   yamldata["general"]["name"],
-                  "%s/mdrun.sh" % PARENT_DIR)#,
-#                  dat["ProductionRun"]["post_comm"])
+                  "%s/mdrun.sh" % PARENT_DIR)
 
     # 1.1 copy raw data
-    copy_gromacs_files(dat["General"]["input_dir"], TOP_DIR,
+    copy_gromacs_files(args.input, TOP_DIR,
                        yamldata["general"]["name"])
 
