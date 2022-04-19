@@ -17,6 +17,8 @@ from script.generate_msmd_system import generate_msmd_system
 from script.addvirtatom2top import addvirtatom2top
 from script.addvirtatom2gro import addvirtatom2gro
 from script.add_posredefine2top import add_posredefine2top
+from script.mdrun import prepare_sequence, prepare_md_files
+
 VERSION = "0.1.0"
 
 from script.utilities.logger import logger
@@ -73,11 +75,17 @@ def wrapper(index, setting, gpuid, ncpus, debug=False):
     q
     EOF
     """)
-    
-    os.system(f"""
-    {exe_python} {WORK_DIR}/script/mdrun.py \
-	-dir {sysdirpath} {YAML_PATH}
-    """)
+
+    setting["exprorer_msmd"]["sequence"] = prepare_sequence(
+        setting["exprorer_msmd"]["sequence"], 
+        setting["exprorer_msmd"]["general"]
+    )
+
+    prepare_md_files(
+        setting["exprorer_msmd"]["sequence"],
+        sysdirpath,
+        JOB_NAME
+    )
 
     os.system(f"""
     unset OMP_NUM_THREADS ; \
