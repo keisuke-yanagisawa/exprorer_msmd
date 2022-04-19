@@ -82,9 +82,9 @@ def wrapper(index, setting, gpuid, ncpus, debug=False):
     
     os.system(f"""
     {exe_python} {WORK_DIR}/script/mdrun.py \
-	-v General:input_dir={prepdirpath} \
-	-v General:output_dir={sysdirpath} \
-    -v General:protocol_yaml={YAML_PATH}
+	-input {prepdirpath} \
+	-output {sysdirpath} \
+    {YAML_PATH}
     """)
 
     os.system(f"""
