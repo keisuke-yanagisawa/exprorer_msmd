@@ -11,153 +11,6 @@ import os
 
 VERSION = "1.0.0"
 
-template_minimize = """
-define       = {define}
-;
-integrator   = steep
-nsteps       = {nsteps}
-nstlog       = {nstlog}
-;
-nstlist      = 5
-ns_type      = grid
-pbc          = {pbc}
-;
-coulombtype  = PME
-;
-vdwtype      = cut-off
-;
-constraints  = none
-"""
-
-template_heat = """
-define       = {define}
-;
-integrator   = md
-dt           = {dt}
-nsteps       = {nsteps}
-;
-nstxtcout     = {nstxtcout}
-xtc-precision = 10000
-nstlog        = {nstlog}
-nstenergy     = {nstenergy}
-;
-nstlist      = 5
-ns_type      = grid
-pbc          = {pbc}
-;
-coulombtype  = PME
-;
-vdwtype      = cut-off
-dispcorr     = EnerPres
-;
-tcoupl       = v-rescale
-tc_grps      = Non-Water Water
-tau_t        = 0.1 0.1
-ref_t        = {target_temp} {target_temp}
-;
-pcoupl       = {pcoupl}
-pcoupltype   = isotropic
-compressibility = 4.5e-5
-ref_p        = {pressure}
-refcoord_scaling = all
-;
-gen_vel = yes
-gen_seed = {seed}
-gen_temp = {initial_temp}
-;
-continuation = no
-constraints  = hbonds
-constraint_algorithm = LINCS
-;
-Annealing = single single
-Annealing_npoints = 2 2
-Annealing_time = 0 {nsteps*dt} 0 {nsteps*dt}
-Annealing_temp = {initial_temp} {target_temp} {initial_temp} {target_temp}
-"""
-
-template_equil = """
-define       = {define}
-;
-integrator   = md
-dt           = {dt}
-nsteps       = {nsteps}
-;
-nstxtcout     = {nstxtcout}
-xtc-precision = 10000
-nstlog        = {nstlog}
-nstenergy     = {nstenergy}
-;
-nstlist      = 5
-ns_type      = grid
-pbc          = {pbc}
-;
-coulombtype  = PME
-;
-vdwtype      = cut-off
-dispcorr     = EnerPres
-;
-tcoupl       = v-rescale
-tc_grps      = Non-Water Water
-tau_t        = 0.1 0.1
-ref_t        = {temperature} {temperature}
-;
-pcoupl       = {pcoupl}
-pcoupltype   = isotropic
-compressibility = 4.5e-5
-ref_p        = {pressure}
-refcoord_scaling = all
-;
-gen_vel = no
-;
-continuation = yes
-constraints  = hbonds
-constraint_algorithm = LINCS
-"""
-
-template_pr = """
-define            = {define}
-;
-integrator      = md
-dt              = {dt}
-nsteps          = {nsteps}
-
-; Output control
-nstxtcout       = {nstxtcout}          ; save coordinates every N ps
-xtc-precision   = 10000
-nstenergy       = {nstenergy}
-nstlog          = {nstlog}
-
-; Bond parameters
-continuation    = yes           ; Restarting after previous RUN
-constraint_algorithm = LINCS    ; holonomic constraints
-constraints          = hbonds  ; Convert the bonds with H-atoms to constraints
-; Langevin Dynamics
-bd_fric = 2.0           ; Brownian dynamics friction coefficient(correspond to gamma_ln in AMBER)
-ld_seed = {seed}
-;
-ns_type         = grid
-nstlist         = 5
-;
-coulombtype     = PME    ; Particle Mesh Ewald for long-range electrostatics
-;
-tcoupl    = V-rescale
-tc-grps   = Non-Water Water
-tau_t     = 0.1  0.1
-ref_t     = {temperature} {temperature}
-; Pressure coupling is on
-pcoupl         = {pcoupl}
-pcoupltype     = isotropic
-ref_p          = {pressure}
-compressibility = 4.5e-5
-refcoord_scaling = com
-; Periodic boundary conditions
-pbc                 = {pbc}
-; Dispersion correction
-DispCorr     = EnerPres ; account for cut-off vdW scheme
-; Velocity generation
-gen_vel         = no            ; Velocity generation
-"""
-
 
 def make_gromacs_directories(parent_dir):
     pathlib.Path("%s/top" % parent_dir).mkdir(parents=True, exist_ok=True)
@@ -171,22 +24,18 @@ def copy_gromacs_files(inputdir, topdir, name):
     shutil.copy("%s/index.ndx" % inputdir, "%s/index.ndx" % topdir)
 
 def gen_mdp(protocol_dict, MD_DIR):
-    if protocol_dict["type"] == "minimization":
-        template = template_minimize
-    elif protocol_dict["type"] == "heating":
-        template = template_heat
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
+    template = env.get_template(f"./template/{protocol_dict['type']}.mdp")
+
+    if protocol_dict["type"] == "heating":
         if "target_temp" not in protocol_dict:
             protocol_dict["target_temp"] = protocol_dict["temperature"]
         if "initial_temp" not in protocol_dict:
             protocol_dict["initial_temp"] = 0
-        protocol_dict["nsteps*dt"] = protocol_dict["nsteps"] * protocol_dict["dt"]
-    elif protocol_dict["type"] == "equilibration":
-        template = template_equil
-    elif protocol_dict["type"] == "production":
-        template = template_pr
+        protocol_dict["duration"] = protocol_dict["nsteps"] * protocol_dict["dt"]
 
     with open(f"{MD_DIR}/{protocol_dict['name']}.mdp", "w") as fout:
-        fout.write(template.format(**protocol_dict))
+        fout.write(template.render(protocol_dict))
 
 def gen_mdrun_job(step_names, name, path, post_comm=""):
     data = {
