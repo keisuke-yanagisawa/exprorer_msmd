@@ -86,7 +86,6 @@ def wrapper(index, setting, gpuid, ncpus, debug=False):
 	{WORK_DIR}/script/mdrun.sh \
 	-v General:input_dir={prepdirpath} \
 	-v General:output_dir={sysdirpath} \
-	-v General:name={JOB_NAME} \
     -v General:protocol_yaml={YAML_PATH}
     """)
 
