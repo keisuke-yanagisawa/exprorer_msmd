@@ -241,31 +241,31 @@ if __name__ == "__main__":
     # print(dat["General"]["name"])
 
     with open(dat["General"]["protocol_yaml"]) as fin:
-        protocol = yaml.safe_load(fin)["exprorer_msmd"]
+        yamldata = yaml.safe_load(fin)
 
     # 1. make directories
     PARENT_DIR, TOP_DIR, MD_DIR = make_gromacs_directories(dat["General"]["output_dir"])
 
-    for i in range(len(protocol["sequence"])):
-        step = protocol["sequence"][i]
+    for i in range(len(yamldata["exprorer_msmd"]["sequence"])):
+        step = yamldata["exprorer_msmd"]["sequence"][i]
         if "name" not in step:
             step["name"] = f"step{i+1}"
 
         if (not "define" in step) or (step["define"] is None):
             step["define"] = ""
         
-        step.update(protocol["general"])
+        step.update(yamldata["exprorer_msmd"]["general"])
         gen_mdp(step, MD_DIR)
-        protocol["sequence"][i] = step # update
+        yamldata["exprorer_msmd"]["sequence"][i] = step # update
         
 
     gen_mdrun_job(args.tmpl_mdrun,
-                  [d["name"] for d in protocol["sequence"]],
-                  dat["General"]["name"],
+                  [d["name"] for d in yamldata["exprorer_msmd"]["sequence"]],
+                  yamldata["general"]["name"],
                   "%s/mdrun.sh" % PARENT_DIR)#,
 #                  dat["ProductionRun"]["post_comm"])
 
     # 1.1 copy raw data
     copy_gromacs_files(dat["General"]["input_dir"], TOP_DIR,
-                       dat["General"]["name"])
+                       yamldata["general"]["name"])
 
