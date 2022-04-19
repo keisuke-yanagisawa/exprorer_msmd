@@ -2,11 +2,9 @@
 
 import argparse
 import tempfile
-import math
 import os 
 import pathlib
 
-import GPUtil
 from joblib import Parallel, delayed
 import yaml
 
@@ -96,28 +94,6 @@ def wrapper(index, setting, gpuid, ncpus, debug=False):
 
     gen_pmap(index, setting)
 
-def get_gpuids():
-    gpuids = set(GPUtil.getAvailable(limit=math.inf))
-    logger.info(f"{len(gpuids)} GPUs are detected")
-    if os.getenv("CUDA_VISIBLE_DEVICES") is not None:
-        logger.info(f"CUDA_VISIBLE_DEVICES detected")
-        cvd = [int(s) for s in os.getenv("CUDA_VISIBLE_DEVICES", default="").split(",")]
-        gpuids &= set(cvd)
-        gpuids = list(gpuids)
-
-    if len(gpuids) == 0:
-        logger.warn(f"No GPU is allowed/existed to use")
-        logger.warn(f"Switch to CPU-only mode, it greatly decreases the simulation speed")
-    else:
-        logger.info(f"GPU IDs of {gpuids} will be used")
-    
-    ngpus = len(gpuids)
-    if ngpus == 0: # there is only CPU
-        gpuids = [-1]
-        ngpus = 1
-    
-    return list(gpuids)
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Run MSMD simulation")
@@ -137,7 +113,7 @@ if __name__ == "__main__":
     setting = util.parse_yaml(args.setting_yaml)
     indices = util.expand_index(setting["general"]["iter_index"])
 
-    gpuids = get_gpuids()
+    gpuids = util.get_gpuids()
     ngpus = len(gpuids)
     ncpus = os.cpu_count()
     ncpus_per_gpu = ncpus // ngpus
