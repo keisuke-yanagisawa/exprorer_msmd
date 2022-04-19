@@ -188,15 +188,15 @@ def gen_mdp(protocol_dict, MD_DIR):
     with open(f"{MD_DIR}/{protocol_dict['name']}.mdp", "w") as fout:
         fout.write(template.format(**protocol_dict))
 
-def gen_mdrun_job(template_file, step_names, name, path, post_comm=""):
+def gen_mdrun_job(step_names, name, path, post_comm=""):
     data = {
         "NAME"         : name,
         "POST_COMMAND" : post_comm,
         "STEP_NAMES"   : " ".join(step_names)
     }
 
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader("/"))
-    template = env.get_template(template_file)
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
+    template = env.get_template("./template/mdrun.sh")
     with open(path, "w") as fout:
         fout.write(template.render(data))
 
@@ -230,12 +230,9 @@ if __name__ == "__main__":
                                     dict(__call__=lambda a, p, n, v, o:
                                          getattr(n, a.dest).update(dict([v.split('=')])))))
 
-    parser.add_argument("conf", help="configfile")
-    parser.add_argument("tmpl_mdrun")
     args = parser.parse_args()
 
     dat = configparser.ConfigParser()
-    dat.read(args.conf, "UTF-8")
     update_config(dat, args.v)
     validate_config(dat)
     # print(dat["General"]["name"])
@@ -259,8 +256,7 @@ if __name__ == "__main__":
         yamldata["exprorer_msmd"]["sequence"][i] = step # update
         
 
-    gen_mdrun_job(args.tmpl_mdrun,
-                  [d["name"] for d in yamldata["exprorer_msmd"]["sequence"]],
+    gen_mdrun_job([d["name"] for d in yamldata["exprorer_msmd"]["sequence"]],
                   yamldata["general"]["name"],
                   "%s/mdrun.sh" % PARENT_DIR)#,
 #                  dat["ProductionRun"]["post_comm"])
