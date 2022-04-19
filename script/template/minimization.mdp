@@ -1,0 +1,15 @@
+define       = {{ define }}
+;
+integrator   = steep
+nsteps       = {{ nsteps }}
+nstlog       = {{ nstlog }}
+;
+nstlist      = 5
+ns_type      = grid
+pbc          = {{ pbc }}
+;
+coulombtype  = PME
+;
+vdwtype      = cut-off
+;
+constraints  = none
