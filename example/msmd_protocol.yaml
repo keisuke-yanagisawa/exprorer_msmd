@@ -47,7 +47,7 @@ exprorer_msmd:
     - name   : min2
       title  : Energy minimization without position restraints
       type   : minimization
-      define :
+      define : ""
       nsteps : 200
       nstlog : 1 # steps
 
@@ -151,7 +151,7 @@ exprorer_msmd:
     - name      : equil8
       title     : Equilibration stage 8 - no constraints
       type      : equilibration
-      define    :
+      define    : ""
       nsteps    : 50000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
@@ -163,7 +163,7 @@ exprorer_msmd:
     - name      : pr
       title     : Production Run
       type      : production
-      define    :
+      define    : ""
       nsteps    : 20000
       nstxtcout : 5 # steps
       nstenergy : 2 # steps

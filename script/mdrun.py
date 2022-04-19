@@ -38,24 +38,23 @@ def gen_mdrun_job(step_names, name, path, post_comm=""):
         fout.write(template.render(data))
 
 
-def update_config(data, var_dict):
-    # TODO check key validity
-    for key, value in var_dict.items():
-        key1, key2 = key.split(":")
-        if key1 not in data.keys():
-            data[key1] = {}
-        data[key1][key2] = value
 
+def prepare_sequence(sequence, general):
+    ret = []
+    for i, step in enumerate(sequence):
+        tmp = {"define":"", "name":f"step{i+1}"}
+        tmp.update(general)
+        tmp.update(step)
+        step = tmp
+        ret.append(step)
+        print(ret)
+    return ret
 
-def validate_config(data):
-    # TODO check more things
-    if("calc_dir" in data["General"]) and ("output_dir" not in data["General"]):
-        print("WARNING: variable General:calc_dir is deprecated. Use General:output_dir instead.")
-        data["General"]["output_dir"] = data["General"]["calc_dir"]
-    assert("output_dir" in data["General"])
-
-### protocol_dict:define must be rewritten to "" if it is None
-    
+def prepare_md_files(sequence, targetdir, jobname):
+    for step in sequence:
+        gen_mdp(step, f"{targetdir}/simulation")
+    gen_mdrun_job([d["name"] for d in sequence],
+                  jobname, f"{targetdir}/mdrun.sh")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="run gromacs jobs automatically")
@@ -68,19 +67,13 @@ if __name__ == "__main__":
     with open(args.yaml) as fin:
         yamldata = yaml.safe_load(fin)
 
-    for i in range(len(yamldata["exprorer_msmd"]["sequence"])):
-        step = yamldata["exprorer_msmd"]["sequence"][i]
-        if "name" not in step:
-            step["name"] = f"step{i+1}"
+    yamldata["exprorer_msmd"]["sequence"] = prepare_sequence(
+        yamldata["exprorer_msmd"]["sequence"], 
+        yamldata["exprorer_msmd"]["general"]
+    )
 
-        if (not "define" in step) or (step["define"] is None):
-            step["define"] = ""
-        
-        step.update(yamldata["exprorer_msmd"]["general"])
-        gen_mdp(step, args.dir+"/simulation")
-        yamldata["exprorer_msmd"]["sequence"][i] = step # update
-        
-
-    gen_mdrun_job([d["name"] for d in yamldata["exprorer_msmd"]["sequence"]],
-                  yamldata["general"]["name"],
-                  f"{args.dir}/mdrun.sh")
+    prepare_md_files(
+        yamldata["exprorer_msmd"]["sequence"],
+        args.dir,
+        yamldata["general"]["name"]
+    )
