@@ -11,18 +11,6 @@ import os
 
 VERSION = "1.0.0"
 
-
-def make_gromacs_directories(parent_dir):
-    pathlib.Path("%s/top" % parent_dir).mkdir(parents=True, exist_ok=True)
-    pathlib.Path("%s/simulation" % parent_dir).mkdir(parents=True, exist_ok=True)
-    return parent_dir, "%s/top" % parent_dir, "%s/simulation" % parent_dir
-
-
-def copy_gromacs_files(inputdir, topdir, name):
-    shutil.copy("%s/%s.gro" % (inputdir, name), "%s/%s.gro" % (topdir, name))
-    shutil.copy("%s/%s.top" % (inputdir, name), "%s/%s.top" % (topdir, name))
-    shutil.copy("%s/index.ndx" % inputdir, "%s/index.ndx" % topdir)
-
 def gen_mdp(protocol_dict, MD_DIR):
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
     template = env.get_template(f"./template/{protocol_dict['type']}.mdp")
@@ -73,16 +61,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="run gromacs jobs automatically")
     parser.add_argument("--version", action="version", version=VERSION)
 
-    parser.add_argument("-input")
-    parser.add_argument("-output")
+    parser.add_argument("-dir")
     parser.add_argument("yaml")
     args = parser.parse_args()
 
     with open(args.yaml) as fin:
         yamldata = yaml.safe_load(fin)
-
-    # 1. make directories
-    PARENT_DIR, TOP_DIR, MD_DIR = make_gromacs_directories(args.output)
 
     for i in range(len(yamldata["exprorer_msmd"]["sequence"])):
         step = yamldata["exprorer_msmd"]["sequence"][i]
@@ -93,15 +77,10 @@ if __name__ == "__main__":
             step["define"] = ""
         
         step.update(yamldata["exprorer_msmd"]["general"])
-        gen_mdp(step, MD_DIR)
+        gen_mdp(step, args.dir+"/simulation")
         yamldata["exprorer_msmd"]["sequence"][i] = step # update
         
 
     gen_mdrun_job([d["name"] for d in yamldata["exprorer_msmd"]["sequence"]],
                   yamldata["general"]["name"],
-                  "%s/mdrun.sh" % PARENT_DIR)
-
-    # 1.1 copy raw data
-    copy_gromacs_files(args.input, TOP_DIR,
-                       yamldata["general"]["name"])
-
+                  f"{args.dir}/mdrun.sh")

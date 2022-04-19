@@ -58,7 +58,7 @@ def gen_pmap(index, setting, debug=False):
     syspathdir = f"{setting['general']['workdir']}/system{index}"
 
     trajectory = util.getabsolutepath(syspathdir) + f"/simulation/{name}.xtc"
-    topology   = util.getabsolutepath(syspathdir) + f"/top/{name}.top" # TODO: TEST_PROJECT should be "PREFIX"
+    topology   = util.getabsolutepath(syspathdir) + f"/prep/{name}.top" # TODO: TEST_PROJECT should be "PREFIX"
     ref_struct = setting["input"]["protein"]["pdb"]
     probe_id   = setting["input"]["probe"]["cid"]
 

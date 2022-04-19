@@ -4,6 +4,7 @@ import argparse
 import tempfile
 import math
 import os 
+import pathlib
 
 import GPUtil
 from joblib import Parallel, delayed
@@ -21,24 +22,17 @@ VERSION = "0.1.0"
 from script.utilities.logger import logger
 
 def wrapper(index, setting, gpuid, ncpus, debug=False):
-    prepdirpath = f'{setting["general"]["workdir"]}/prep{index}'
-    sysdirpath = f'{setting["general"]["workdir"]}/system{index}'
-    topdirpath = f'{sysdirpath}/top'
+    sysdirpath  = f'{setting["general"]["workdir"]}/system{index}'
+    prepdirpath = f'{sysdirpath}/prep'
+    simdirpath  = f'{sysdirpath}/simulation'
+    pathlib.Path(sysdirpath).mkdir(parents=True, exist_ok=True)
+    pathlib.Path(prepdirpath).mkdir(parents=True, exist_ok=True)
+    pathlib.Path(simdirpath).mkdir(parents=True, exist_ok=True)
     
     PROBE_ID = setting["input"]["probe"]["cid"]
     YAML_PATH = setting["general"]["yaml"]
     JOB_NAME = setting["general"]["name"]
     WORK_DIR = os.path.dirname(util.getabsolutepath(__file__))
-
-    if not os.path.exists(prepdirpath):
-        logger.info(f"make {prepdirpath}")
-        os.system(f"mkdir -p {prepdirpath}")
-    if not os.path.exists(sysdirpath):
-        logger.info(f"make {sysdirpath}")
-        os.system(f"mkdir -p {sysdirpath}")
-    if not os.path.exists(topdirpath):
-        logger.info(f"make {topdirpath}")
-        os.system(f"mkdir -p {topdirpath}")
 
     tmp_name = "tmp"
     exe_python  = setting["general"]["executables"]["python"]
@@ -82,9 +76,7 @@ def wrapper(index, setting, gpuid, ncpus, debug=False):
     
     os.system(f"""
     {exe_python} {WORK_DIR}/script/mdrun.py \
-	-input {prepdirpath} \
-	-output {sysdirpath} \
-    {YAML_PATH}
+	-dir {sysdirpath} {YAML_PATH}
     """)
 
     os.system(f"""
