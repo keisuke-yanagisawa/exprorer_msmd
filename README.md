@@ -71,3 +71,8 @@ The command will construct PMAP in accordance with input map files.
 1. Prepare probe `.mol2` and `.pdb` files
 2. Make new probe config file (example: `example/probe.conf`). You have to write down absolute pathes to `.mol2` and `.pdb` files as well as residue name of the probe.
 3．Make new MSMD config file like `example/msmd_config.sh`. Please make sure to use new probe config file.
+
+## Calculation cost
+
+- 3.5 hrs for 40 ns simulation (with 37,763 atoms of example protocol) on Cygnus, Tsukuba University (Xeon Gold 6126 + Tesla V100)
+  - 70 GPU hrs for 20 runs of 40 ns simulation
