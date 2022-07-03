@@ -78,28 +78,20 @@ def wrapper(model, dx, resn, threshold, lt, env_distance):
 def resenv(grid, ipdb, resn, opdb, 
            threshold=0.2, lt=False, env_distance=4, n_jobs=1):
     dx = gridData.Grid(grid)
-    models = []
-    for path in tqdm(ipdb, desc="[read PDBs]", disable=not (VERBOSE or DEBUG)):
-        snapshot = uPDB.get_structure(path)
-        [models.append(m) for m in snapshot]
 
-    out_structure = PDB.Structure.Structure("")
-    lst_of_lst = Parallel(n_jobs=n_jobs)(
-        delayed(wrapper)(model, dx, resn, threshold, lt, env_distance)
-        for model in tqdm(models, desc="[extract res. env.]", disable=not (VERBOSE or DEBUG))
-    )
+    out_helper = uPDB.PDBIOhelper(opdb)
+    for path in ipdb:
+        reader = uPDB.MultiModelPDBReader(path)
+        
+        lst_of_lst = Parallel(n_jobs=n_jobs)(
+            delayed(wrapper)(model, dx, resn, threshold, lt, env_distance)
+            for model in tqdm(reader, desc="[extract res. env.]", disable=not (VERBOSE or DEBUG))
+        )
 
-    for lst in lst_of_lst:
-        for struct in lst:
-            struct.id = len(out_structure)
-            struct.serial_num = struct.id+1
-            out_structure.add(struct)
 
-    pdbio = PDB.PDBIO()
-    pdbio.set_structure(out_structure)
-    path = opdb
-    print("output", path)
-    pdbio.save(path)
+        for lst in lst_of_lst:
+            for struct in lst:
+                out_helper.save(struct)
 
 VERBOSE = None
 DEBUG = None
