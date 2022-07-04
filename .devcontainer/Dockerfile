@@ -1,10 +1,8 @@
 FROM gromacs/gromacs:2021.5
 
-SHELL ["/bin/bash", "-c"]
-
 # install conda
-ENV PATH="/root/miniconda3/bin:${PATH}"
-ARG PATH="/root/miniconda3/bin:${PATH}"
+ENV PATH="/miniconda3/bin:${PATH}"
+ARG PATH="/miniconda3/bin:${PATH}"
 
 # for update of cuda
 RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
@@ -16,8 +14,8 @@ RUN apt-get install -y wget && rm -rf /var/lib/apt/lists/*
 
 RUN wget \
     https://repo.anaconda.com/miniconda/Miniconda3-py39_4.11.0-Linux-x86_64.sh \
-    && mkdir /root/.conda \
     && bash Miniconda3-py39_4.11.0-Linux-x86_64.sh -b \
+         -p /miniconda3 \
     && rm -f Miniconda3-py39_4.11.0-Linux-x86_64.sh 
 RUN conda --version
 
