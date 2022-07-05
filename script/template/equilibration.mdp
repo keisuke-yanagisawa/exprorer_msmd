@@ -1,0 +1,36 @@
+define       = {{ define }}
+;
+integrator   = md
+dt           = {{ dt }}
+nsteps       = {{ nsteps }}
+;
+nstxtcout     = {{ nstxtcout }}
+xtc-precision = 10000
+nstlog        = {{ nstlog }}
+nstenergy     = {{ nstenergy }}
+;
+nstlist      = 5
+ns_type      = grid
+pbc          = {{ pbc }}
+;
+coulombtype  = PME
+;
+vdwtype      = cut-off
+dispcorr     = EnerPres
+;
+tcoupl       = v-rescale
+tc_grps      = Non-Water Water
+tau_t        = 0.1 0.1
+ref_t        = {{ temperature }} {{ temperature }}
+;
+pcoupl       = {{ pcoupl }}
+pcoupltype   = isotropic
+compressibility = 4.5e-5
+ref_p        = {{ pressure }}
+refcoord_scaling = all
+;
+gen_vel = no
+;
+continuation = yes
+constraints  = hbonds
+constraint_algorithm = LINCS
