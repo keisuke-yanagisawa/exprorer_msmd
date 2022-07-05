@@ -3,8 +3,8 @@
 """
 BioPytnonの Bio.PDB モジュールに関係する関数群。
 
-version: 1.2.0
-last update: 14 Sep, 2021
+version: 1.3.0
+last update: 1 Jul, 2022
 Authors: Keisuke Yanagisawa
 """
 import gzip
@@ -13,6 +13,92 @@ from Bio import PDB
 from collections.abc import Iterable
 import tempfile
 import io
+
+class MultiModelPDBReader(object):
+    """
+    多数のモデルが含まれるPDBファイルを
+    省メモリで読むためのヘルパークラス。
+    iteratorに対応し、1つずつ読んでくれる。
+    一応get_modelもあるが、これの実装は雑なので注意。
+    """
+    
+    def _init_fileobj(self):
+        self.model_positions = []
+        self.fileend = False
+        self.file.seek(0)
+        while True:
+            l = self.file.readline()
+            if l.startswith(self.header):
+                self.model_positions.append(
+                    self.file.tell() - len(l.encode())
+                )
+                break
+            
+    def __init__(self, file, header="MODEL"):
+        self.file = open(file)
+        self.model_positions = []
+        self.fileend = False
+        self.header = header
+        self._init_fileobj()
+
+    def __del__(self):
+        self.file.close()
+        
+    def get_model(self, idx):
+        """
+        get a model with 0-origin
+        Note that it uses idx, not MODEL ID.
+        It will do sequential search, thus the computation complexity is O(N), not O(1)
+        """
+        if idx < 0:
+            raise IndexError(f"{self.header} index out of range")                
+            
+        while (len(self.model_positions) <= idx+1):
+            if self.fileend:
+                raise IndexError(f"{self.header} index out of range")                
+            self.model_positions.append(self._next())
+        self.file.seek(self.model_positions[idx])
+
+        with tempfile.NamedTemporaryFile("w") as f:
+            n_bytes_to_be_read \
+              = self.model_positions[idx+1] - self.model_positions[idx]
+            self.file.seek(self.model_positions[idx])
+            f.write(self.file.read(n_bytes_to_be_read))
+            f.flush()
+            return get_structure(f.name)
+        
+    def _next(self) -> int:
+        """
+        get next STARTING point
+        """
+
+        if(self.fileend):
+            return None
+
+        self.file.seek(self.model_positions[-1])
+
+        while True:
+            l = self.file.readline()
+            if l == "":
+                self.fileend = True
+                break
+            elif l.startswith(self.header):
+                cur = self.file.tell() - len(l.encode())
+                if cur == self.model_positions[-1]:
+                    continue
+                self.file.seek(cur)
+                break
+        return self.file.tell()
+
+    def __iter__(self):
+        self._init_fileobj()
+        return self
+            
+    def __next__(self):
+        try:
+            return self.get_model(len(self.model_positions)-1)
+        except IndexError as e:
+            raise StopIteration
 
 class PDBIOhelper():
     """

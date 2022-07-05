@@ -21,25 +21,31 @@ def position_restraint(atom_id_list):
         ret_str += '#endif\n'
     return "\n"+ret_str+"\n"
 
-def gen_protein_heavyatom_id_list(top_path):
-    top = pmd.load_file(top_path)
-
-    protein_resis = set(r.idx for r in top["@CA"].residues)
+def gen_atom_id_list(gro_string, target, RES, INV):
     atom_id_list = []
-    for atom in top.atoms:
-        if atom.element_name == "H":
-            continue
-        if atom.residue.idx not in protein_resis:
-            continue
-        atom_id_list.append(atom.idx+1)
+
+    MOLECULE = target == "molecule"
+    
+    mol_resi = -1
+    mol_first_atom = -1 if MOLECULE else 1
+    gro_strings = gro_string.split("\n")[2:-2]
+    for line in gro_strings:
+        resi = int(line[:5])
+        resn = line[5:10].strip()
+        atom = line[10:15].strip()
+        nr = int(line[15:20])
+        if MOLECULE and (resn in RES) != INV:
+            if mol_resi == -1:
+                mol_resi = resi
+                mol_first_atom = nr
+            if mol_resi != resi:
+                break
+        if not atom.strip().startswith("H"):
+            if (resn in RES) != INV:
+                atom_id_list.append(nr-mol_first_atom+1)
     return atom_id_list
 
-def add_posredefine2top(top_string):
-    _, tmp = tempfile.mkstemp(suffix=".top")
-    open(tmp, "w").write(top_string)
-    atom_id_list = gen_protein_heavyatom_id_list(tmp)
-    os.system(f"rm {tmp}")
-
+def embed_posre(top_string, atom_id_list):
     ret = []
     curr_section = None
     mol_count = 0
@@ -50,8 +56,21 @@ def add_posredefine2top(top_string):
                 if mol_count == 1:
                     ret.append(position_restraint(atom_id_list))
                 mol_count += 1
-        ret.append(line+"\n")
-    return "".join(ret)
+
+        ret.append(line)
+    ret = "\n".join(ret)
+
+    return ret
+
+def add_posredefine2top(top_string, gro_string, cid):
+    atom_id_list = gen_atom_id_list(
+        gro_string, 
+        "protein",
+        ["WAT", "Na+", "Cl-", "CA", "MG", "ZN", "CU", cid],
+        True
+    )
+    ret = embed_posre(top_string, atom_id_list)
+    return ret
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="add position restraints for topology file")
@@ -60,7 +79,13 @@ if __name__ == "__main__":
     parser.add_argument("--version", action="version", version=VERSION)
     args = parser.parse_args()
 
-    top_string = open(args.i).read()
-    ret = add_posredefine2top(top_string)
-    open(args.o, "w").write(ret)
-    
+    with open(args.i) as fin:
+        top_string = fin.read()
+
+    with open(args.gro) as fin:
+        gro_string = fin.read()
+
+    top_string = add_posredefine2top(top_string, gro_string, cid)
+
+    with open(args.o, "w") as fout:
+        fout.write(top_string)
