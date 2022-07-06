@@ -1,7 +1,8 @@
 general:
   iter_index: 0
   # iter_index: 1-2,4,5-9:2 # MSMD indices to be calculated / Notation 1-2 => 1,2  5-9:2 => 5,7,9
-  workdir: ../output/test # output directory / absolute path or relative path from THIS YAML FILE
+  multiprocessing: True
+  workdir: ../output/example_protocol # output directory / absolute path or relative path from THIS YAML FILE
   name: TEST_PROJECT
   # loglevel: debug # not implemented
   executables:
@@ -172,22 +173,24 @@ exprorer_msmd:
       pcoupl    : Parrinello-Rahman
       # ref_p     : 1.0
 
-  pmap: # PMAP generation
-    valid_dist: 5 # PMAP valid distance from protein atoms
-    snapshots: pr|2001-4001:1 # steps / "NAME" trajectory will be used with "NAME|" 
-
-
-
-protein_hotspot:
-  pmap_aggregation: max # max is only the option so far
+map: # MAP generation
+  type: pmap
+  valid_dist: 5            # PMAP valid distance from protein atoms
+  snapshot: 2001-4001:1 # steps / "NAME" trajectory will be used with "NAME|" 
+  maps:
+    - suffix: nVH
+      selector: (!@VIS)&(!@H*)
+    - suffix: nV
+      selector: (!@VIS)
+  map_size: 80 # 80 A * 80 A * 80 A
+  aggregation: max
 
 probe_profile:
-  pmap_aggregation: max # max is only the option
   resenv: # Extract residue environments around probe molecules
     threshold: 0.2 # probability threshold of "preferred" residue environment
     env_dist: 4    # residue environment distance from a probe molecule
     # snapshots: 2001-4001:1
-    snapshots: pr|2001-4001:50 # reduce calculation cost (but less environments)
+    snapshots: 2001-4001:50 # reduce calculation cost (but less environments)
     align: [" C1 ", " C2 ", " C3 ", " O1 "] # all heavy atoms are used if "align" is not defined
 
   profile:
