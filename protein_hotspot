@@ -18,17 +18,18 @@ def protein_hotspot(setting):
     WORK_DIR = os.path.dirname(util.getabsolutepath(__file__))
     exe_python  = setting["general"]["executables"]["python"]
 
-    logger.info("PELMAP aggregation: mapPELMAP")
+    # TODO read ["map"]["maps"]
+    logger.info("PMAP aggregation: mapPMAP")
     os.system(f"""
     {exe_python} {WORK_DIR}/script/maxpmap_main.py \
-    {basedirpath}/system*/PELMAP_{JOB_NAME}_nVH.dx \
-    {basedirpath}/maxPELMAP_{JOB_NAME}_nVH.dx
+    {basedirpath}/system*/PMAP_{JOB_NAME}_nVH.dx \
+    {basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx
     """)
-    logger.info(f"Output file: {basedirpath}/maxPELMAP_{JOB_NAME}_nVH.dx")
+    logger.info(f"Output file: {basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Calculate protein hotspot: aggregating PELMAPs")
+        description="Calculate protein hotspot: aggregating PMAPs")
     parser.add_argument("setting_yaml")
     parser.add_argument("-v,--verbose", dest="verbose", action="store_true")
     parser.add_argument("--debug", action="store_true")
