@@ -13,6 +13,8 @@ VERSION = "0.1.0"
 
 from script.utilities.logger import logger
 
+# TODO: which map should be used? nVH? others?
+
 def gen_maxpmap(setting):
     basedirpath = setting["general"]["workdir"]
     JOB_NAME = setting["general"]["name"]
