@@ -53,22 +53,21 @@ def convert_to_pmap(grid_path, ref_struct, valid_distance):
 
 def parse_snapshot_setting(string):
     offset = "1" # default parameter
-    target, other = string.split("|")     # target name is mandatory
-    if len(other.split(":")) != 1:        # ofset is an option
-        other, offset = other.split(":")
-    start, stop = other.split("-")         # start and end is mandatory
-    return target, start, stop, offset
+    if len(string.split(":")) != 1:        # ofset is an option
+        string, offset = string.split(":")
+    start, stop = string.split("-")         # start and end is mandatory
+    return start, stop, offset
 
 def gen_pmap(index, setting_general, setting_input, setting_pmap, debug=False):
 
-    traj_target, traj_start, traj_stop, traj_offset \
+    traj_start, traj_stop, traj_offset \
         = parse_snapshot_setting(setting_pmap["snapshot"])
 
     name = setting_general["name"]
     syspathdir = f"{setting_general['workdir']}/system{index}"
 
-    trajectory = util.getabsolutepath(syspathdir) + f"/simulation/{traj_target}.xtc"
-    topology   = util.getabsolutepath(syspathdir) + f"/top/{name}.top" # TODO: TEST_PROJECT should be "PREFIX"
+    trajectory = util.getabsolutepath(syspathdir) + f"/simulation/{name}.xtc"
+    topology   = util.getabsolutepath(syspathdir) + f"/prep/{name}.top" # TODO: TEST_PROJECT should be "PREFIX"
     ref_struct = setting_input["protein"]["pdb"]
     probe_id   = setting_input["probe"]["cid"]
     maps       = setting_pmap["maps"]

@@ -93,7 +93,7 @@ def wrapper(index, setting, gpuid, ncpus, debug=False):
     """)
 
     gen_pmap(index, setting["general"], setting["input"],
-             setting["exprorer_msmd"]["pmap"])
+             setting["map"])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -116,6 +116,8 @@ if __name__ == "__main__":
 
     gpuids = util.get_gpuids()
     ngpus = len(gpuids)
+    if setting["general"]["multiprocessing"] == False:
+        ngpus=1
     ncpus = os.cpu_count()
     ncpus_per_gpu = ncpus // ngpus
     if ncpus_per_gpu == 0:
