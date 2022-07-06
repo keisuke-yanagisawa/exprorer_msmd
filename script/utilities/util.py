@@ -78,11 +78,45 @@ def get_gpuids():
     
     return list(gpuids)
 
+def set_default(setting):
+    if not "multiprocessing" in setting["general"]:
+        setting["general"]["multiprocessing"] = True    
+    if not "valid_dist" in setting["map"]:
+        setting["map"]["valid_dist"] = 5
+    if not "env_dist" in setting["probe_profile"]:
+        setting["probe_profile"]["env_dist"] = 4
+    if not "dt" in setting["exprorer_msmd"]["general"]:
+        setting["exprorer_msmd"]["general"]["dt"] = 0.002
+    if not "temperature" in setting["exprorer_msmd"]["general"]:
+        setting["exprorer_msmd"]["general"]["temperature"] = 300
+    if not "pressure" in setting["exprorer_msmd"]["general"]:
+        setting["exprorer_msmd"]["general"]["pressure"] = 1.0
+    if not "seed" in setting["exprorer_msmd"]["general"]:
+        setting["exprorer_msmd"]["general"]["seed"] = -1
+
+def ensure_compatibility_v1_1(setting):
+    if not "map" in setting:
+        setting["map"] = setting["exprorer_msmd"]["pmap"]
+        setting["map"]["snapshot"] = setting["exprorer_msmd"]["pmap"]["snapshots"]
+    setting["map"]["snapshot"] = setting["map"]["snapshot"].split("|")[-1]
+    if not "maps" in setting["map"]:
+        setting["map"]["maps"] = [
+            {"suffix": "nVH", "selector": "(!@VIS)&(!@H*)"}
+        ]
+    if not "map_size" in setting["map"]:
+        setting["map"]["map_size"] = 80
+    if not "aggregation" in setting["map"]:
+        setting["map"]["aggregation"] = "max"
+
 def parse_yaml(yamlpath):
     YAML_PATH = getabsolutepath(yamlpath) 
     YAML_DIR_PATH = os.path.dirname(YAML_PATH)
     with open(YAML_PATH) as fin:
         setting = yaml.safe_load(fin)
+
+    ensure_compatibility_v1_1(setting)
+    set_default(setting)
+
     if not "mol2" in setting["input"]["probe"] \
        or setting["input"]["probe"]["mol2"] is None:
         setting["input"]["probe"]["mol2"] \
