@@ -137,6 +137,9 @@ if __name__ == "__main__":
     parser.add_argument("setting_yaml")
     parser.add_argument("-v,--verbose", dest="verbose", action="store_true")
     parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--skip-preprocess", action="store_true")
+    parser.add_argument("--skip-simulation", action="store_true")
+    parser.add_argument("--skip-postprocess", action="store_true")
     parser.add_argument("--version", action="version", version=VERSION)
     args = parser.parse_args()
 
@@ -149,6 +152,11 @@ if __name__ == "__main__":
     logger.info(f"read yaml: {args.setting_yaml}")
     setting = util.parse_yaml(args.setting_yaml)
     indices = util.expand_index(setting["general"]["iter_index"])
+
+    jobname = setting["general"]["name"]
+    workdir = setting["general"]["workdir"]
+    logger.info(f"job name: {jobname}")
+    logger.info(f"workdir: {workdir}")
 
     # Count num. of GPUs and allocate CPU cores to each GPU
     # Raise EnvironmentError if GPU is not available
@@ -167,24 +175,37 @@ if __name__ == "__main__":
 
     # prepare systems
     # n_jobs = num of CPU cores, not num of GPUs
-    files = Parallel(n_jobs=ncpus, backend='threading')(
-        delayed(preprocess)(idx, setting, debug=args.debug) 
-        for idx in indices
-    )
-    tops = [elem[0] for elem in files]
-    gros = [elem[1] for elem in files]
-    pdbs = [elem[2] for elem in files]
+    if not args.skip_preprocess:
+        files = Parallel(n_jobs=ncpus, backend='threading')(
+            delayed(preprocess)(idx, setting, debug=args.debug) 
+            for idx in indices
+        )
+        tops = [elem[0] for elem in files]
+        gros = [elem[1] for elem in files]
+        pdbs = [elem[2] for elem in files]
+    else:
+        prepdirpath  = '{workdir}/system{index}/prep'
+        tops = [prepdirpath.format(workdir=workdir, index=idx) + f"/{jobname}.top" for idx in indices]
+        gros = [prepdirpath.format(workdir=workdir, index=idx) + f"/{jobname}.gro" for idx in indices]
+        pdbs = [prepdirpath.format(workdir=workdir, index=idx) + f"/{jobname}.pdb" for idx in indices]
 
     # execute MSMD simulations parallelly
-    gpuids = (gpuids * len(indices))[:len(indices)]
-    trajectories = Parallel(n_jobs=ngpus, backend='threading')(
-        delayed(execute_single_simulation)(idx, setting, gpuid, ncpus_per_gpu, top=top, gro=gro, pdb=pdb, debug=args.debug) 
-        for idx, gpuid, top, gro, pdb in zip(indices, gpuids, tops, gros, pdbs)
-    )
+    if not args.skip_simulation:
+        gpuids = (gpuids * len(indices))[:len(indices)]
+        trajectories = Parallel(n_jobs=ngpus, backend='threading')(
+            delayed(execute_single_simulation)(idx, setting, gpuid, ncpus_per_gpu, top=top, gro=gro, pdb=pdb, debug=args.debug) 
+            for idx, gpuid, top, gro, pdb in zip(indices, gpuids, tops, gros, pdbs)
+        )
+    else: 
+        simdirpath  = '{workdir}/system{index}/simulation'
+        trajectories = [simdirpath.format(workdir=workdir, index=idx) + f"/{jobname}.xtc" for idx in indices]
 
     # postprocess (generate PMAPs)
     # n_jobs = num of CPU cores, not num of GPUs
-    Parallel(n_jobs=ncpus, backend='threading')(
-        delayed(postprocess)(idx, setting, top=top, traj=traj, debug=args.debug) 
-        for idx, top, traj in zip(indices, tops, trajectories)
-    )
+    if not args.skip_postprocess:
+        Parallel(n_jobs=ncpus, backend='threading')(
+            delayed(postprocess)(idx, setting, top=top, traj=traj, debug=args.debug) 
+            for idx, top, traj in zip(indices, tops, trajectories)
+        )
+    else:
+        None # there is no output by Parallel - postprocess
