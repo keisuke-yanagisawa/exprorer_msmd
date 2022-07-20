@@ -9,6 +9,8 @@ import jinja2
 import yaml
 import os
 
+from .utilities.logger import logger
+
 VERSION = "1.0.0"
 
 def gen_mdp(protocol_dict, MD_DIR):
@@ -25,9 +27,12 @@ def gen_mdp(protocol_dict, MD_DIR):
     with open(f"{MD_DIR}/{protocol_dict['name']}.mdp", "w") as fout:
         fout.write(template.render(protocol_dict))
 
-def gen_mdrun_job(step_names, name, path, post_comm=""):
+def gen_mdrun_job(step_names, name, path, top, gro, out_traj, post_comm=""):
     data = {
         "NAME"         : name,
+        "TOP"          : top,
+        "GRO"          : gro,
+        "OUT_TRAJ"     : out_traj,
         "POST_COMMAND" : post_comm,
         "STEP_NAMES"   : " ".join(step_names)
     }
@@ -36,6 +41,7 @@ def gen_mdrun_job(step_names, name, path, post_comm=""):
     template = env.get_template("./template/mdrun.sh")
     with open(path, "w") as fout:
         fout.write(template.render(data))
+    logger.debug(f"generate {path}")
 
 
 
@@ -50,11 +56,11 @@ def prepare_sequence(sequence, general):
         print(ret)
     return ret
 
-def prepare_md_files(sequence, targetdir, jobname):
+def prepare_md_files(sequence, targetdir, jobname, top, gro, out_traj):
     for step in sequence:
-        gen_mdp(step, f"{targetdir}/simulation")
+        gen_mdp(step, targetdir)
     gen_mdrun_job([d["name"] for d in sequence],
-                  jobname, f"{targetdir}/mdrun.sh")
+                  jobname, f"{targetdir}/mdrun.sh", top, gro, out_traj)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="run gromacs jobs automatically")
