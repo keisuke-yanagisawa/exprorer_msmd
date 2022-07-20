@@ -63,13 +63,12 @@ def parse_snapshot_setting(string):
     start, stop = string.split("-")         # start and end is mandatory
     return start, stop, offset
 
-def gen_pmap(index, setting_general, setting_input, setting_pmap, traj, top, debug=False):
+def gen_pmap(dirpath, setting_general, setting_input, setting_pmap, traj, top, debug=False):
 
     traj_start, traj_stop, traj_offset \
         = parse_snapshot_setting(setting_pmap["snapshot"])
 
     name = setting_general["name"]
-    syspathdir = f"{setting_general['workdir']}/system{index}"
 
     trajectory = util.getabsolutepath(traj)
     topology   = util.getabsolutepath(top)
@@ -81,7 +80,7 @@ def gen_pmap(index, setting_general, setting_input, setting_pmap, traj, top, deb
     cpptraj_obj = Cpptraj(debug=debug)
     cpptraj_obj.set(topology, trajectory, ref_struct, probe_id)
     cpptraj_obj.run(
-        basedir=syspathdir, 
+        basedir=dirpath, 
         prefix=name,
         box_size=box_size,
         traj_start=traj_start, 
