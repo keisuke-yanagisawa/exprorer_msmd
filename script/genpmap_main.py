@@ -33,8 +33,6 @@ def mask_generator(ref_struct, reference_grid, distance=None):
 def convert_to_proba(g, mask_grid=None, normalize="snapshot", frames=1):
     if mask_grid is not None:
         values = g.grid[np.where(mask_grid)]
-        print(values)
-        print(frames)
         # print(np.sum(g.grid), np.sum(values), np.where(mask_grid))
         if normalize == "snapshot":
             values /= frames

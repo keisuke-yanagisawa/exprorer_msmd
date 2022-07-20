@@ -6,6 +6,7 @@ from .. import const
 from .execute import Command
 import shutil
 import jinja2
+from ..logger import logger
 
 class Packmol(object):
     def __init__(self, exe="packmol", debug=False):
@@ -53,9 +54,8 @@ class Packmol(object):
         with open(inp, "w") as fout:
             fout.write(template.render(data))
         command = Command(f"{self.exe} < {inp}")
-        if self.debug:
-          print(command)
-        print(command.run())
+        logger.debug(command)
+        logger.info(command.run())
         return self
 
     def __del__(self):
