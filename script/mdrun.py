@@ -53,7 +53,7 @@ def prepare_sequence(sequence, general):
         tmp.update(step)
         step = tmp
         ret.append(step)
-        print(ret)
+        logger.info(ret)
     return ret
 
 def prepare_md_files(sequence, targetdir, jobname, top, gro, out_traj):
