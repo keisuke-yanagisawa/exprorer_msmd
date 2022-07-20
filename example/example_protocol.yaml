@@ -183,6 +183,7 @@ map: # MAP generation
       selector: (!@VIS)
   map_size: 80 # 80 A * 80 A * 80 A
   aggregation: max
+  normalization: snapshot # total or snapshot
 
 probe_profile:
   resenv: # Extract residue environments around probe molecules

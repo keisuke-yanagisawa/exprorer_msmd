@@ -107,6 +107,8 @@ def ensure_compatibility_v1_1(setting):
         setting["map"]["map_size"] = 80
     if not "aggregation" in setting["map"]:
         setting["map"]["aggregation"] = "max"
+    if not "normalization" in setting["map"]:
+        setting["map"]["normalization"] = "total"
 
 def parse_yaml(yamlpath):
     YAML_PATH = getabsolutepath(yamlpath) 
