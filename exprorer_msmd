@@ -117,10 +117,19 @@ def execute_single_simulation(index, setting, gpuid, ncpus, top, gro, pdb, debug
     GMX={exe_gromacs} bash mdrun.sh {ncpus}
     """)
 
+    return f"{simdirpath}/{JOB_NAME}.xtc"
+
+def postprocess(index, setting, top, traj, debug=False):
+    sysdirpath  = f'{setting["general"]["workdir"]}/system{index}'
+
     # generate pmap files
-    gen_pmap(index, setting["general"], setting["input"],
-             setting["map"], traj=f"{simdirpath}/{JOB_NAME}.xtc", 
-             top=top)
+    gen_pmap(sysdirpath, 
+             setting["general"], 
+             setting["input"],
+             setting["map"], 
+             traj=traj, 
+             top=top, 
+             debug=debug)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -156,7 +165,8 @@ if __name__ == "__main__":
     logger.info(f"{ncpus} threads are detected")
     logger.info(f"{ngpus} parallel execution with {ncpus_per_gpu} CPU threads per process")
 
-    # prepare systems - n_jobs = num of CPU cores, not num of GPUs
+    # prepare systems
+    # n_jobs = num of CPU cores, not num of GPUs
     files = Parallel(n_jobs=ncpus, backend='threading')(
         delayed(preprocess)(idx, setting, debug=args.debug) 
         for idx in indices
@@ -167,7 +177,14 @@ if __name__ == "__main__":
 
     # execute MSMD simulations parallelly
     gpuids = (gpuids * len(indices))[:len(indices)]
-    Parallel(n_jobs=ngpus, backend='threading')(
+    trajectories = Parallel(n_jobs=ngpus, backend='threading')(
         delayed(execute_single_simulation)(idx, setting, gpuid, ncpus_per_gpu, top=top, gro=gro, pdb=pdb, debug=args.debug) 
         for idx, gpuid, top, gro, pdb in zip(indices, gpuids, tops, gros, pdbs)
+    )
+
+    # postprocess (generate PMAPs)
+    # n_jobs = num of CPU cores, not num of GPUs
+    Parallel(n_jobs=ncpus, backend='threading')(
+        delayed(postprocess)(idx, setting, top=top, traj=traj, debug=args.debug) 
+        for idx, top, traj in zip(indices, tops, trajectories)
     )
