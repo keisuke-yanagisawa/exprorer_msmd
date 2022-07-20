@@ -67,10 +67,17 @@ def execute_single_simulation(index, setting, gpuid, ncpus, debug=False):
     EOF
     """)
 
+    ##################
+    # hereafter, simulation directory will be used as working directory
+    ##################
+
+    os.system(f"cp {prepdirpath}/{JOB_NAME}.top {simdirpath}/input.top")
+    os.system(f"cp {prepdirpath}/{JOB_NAME}.gro {simdirpath}/input.gro")
+
     # generate a gromacs index file
     os.system(f"""
-    cd {prepdirpath} &&
-    {exe_gromacs} make_ndx -f {prepdirpath}/{JOB_NAME}.gro << EOF
+    cd {simdirpath} &&
+    {exe_gromacs} make_ndx -f {simdirpath}/input.gro << EOF
     q
     EOF
     """)
@@ -83,21 +90,25 @@ def execute_single_simulation(index, setting, gpuid, ncpus, debug=False):
     # generate mdp files and a shell script to run each simulation sequentially
     prepare_md_files(
         setting["exprorer_msmd"]["sequence"],
-        sysdirpath,
-        JOB_NAME
+        simdirpath,
+        JOB_NAME,
+        top=f"{simdirpath}/input.top",
+        gro=f"{simdirpath}/input.gro",
+        out_traj=f"{simdirpath}/{JOB_NAME}.xtc"
     )
 
     # execute simulation
     os.system(f"""
     unset OMP_NUM_THREADS ; \
     export CUDA_VISIBLE_DEVICES="{gpuid}" ; \
-    cd {sysdirpath} && \
+    cd {simdirpath} && \
     GMX={exe_gromacs} bash mdrun.sh {ncpus}
     """)
 
     # generate pmap files
     gen_pmap(index, setting["general"], setting["input"],
-             setting["map"])
+             setting["map"], traj=f"{simdirpath}/{JOB_NAME}.xtc", 
+             top=f"{simdirpath}/input.top")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
