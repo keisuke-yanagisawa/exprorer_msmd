@@ -20,19 +20,16 @@ VERSION = "0.2.0"
 
 from script.utilities.logger import logger
 
-def execute_single_simulation(index, setting, gpuid, ncpus, debug=False):
-    """
-    Execute a single MSMD simulation with preprocessing and postprocessing.
-    """
-    sysdirpath  = f'{setting["general"]["workdir"]}/system{index}'
-    prepdirpath = f'{sysdirpath}/prep'
-    simdirpath  = f'{sysdirpath}/simulation'
-    pathlib.Path(sysdirpath).mkdir(parents=True, exist_ok=True)
+def preprocess(index, setting, debug=False):
+    prepdirpath  = f'{setting["general"]["workdir"]}/system{index}/prep'
     pathlib.Path(prepdirpath).mkdir(parents=True, exist_ok=True)
-    pathlib.Path(simdirpath).mkdir(parents=True, exist_ok=True)
     
+
     PROBE_ID = setting["input"]["probe"]["cid"]
     JOB_NAME = setting["general"]["name"]
+    top = f"{prepdirpath}/{JOB_NAME}.top"
+    gro = f"{prepdirpath}/{JOB_NAME}.gro"
+    pdb = f"{prepdirpath}/{JOB_NAME}.pdb"
 
     exe_gromacs = setting["general"]["executables"]["gromacs"]
  
@@ -55,29 +52,44 @@ def execute_single_simulation(index, setting, gpuid, ncpus, debug=False):
         PROBE_ID
     )
 
-    open(f"{prepdirpath}/{JOB_NAME}.top", "w").write(top_string)
-    open(f"{prepdirpath}/{JOB_NAME}.gro", "w").write(gro_string)
+    open(top, "w").write(top_string)
+    open(gro, "w").write(gro_string)
 
     # create a pdb file with virtual atoms
     os.system(f"""
-    {exe_gromacs} trjconv -s {prepdirpath}/{JOB_NAME}.gro \
-    -f {prepdirpath}/{JOB_NAME}.gro \
-    -o {prepdirpath}/{JOB_NAME}.pdb <<EOF
+    {exe_gromacs} trjconv -s {gro} \
+    -f {gro} \
+    -o {pdb} <<EOF
     0
     EOF
     """)
 
-    ##################
-    # hereafter, simulation directory will be used as working directory
-    ##################
+    return top, gro, pdb
 
-    os.system(f"cp {prepdirpath}/{JOB_NAME}.top {simdirpath}/input.top")
-    os.system(f"cp {prepdirpath}/{JOB_NAME}.gro {simdirpath}/input.gro")
+def execute_single_simulation(index, setting, gpuid, ncpus, top, gro, pdb, debug=False):
+    """
+    Execute a single MSMD simulation with preprocessing and postprocessing.
+    """
+
+    simdirpath  = f'{setting["general"]["workdir"]}/system{index}/simulation'
+    pathlib.Path(simdirpath).mkdir(parents=True, exist_ok=True)
+    
+    JOB_NAME = setting["general"]["name"]
+
+    exe_gromacs = setting["general"]["executables"]["gromacs"]
+
+    
+    os.system(f"cp {top} {simdirpath}/input.top")
+    os.system(f"cp {gro} {simdirpath}/input.gro")
+    os.system(f"cp {pdb} {simdirpath}/input.pdb") # is it needed?
+    top = f"{simdirpath}/input.top"
+    gro = f"{simdirpath}/input.gro"
+    pdb = f"{simdirpath}/input.pdb"
 
     # generate a gromacs index file
     os.system(f"""
     cd {simdirpath} &&
-    {exe_gromacs} make_ndx -f {simdirpath}/input.gro << EOF
+    {exe_gromacs} make_ndx -f {gro} << EOF
     q
     EOF
     """)
@@ -92,8 +104,8 @@ def execute_single_simulation(index, setting, gpuid, ncpus, debug=False):
         setting["exprorer_msmd"]["sequence"],
         simdirpath,
         JOB_NAME,
-        top=f"{simdirpath}/input.top",
-        gro=f"{simdirpath}/input.gro",
+        top=top,
+        gro=gro,
         out_traj=f"{simdirpath}/{JOB_NAME}.xtc"
     )
 
@@ -108,7 +120,7 @@ def execute_single_simulation(index, setting, gpuid, ncpus, debug=False):
     # generate pmap files
     gen_pmap(index, setting["general"], setting["input"],
              setting["map"], traj=f"{simdirpath}/{JOB_NAME}.xtc", 
-             top=f"{simdirpath}/input.top")
+             top=top)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -144,9 +156,18 @@ if __name__ == "__main__":
     logger.info(f"{ncpus} threads are detected")
     logger.info(f"{ngpus} parallel execution with {ncpus_per_gpu} CPU threads per process")
 
+    # prepare systems - n_jobs = num of CPU cores, not num of GPUs
+    files = Parallel(n_jobs=ncpus, backend='threading')(
+        delayed(preprocess)(idx, setting, debug=args.debug) 
+        for idx in indices
+    )
+    tops = [elem[0] for elem in files]
+    gros = [elem[1] for elem in files]
+    pdbs = [elem[2] for elem in files]
+
     # execute MSMD simulations parallelly
     gpuids = (gpuids * len(indices))[:len(indices)]
     Parallel(n_jobs=ngpus, backend='threading')(
-        delayed(execute_single_simulation)(idx, setting, gpuid, ncpus_per_gpu, debug=args.debug) 
-        for idx, gpuid in zip(indices, gpuids)
+        delayed(execute_single_simulation)(idx, setting, gpuid, ncpus_per_gpu, top=top, gro=gro, pdb=pdb, debug=args.debug) 
+        for idx, gpuid, top, gro, pdb in zip(indices, gpuids, tops, gros, pdbs)
     )
