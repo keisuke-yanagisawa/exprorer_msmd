@@ -1,4 +1,5 @@
 import subprocess
+from ..logger import logger
 
 class Command(object):
   def __init__(self, comm):
@@ -11,5 +12,5 @@ class Command(object):
     try:
       res = subprocess.run(self.comm, shell=True, stdout=subprocess.PIPE)
     except Exception as e:
-      print(e)
+      logger.error(e)
     return res.stdout.decode("utf-8")

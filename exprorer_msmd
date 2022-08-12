@@ -6,7 +6,6 @@ import os
 import pathlib
 
 from joblib import Parallel, delayed
-import yaml
 
 from script.utilities import util
 from script.genpmap_main import gen_pmap
@@ -17,59 +16,80 @@ from script.addvirtatom2gro import addvirtatom2gro
 from script.add_posredefine2top import add_posredefine2top
 from script.mdrun import prepare_sequence, prepare_md_files
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 from script.utilities.logger import logger
 
-def wrapper(index, setting, gpuid, ncpus, debug=False):
-    sysdirpath  = f'{setting["general"]["workdir"]}/system{index}'
-    prepdirpath = f'{sysdirpath}/prep'
-    simdirpath  = f'{sysdirpath}/simulation'
-    pathlib.Path(sysdirpath).mkdir(parents=True, exist_ok=True)
+def preprocess(index, setting, debug=False):
+    prepdirpath  = f'{setting["general"]["workdir"]}/system{index}/prep'
     pathlib.Path(prepdirpath).mkdir(parents=True, exist_ok=True)
-    pathlib.Path(simdirpath).mkdir(parents=True, exist_ok=True)
     
-    PROBE_ID = setting["input"]["probe"]["cid"]
-    YAML_PATH = setting["general"]["yaml"]
-    JOB_NAME = setting["general"]["name"]
-    WORK_DIR = os.path.dirname(util.getabsolutepath(__file__))
 
-    tmp_name = "tmp"
-    exe_python  = setting["general"]["executables"]["python"]
+    PROBE_ID = setting["input"]["probe"]["cid"]
+    JOB_NAME = setting["general"]["name"]
+    top = f"{prepdirpath}/{JOB_NAME}.top"
+    gro = f"{prepdirpath}/{JOB_NAME}.gro"
+    pdb = f"{prepdirpath}/{JOB_NAME}.pdb"
+
     exe_gromacs = setting["general"]["executables"]["gromacs"]
  
-
+    # create a protein-water-probe system
     _, tmptop = tempfile.mkstemp(suffix=".top")
     _, tmpgro = tempfile.mkstemp(suffix=".gro")
     parm7, rst7 = generate_msmd_system(setting, debug=debug)
     pmd_convert(parm7, tmptop, inxyz=rst7, outxyz=tmpgro)    
 
+    # add virtual atoms for pseudo repulsion between probes
     top_string = open(tmptop).read()
     top_string = addvirtatom2top(top_string, PROBE_ID)
-
     gro_string = open(tmpgro).read()
     gro_string = addvirtatom2gro(gro_string, PROBE_ID)
 
+    # define position restraints of heavy atoms
     top_string = add_posredefine2top(
         top_string, 
         gro_string, 
         PROBE_ID
     )
 
-    open(f"{prepdirpath}/{JOB_NAME}.top", "w").write(top_string)
-    open(f"{prepdirpath}/{JOB_NAME}.gro", "w").write(gro_string)
+    open(top, "w").write(top_string)
+    open(gro, "w").write(gro_string)
 
+    # create a pdb file with virtual atoms
     os.system(f"""
-    {exe_gromacs} trjconv -s {prepdirpath}/{JOB_NAME}.gro \
-    -f {prepdirpath}/{JOB_NAME}.gro \
-    -o {prepdirpath}/{JOB_NAME}.pdb <<EOF
+    {exe_gromacs} trjconv -s {gro} \
+    -f {gro} \
+    -o {pdb} <<EOF
     0
     EOF
     """)
 
+    return top, gro, pdb
+
+def execute_single_simulation(index, setting, gpuid, ncpus, top, gro, pdb, debug=False):
+    """
+    Execute a single MSMD simulation with preprocessing and postprocessing.
+    """
+
+    simdirpath  = f'{setting["general"]["workdir"]}/system{index}/simulation'
+    pathlib.Path(simdirpath).mkdir(parents=True, exist_ok=True)
+    
+    JOB_NAME = setting["general"]["name"]
+
+    exe_gromacs = setting["general"]["executables"]["gromacs"]
+
+    
+    os.system(f"cp {top} {simdirpath}/input.top")
+    os.system(f"cp {gro} {simdirpath}/input.gro")
+    os.system(f"cp {pdb} {simdirpath}/input.pdb") # is it needed?
+    top = f"{simdirpath}/input.top"
+    gro = f"{simdirpath}/input.gro"
+    pdb = f"{simdirpath}/input.pdb"
+
+    # generate a gromacs index file
     os.system(f"""
-    cd {prepdirpath} &&
-    {exe_gromacs} make_ndx -f {prepdirpath}/{JOB_NAME}.gro << EOF
+    cd {simdirpath} &&
+    {exe_gromacs} make_ndx -f {gro} << EOF
     q
     EOF
     """)
@@ -79,21 +99,37 @@ def wrapper(index, setting, gpuid, ncpus, debug=False):
         setting["exprorer_msmd"]["general"]
     )
 
+    # generate mdp files and a shell script to run each simulation sequentially
     prepare_md_files(
         setting["exprorer_msmd"]["sequence"],
-        sysdirpath,
-        JOB_NAME
+        simdirpath,
+        JOB_NAME,
+        top=top,
+        gro=gro,
+        out_traj=f"{simdirpath}/{JOB_NAME}.xtc"
     )
 
+    # execute simulation
     os.system(f"""
     unset OMP_NUM_THREADS ; \
     export CUDA_VISIBLE_DEVICES="{gpuid}" ; \
-    cd {sysdirpath} && \
+    cd {simdirpath} && \
     GMX={exe_gromacs} bash mdrun.sh {ncpus}
     """)
 
-    gen_pmap(index, setting["general"], setting["input"],
-             setting["map"])
+    return f"{simdirpath}/{JOB_NAME}.xtc"
+
+def postprocess(index, setting, top, traj, debug=False):
+    sysdirpath  = f'{setting["general"]["workdir"]}/system{index}'
+
+    # generate pmap files
+    gen_pmap(sysdirpath, 
+             setting["general"], 
+             setting["input"],
+             setting["map"], 
+             traj=traj, 
+             top=top, 
+             debug=debug)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -101,19 +137,29 @@ if __name__ == "__main__":
     parser.add_argument("setting_yaml")
     parser.add_argument("-v,--verbose", dest="verbose", action="store_true")
     parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--skip-preprocess", action="store_true")
+    parser.add_argument("--skip-simulation", action="store_true")
+    parser.add_argument("--skip-postprocess", action="store_true")
     parser.add_argument("--version", action="version", version=VERSION)
     args = parser.parse_args()
 
+    # initial logger level is "warn"
     if args.debug:
         logger.setLevel("debug")
     elif args.verbose:
         logger.setLevel("info")
-    # else: logger level is "warn"
 
     logger.info(f"read yaml: {args.setting_yaml}")
     setting = util.parse_yaml(args.setting_yaml)
     indices = util.expand_index(setting["general"]["iter_index"])
 
+    jobname = setting["general"]["name"]
+    workdir = setting["general"]["workdir"]
+    logger.info(f"job name: {jobname}")
+    logger.info(f"workdir: {workdir}")
+
+    # Count num. of GPUs and allocate CPU cores to each GPU
+    # Raise EnvironmentError if GPU is not available
     gpuids = util.get_gpuids()
     ngpus = len(gpuids)
     if setting["general"]["multiprocessing"] == False:
@@ -127,9 +173,39 @@ if __name__ == "__main__":
     logger.info(f"{ncpus} threads are detected")
     logger.info(f"{ngpus} parallel execution with {ncpus_per_gpu} CPU threads per process")
 
-    # execute individual MSMD
-    gpuids = (gpuids * len(indices))[:len(indices)]
-    Parallel(n_jobs=ngpus, backend='threading')(
-        delayed(wrapper)(idx, setting, gpuid, ncpus_per_gpu, debug=args.debug) 
-        for idx, gpuid in zip(indices, gpuids)
-    )
+    # prepare systems
+    # n_jobs = num of CPU cores, not num of GPUs
+    if not args.skip_preprocess:
+        files = Parallel(n_jobs=ncpus, backend='threading')(
+            delayed(preprocess)(idx, setting, debug=args.debug) 
+            for idx in indices
+        )
+        tops = [elem[0] for elem in files]
+        gros = [elem[1] for elem in files]
+        pdbs = [elem[2] for elem in files]
+    else:
+        prepdirpath  = '{workdir}/system{index}/prep'
+        tops = [prepdirpath.format(workdir=workdir, index=idx) + f"/{jobname}.top" for idx in indices]
+        gros = [prepdirpath.format(workdir=workdir, index=idx) + f"/{jobname}.gro" for idx in indices]
+        pdbs = [prepdirpath.format(workdir=workdir, index=idx) + f"/{jobname}.pdb" for idx in indices]
+
+    # execute MSMD simulations parallelly
+    if not args.skip_simulation:
+        gpuids = (gpuids * len(indices))[:len(indices)]
+        trajectories = Parallel(n_jobs=ngpus, backend='threading')(
+            delayed(execute_single_simulation)(idx, setting, gpuid, ncpus_per_gpu, top=top, gro=gro, pdb=pdb, debug=args.debug) 
+            for idx, gpuid, top, gro, pdb in zip(indices, gpuids, tops, gros, pdbs)
+        )
+    else: 
+        simdirpath  = '{workdir}/system{index}/simulation'
+        trajectories = [simdirpath.format(workdir=workdir, index=idx) + f"/{jobname}.xtc" for idx in indices]
+
+    # postprocess (generate PMAPs)
+    # n_jobs = num of CPU cores, not num of GPUs
+    if not args.skip_postprocess:
+        Parallel(n_jobs=ncpus, backend='threading')(
+            delayed(postprocess)(idx, setting, top=top, traj=traj, debug=args.debug) 
+            for idx, top, traj in zip(indices, tops, trajectories)
+        )
+    else:
+        None # there is no output by Parallel - postprocess

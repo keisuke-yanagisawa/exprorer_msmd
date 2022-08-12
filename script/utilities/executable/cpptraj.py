@@ -55,11 +55,10 @@ class Cpptraj(object):
         template = env.get_template("cpptraj_pmap.in")
         with open(self.inp, "w") as fout:
             fout.write(template.render(data))
-            print(template.render(data))
+            logger.info(template.render(data))
         command = Command(f"{self.exe} < {self.inp}")
-        if self.debug:
-          print(command)
-        print(command.run())
+        logger.debug(command)
+        logger.info(command.run())
 
         self.grids = [
             f"{self.basedir}/{self.prefix}_{map['suffix']}.dx"

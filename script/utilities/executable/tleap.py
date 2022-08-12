@@ -4,6 +4,7 @@ from subprocess import getoutput as gop
 import jinja2
 from .. import const
 from .execute import Command
+from ..logger import logger
 
 
 class TLeap(object):
@@ -44,10 +45,9 @@ class TLeap(object):
             fout.write(template.render(data))
 
         command = Command(f"{self.exe} -f {inputfile}")
-        if self.debug:
-          print(command)
+        logger.debug(command)
         output = command.run()
-        print(output)
+        logger.info(output)
         final_charge_info = [s.strip() for s in output.split("\n")
                             if s.strip().startswith("Total unperturbed charge")][0]
         self._final_charge_value = float(final_charge_info.split()[-1])
