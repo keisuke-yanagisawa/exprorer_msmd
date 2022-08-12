@@ -16,6 +16,6 @@
     ],
     "settings": {
         "python.analysis.typeCheckingMode": "basic",
-        "python.pythonPath": "/opt/conda/bin/python"
+        "python.pythonPath": "/miniconda3/bin/python"
     }
 }
