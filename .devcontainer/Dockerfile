@@ -27,3 +27,8 @@ RUN mamba install -y -c conda-forge \
     jinja2=3.0.3 griddataformats=0.7.0 \
     parmed=3.4.3 git=2.35.1 pyyaml=6.0 \
     tqdm=4.62.3 scikit-learn=1.0.2 gputil=1.4.0 joblib=1.1.0 
+
+# ====== settings for git / ssh =======
+# change permission to read ssh settings if exists
+RUN chown root:$USER /root/.ssh/config || true
+RUN chmod 600        /root/.ssh/config || true
