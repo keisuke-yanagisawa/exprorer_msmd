@@ -20,6 +20,8 @@ GROMACSを用いたMSMDを自動的に行うためのシステム。
 ./exprorer_msmd example/example_protocol.yaml
 ```
 
+なお、このシミュレーションの手順は preprocess, simulation, postprocess の3つに分かれており、それぞれは `--skip-preprocess, --skip-simulation, --skip-postprocess` で飛ばすことができる。
+
 ### MSMDシミュレーション結果の解析
 
 現在、2つの解析手法が準備されている。

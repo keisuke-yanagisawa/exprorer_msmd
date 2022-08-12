@@ -30,21 +30,24 @@ def mask_generator(ref_struct, reference_grid, distance=None):
         mask.grid = mask.grid < np.inf
     return mask
 
-def convert_to_proba(g, mask_grid=None):
+def convert_to_proba(g, mask_grid=None, normalize="snapshot", frames=1):
     if mask_grid is not None:
         values = g.grid[np.where(mask_grid)]
         # print(np.sum(g.grid), np.sum(values), np.where(mask_grid))
-        values /= np.sum(values)
+        if normalize == "snapshot":
+            values /= frames
+        else:
+            values /= np.sum(values)
         g.grid = np.full_like(g.grid, np.min([np.min(values), -1])) # assign -1 for outside of mask
         g.grid[np.where(mask_grid)] = values
     else:
         g.grid /= np.sum(g.grid)
     return g
 
-def convert_to_pmap(grid_path, ref_struct, valid_distance):
+def convert_to_pmap(grid_path, ref_struct, valid_distance, normalize="snapshot", frames=1):
     grid = gridData.Grid(grid_path)
     mask = mask_generator(ref_struct, grid, valid_distance)
-    pmap = convert_to_proba(grid, mask.grid)
+    pmap = convert_to_proba(grid, mask.grid, frames=frames, normalize=normalize)
     
     pmap_path = os.path.dirname(grid_path) + "/" \
                 + "PMAP" + "_" + os.path.basename(grid_path)
@@ -58,16 +61,15 @@ def parse_snapshot_setting(string):
     start, stop = string.split("-")         # start and end is mandatory
     return start, stop, offset
 
-def gen_pmap(index, setting_general, setting_input, setting_pmap, debug=False):
+def gen_pmap(dirpath, setting_general, setting_input, setting_pmap, traj, top, debug=False):
 
     traj_start, traj_stop, traj_offset \
         = parse_snapshot_setting(setting_pmap["snapshot"])
 
     name = setting_general["name"]
-    syspathdir = f"{setting_general['workdir']}/system{index}"
 
-    trajectory = util.getabsolutepath(syspathdir) + f"/simulation/{name}.xtc"
-    topology   = util.getabsolutepath(syspathdir) + f"/prep/{name}.top" # TODO: TEST_PROJECT should be "PREFIX"
+    trajectory = util.getabsolutepath(traj)
+    topology   = util.getabsolutepath(top)
     ref_struct = setting_input["protein"]["pdb"]
     probe_id   = setting_input["probe"]["cid"]
     maps       = setting_pmap["maps"]
@@ -76,7 +78,7 @@ def gen_pmap(index, setting_general, setting_input, setting_pmap, debug=False):
     cpptraj_obj = Cpptraj(debug=debug)
     cpptraj_obj.set(topology, trajectory, ref_struct, probe_id)
     cpptraj_obj.run(
-        basedir=syspathdir, 
+        basedir=dirpath, 
         prefix=name,
         box_size=box_size,
         traj_start=traj_start, 
@@ -88,7 +90,9 @@ def gen_pmap(index, setting_general, setting_input, setting_pmap, debug=False):
     pmap_paths = []
     for grid_path in cpptraj_obj.grids:
         pmap_path = convert_to_pmap(grid_path, ref_struct, 
-            setting_pmap["valid_dist"])
+            setting_pmap["valid_dist"], 
+            frames=cpptraj_obj.frames,
+            normalize=setting_pmap["normalization"])
         pmap_paths.append(pmap_path)
     
     return pmap_paths

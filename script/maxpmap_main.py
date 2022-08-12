@@ -14,6 +14,7 @@ from utilities.pmd import convert as pmd_convert
 from utilities.util import expandpath
 from utilities.executable import Cpptraj
 from utilities import const, GridUtil
+from utilities.logger import logger
 from gridData import Grid
 import numpy as np
 
@@ -24,7 +25,7 @@ def check(gs):
 def grid_max(gs):
     # TODO: check all grids have the same voxel fields
     if not check(gs):
-        print("ERROR: Grid(s) have different voxel fields")
+        logger.error("ERROR: Grid(s) have different voxel fields")
         exit(1)
     
     ret = gs[0]
