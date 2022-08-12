@@ -13,8 +13,8 @@ from ..scipy.spatial import estimate_volume
 import numpy as np
 
 # obtained from biopython/Bio/PDB/SASA.py
-__ATOMIC_RADII = collections.defaultdict(lambda: 2.0)
-__ATOMIC_RADII.update(
+_ATOMIC_RADII = collections.defaultdict(lambda: 2.0)
+_ATOMIC_RADII.update(
     {
         "H": 1.200,
         "HE": 1.400,
@@ -67,10 +67,10 @@ class Packmol(object):
       for atom in get_structure(self.protein_pdb).get_atoms():
         if not atom.get_parent().resname in ["HOH", "WAT"]:
           coords.append(atom.get_coord())
-          radii.append(__ATOMIC_RADII[atom.element])
+          radii.append(_ATOMIC_RADII[atom.element])
       coords = np.array(coords)
       radii  = np.array(radii)
-      radii += __ATOMIC_RADII["C"] # solvents' VdW radius: estimated by carbon radius.
+      radii += _ATOMIC_RADII["C"] # solvents' VdW radius: estimated by carbon radius.
       return estimate_volume(coords, radii)
 
 
