@@ -61,7 +61,7 @@ class Gro_atom():
 
     def __repr__(self):
         ret_str = "{:>5}{:>5}{:>5}{:>5}{:8.3f}{:8.3f}{:8.3f}" \
-            .format(self.resi, self.resn, self.atomtype, self.atom_id,
+            .format(self.resi, self.resn, self.atomtype, self.atom_id%100000,
                     *self.point)
         if(self.comment != ""):
             ret_str += " ; {}".format(self.comment)
