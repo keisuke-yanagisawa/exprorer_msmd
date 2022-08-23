@@ -2,6 +2,7 @@ import tempfile
 import os
 from .execute import Command
 from .. import const
+from ..logger import logger
 
 class Parmchk(object):
   def __init__(self, debug=False):
@@ -20,13 +21,11 @@ class Parmchk(object):
     if self.frcmod is None:
       _, self.frcmod = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_FRCMOD)
     command = Command(f"{self.exe} -i {self.mol2} -f mol2 -o {self.frcmod} -s {self.at_id}")
-    if self.debug:
-      print(command)
-    print(command.run())
+    logger.debug(command)
+    logger.info(command.run())
     return self
 
   def __del__(self):
-    if self.debug:
-      print(self.frcmod)
-    elif not self.frcmod_user_define:
+    if not self.frcmod_user_define:
+      logger.debug("[Parmchk] delete: ", self.frcmod)
       os.remove(self.frcmod)

@@ -27,9 +27,9 @@ def randomname(n):
 
 def dat_dump(dat):
     for section in dat.sections():
-        print("[%s]" % section)
+        logger.debug("[%s]" % section)
         for option in dat[section]:
-            print("  %s : %s" % (option, dat[section][option]))
+            logger.debug("  %s : %s" % (option, dat[section][option]))
 
 
 # Notation 1-2 => 1,2  5-9:2 => 5,7,9
