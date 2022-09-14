@@ -40,7 +40,6 @@ cd /PATH/TO/exprorer_msmd
 
 1. Prepare the protein `.pdb` file
   - Residue IDs must be 1-origin and must not any jump of residue IDs.
-  - The protein should be centered.
 2．Modify or make a protocol file with settings of `input` - `protein`. 
 
 ### To do CMD with a different probe (cosolvent)
