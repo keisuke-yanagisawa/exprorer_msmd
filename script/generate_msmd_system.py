@@ -103,10 +103,6 @@ def create_system(setting_protein, setting_probe, probe_frcmod, debug=False):
     return tleap_obj.parm7, tleap_obj.rst7
 
 def generate_msmd_system(setting, debug=False):
-    pdbpath = protein_pdb_preparation(setting["input"]["protein"]["pdb"])
-    probemolar = float( setting["input"]["probe"]["molar"] )
-
-    cosolv_box_size = ((constants.N_A * probemolar) * 1e-27)**(-1/3.0)  # /L -> /A^3 : 1e-27
     cfrcmod = create_frcmod(setting["input"]["probe"], debug=debug)
     parm7, rst7 = create_system(setting["input"]["protein"], 
                                 setting["input"]["probe"], 

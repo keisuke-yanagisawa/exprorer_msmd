@@ -25,7 +25,7 @@ class Cpptraj(object):
         self.probe_id = probe_id
         return self
 
-    def run(self, basedir, prefix, box_size=80, interval=1, 
+    def run(self, basedir, prefix, box_center=[0.,0.,0.], box_size=80, interval=1, 
             traj_start=1, traj_stop="last", traj_offset=1,
             maps=[{"suffix":"nVH", "selector":"(!@VIS)&(!@H*)"}]):
         self.basedir = basedir
@@ -45,7 +45,8 @@ class Cpptraj(object):
           "cid"         : self.probe_id,
           "frame_info"  : " ".join([str(n) for n in self.frame_info]),
           "ref"         : self.ref_struct,
-          "map_voxel"   : " ".join([str(n) for n in self.voxel]),
+          "map_voxel"   : " ".join([str(n) for n in self.voxel]) 
+                          + " gridcenter " + " ".join([str(x) for x in box_center]),
           "prefix"      : self.prefix,
           "maps"        : self.maps,
           "tmp_rmsdfile": tmp_rmsdfile,

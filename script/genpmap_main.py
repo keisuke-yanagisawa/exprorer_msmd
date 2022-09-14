@@ -16,6 +16,7 @@ from .utilities import util
 from .utilities.executable import Cpptraj
 from .utilities import const, GridUtil
 from .utilities.logger import logger
+from .utilities.Bio import PDB as uPDB
 import gridData
 import numpy as np
 
@@ -73,7 +74,8 @@ def gen_pmap(dirpath, setting_general, setting_input, setting_pmap, traj, top, d
     ref_struct = setting_input["protein"]["pdb"]
     probe_id   = setting_input["probe"]["cid"]
     maps       = setting_pmap["maps"]
-    box_size  = setting_pmap["map_size"]
+    box_size   = setting_pmap["map_size"]
+    box_center = uPDB.get_structure(setting_input["protein"]["pdb"]).center_of_mass()
 
     cpptraj_obj = Cpptraj(debug=debug)
     cpptraj_obj.set(topology, trajectory, ref_struct, probe_id)
@@ -81,6 +83,7 @@ def gen_pmap(dirpath, setting_general, setting_input, setting_pmap, traj, top, d
         basedir=dirpath, 
         prefix=name,
         box_size=box_size,
+        box_center=box_center,
         traj_start=traj_start, 
         traj_stop=traj_stop, 
         traj_offset=traj_offset,
