@@ -45,6 +45,19 @@ def convert_to_proba(g, mask_grid=None, normalize="snapshot", frames=1):
         g.grid /= np.sum(g.grid)
     return g
 
+def convert_to_gfe(grid_path, mean_proba, temperature=300):
+    pmap = gridData.Grid(grid_path)
+    pmap.grid = np.where(pmap.grid <= 0, 1e-10, pmap.grid) # avoid log(0)
+    pmap.grid = -(constants.R / constants.calorie / constants.kilo) * temperature * np.log(pmap.grid/mean_proba)
+    pmap.grid = np.where(pmap.grid > 3, 3, pmap.grid) # Definition of GFE in the paper Raman et al., JCIM, 2013
+
+    gfe_path = os.path.dirname(grid_path) + "/" \
+                + "GFE" + "_" + os.path.basename(grid_path)
+    pmap.export(gfe_path, type="double")
+    print(gfe_path)
+
+    return gfe_path
+
 def convert_to_pmap(grid_path, ref_struct, valid_distance, normalize="snapshot", frames=1):
     grid = gridData.Grid(grid_path)
     mask = mask_generator(ref_struct, grid, valid_distance)
@@ -96,6 +109,10 @@ def gen_pmap(dirpath, setting_general, setting_input, setting_pmap, traj, top, d
             setting_pmap["valid_dist"], 
             frames=cpptraj_obj.frames,
             normalize=setting_pmap["normalization"])
+        if setting_pmap["normalization"]=="GFE":
+            mean_proba = cpptraj_obj.num_probe_atoms / cpptraj_obj.last_volume
+            pmap_path = convert_to_gfe(pmap_path, mean_proba, 
+                                       temperature=300) #TODO: read temperature from setting
         pmap_paths.append(pmap_path)
     
     return pmap_paths

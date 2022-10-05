@@ -48,7 +48,14 @@ class TLeap(object):
         logger.debug(command)
         output = command.run()
         logger.info(output)
-        final_charge_info = [s.strip() for s in output.split("\n")
-                            if s.strip().startswith("Total unperturbed charge")][0]
+        try:
+            final_charge_info = [s.strip() for s in output.split("\n")
+                                if s.strip().startswith("Total unperturbed charge")][0]
+        except IndexError as e:
+            logger.error(e)
+            logger.error(output)
+            logger.error(f"cat {self.box_path}")
+            logger.error(os.system(f"cat {self.box_path}"))
+            return None
         self._final_charge_value = float(final_charge_info.split()[-1])
         return self
