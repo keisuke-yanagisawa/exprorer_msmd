@@ -23,6 +23,7 @@ class Cpptraj(object):
         self.trajectory = trajectory
         self.ref_struct = ref_struct
         self.probe_id = probe_id
+
         return self
 
     def run(self, basedir, prefix, box_center=[0.,0.,0.], box_size=80, interval=1, 
@@ -38,6 +39,8 @@ class Cpptraj(object):
 
         _, self.inp = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_INP)
         _, tmp_rmsdfile = tempfile.mkstemp(suffix=".dat")
+        _, tmp_volumefile = tempfile.mkstemp(suffix=".dat")
+        _, tmp_probe_atominfofile = tempfile.mkstemp(suffix=".dat")
         data = {
           "basedir"     : self.basedir,
           "top"         : self.parm7,
@@ -50,6 +53,8 @@ class Cpptraj(object):
           "prefix"      : self.prefix,
           "maps"        : self.maps,
           "tmp_rmsdfile": tmp_rmsdfile,
+          "tmp_volumefile": tmp_volumefile,
+          "tmp_probe_atominfofile": tmp_probe_atominfofile,
         }
 
         env = jinja2.Environment(loader=jinja2.FileSystemLoader(f"{os.path.dirname(__file__)}/template"))
@@ -68,6 +73,11 @@ class Cpptraj(object):
 
         self.frames = len(open(tmp_rmsdfile).readlines()) - 1 # -1 for header line
         os.system(f"rm {tmp_rmsdfile}")
+        self.last_volume = float(open(tmp_volumefile).readlines()[-1].split()[1])
+        os.system(f"rm {tmp_volumefile}")
+        self.num_probe_atoms = len(open(tmp_probe_atominfofile).readlines()) - 1 # -1 for header line
+        os.system(f"rm {tmp_probe_atominfofile}")
+        #TODO: num_probe_atoms should depend on map selectors
 
         return self
 

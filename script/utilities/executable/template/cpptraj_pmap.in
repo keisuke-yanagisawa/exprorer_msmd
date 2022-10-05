@@ -3,6 +3,9 @@ trajin {{ traj }} {{ frame_info }}
 parm {{ ref }}
 reference {{ ref }} parm {{ ref }} [REF]
 
+volume Vol out {{ tmp_volumefile }}
+atoms :{{ cid }}&(!@VIS)&(!@H*) out {{ tmp_probe_atominfofile }}
+
 unwrap @CA&(!:CA)&(!:{{ cid }})
 center @CA&(!:CA)&(!:{{ cid }})
 fiximagedbonds
