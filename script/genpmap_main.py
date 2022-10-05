@@ -35,7 +35,7 @@ def convert_to_proba(g, mask_grid=None, normalize="snapshot", frames=1):
     if mask_grid is not None:
         values = g.grid[np.where(mask_grid)]
         # print(np.sum(g.grid), np.sum(values), np.where(mask_grid))
-        if normalize == "snapshot":
+        if normalize == "snapshot" or normalize == "GFE":
             values /= frames
         else:
             values /= np.sum(values)
@@ -54,7 +54,11 @@ def convert_to_gfe(grid_path, mean_proba, temperature=300):
     gfe_path = os.path.dirname(grid_path) + "/" \
                 + "GFE" + "_" + os.path.basename(grid_path)
     pmap.export(gfe_path, type="double")
-    print(gfe_path)
+
+    pmap.grid = -pmap.grid
+    invgfe_path = os.path.dirname(grid_path) + "/" \
+                + "InvGFE" + "_" + os.path.basename(grid_path)
+    pmap.export(invgfe_path, type="double")
 
     return gfe_path
 
