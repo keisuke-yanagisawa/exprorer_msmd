@@ -34,13 +34,15 @@ class Cpptraj(object):
         self.voxel = [box_size, interval] * 3 # x, y, z
         self.frame_info = [traj_start, traj_stop, traj_offset]
         self.maps = maps
+        for i in range(len(self.maps)):
+          _, self.maps[i]["atominfofile"] = tempfile.mkstemp(suffix=".dat")
 
         self._gen_parm7()
 
         _, self.inp = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_INP)
         _, tmp_rmsdfile = tempfile.mkstemp(suffix=".dat")
         _, tmp_volumefile = tempfile.mkstemp(suffix=".dat")
-        _, tmp_probe_atominfofile = tempfile.mkstemp(suffix=".dat")
+        
         data = {
           "basedir"     : self.basedir,
           "top"         : self.parm7,
@@ -54,7 +56,6 @@ class Cpptraj(object):
           "maps"        : self.maps,
           "tmp_rmsdfile": tmp_rmsdfile,
           "tmp_volumefile": tmp_volumefile,
-          "tmp_probe_atominfofile": tmp_probe_atominfofile,
         }
 
         env = jinja2.Environment(loader=jinja2.FileSystemLoader(f"{os.path.dirname(__file__)}/template"))
@@ -66,17 +67,17 @@ class Cpptraj(object):
         logger.debug(command)
         logger.info(command.run())
 
-        self.grids = [
-            f"{self.basedir}/{self.prefix}_{map['suffix']}.dx"
-            for map in maps
-        ]
+        for i in range(len(self.maps)):
+          self.maps[i]["grid"] = f"{self.basedir}/{self.prefix}_{self.maps[i]['suffix']}.dx"
 
         self.frames = len(open(tmp_rmsdfile).readlines()) - 1 # -1 for header line
         os.system(f"rm {tmp_rmsdfile}")
         self.last_volume = float(open(tmp_volumefile).readlines()[-1].split()[1])
         os.system(f"rm {tmp_volumefile}")
-        self.num_probe_atoms = len(open(tmp_probe_atominfofile).readlines()) - 1 # -1 for header line
-        os.system(f"rm {tmp_probe_atominfofile}")
+        for i in range(len(self.maps)):
+          maps[i]["num_probe_atoms"] = len(open(self.maps[i]["atominfofile"]).readlines()) - 1 # -1 for header line
+          os.system(f"rm {self.maps[i]['atominfofile']}")
+          del self.maps[i]["atominfofile"]
         #TODO: num_probe_atoms should depend on map selectors
 
         return self

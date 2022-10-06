@@ -4,7 +4,6 @@ parm {{ ref }}
 reference {{ ref }} parm {{ ref }} [REF]
 
 volume Vol out {{ tmp_volumefile }}
-atoms :{{ cid }}&(!@VIS)&(!@H*) out {{ tmp_probe_atominfofile }}
 
 unwrap @CA&(!:CA)&(!:{{ cid }})
 center @CA&(!:CA)&(!:{{ cid }})
@@ -15,6 +14,7 @@ rms ToREF ref [REF] @CA&(!:CA)&(!:{{ cid }}) @CA&(!:CA)&(!:{{ cid }}) out {{ tmp
 
 {% for MAP in maps %}
 grid {{ basedir }}/{{ prefix }}_{{ MAP.suffix }}.dx {{ map_voxel }} :{{ cid }}&{{ MAP.selector }}
+atoms :{{ cid }}&{{ MAP.selector }} out {{ MAP.atominfofile }}
 {% endfor %}
 
 trajout {{ basedir }}/{{ prefix }}_position_check.pdb start 1 stop 1 offset 1
