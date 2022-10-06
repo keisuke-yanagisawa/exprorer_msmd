@@ -108,13 +108,13 @@ def gen_pmap(dirpath, setting_general, setting_input, setting_pmap, traj, top, d
     )
     
     pmap_paths = []
-    for grid_path in cpptraj_obj.grids:
-        pmap_path = convert_to_pmap(grid_path, ref_struct, 
+    for map  in cpptraj_obj.maps:
+        pmap_path = convert_to_pmap(map["grid"], ref_struct, 
             setting_pmap["valid_dist"], 
             frames=cpptraj_obj.frames,
             normalize=setting_pmap["normalization"])
         if setting_pmap["normalization"]=="GFE":
-            mean_proba = cpptraj_obj.num_probe_atoms / cpptraj_obj.last_volume
+            mean_proba = map["num_probe_atoms"] / cpptraj_obj.last_volume
             pmap_path = convert_to_gfe(pmap_path, mean_proba, 
                                        temperature=300) #TODO: read temperature from setting
         pmap_paths.append(pmap_path)
