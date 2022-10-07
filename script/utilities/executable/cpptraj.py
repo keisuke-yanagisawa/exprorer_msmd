@@ -29,13 +29,13 @@ class Cpptraj(object):
     def run(self, basedir, prefix, box_center=[0.,0.,0.], box_size=80, interval=1, 
             traj_start=1, traj_stop="last", traj_offset=1,
             maps=[{"suffix":"nVH", "selector":"(!@VIS)&(!@H*)"}]):
+        #TODO: self.SOMETHING is (probably) sometimes contaminated by other threads (multiprocessing by threading)
         self.basedir = basedir
         self.prefix = prefix
         self.voxel = [box_size, interval] * 3 # x, y, z
         self.frame_info = [traj_start, traj_stop, traj_offset]
-        self.maps = maps
-        for i in range(len(self.maps)):
-          _, self.maps[i]["atominfofile"] = tempfile.mkstemp(suffix=".dat")
+        for i in range(len(maps)):
+          _, maps[i]["atominfofile"] = tempfile.mkstemp(suffix=".dat")
 
         self._gen_parm7()
 
@@ -53,7 +53,7 @@ class Cpptraj(object):
           "map_voxel"   : " ".join([str(n) for n in self.voxel]) 
                           + " gridcenter " + " ".join([str(x) for x in box_center]),
           "prefix"      : self.prefix,
-          "maps"        : self.maps,
+          "maps"        : maps,
           "tmp_rmsdfile": tmp_rmsdfile,
           "tmp_volumefile": tmp_volumefile,
         }
@@ -67,18 +67,20 @@ class Cpptraj(object):
         logger.debug(command)
         logger.info(command.run())
 
-        for i in range(len(self.maps)):
-          self.maps[i]["grid"] = f"{self.basedir}/{self.prefix}_{self.maps[i]['suffix']}.dx"
+        for i in range(len(maps)):
+          maps[i]["grid"] = f"{self.basedir}/{self.prefix}_{maps[i]['suffix']}.dx"
 
         self.frames = len(open(tmp_rmsdfile).readlines()) - 1 # -1 for header line
         os.system(f"rm {tmp_rmsdfile}")
         self.last_volume = float(open(tmp_volumefile).readlines()[-1].split()[1])
         os.system(f"rm {tmp_volumefile}")
-        for i in range(len(self.maps)):
-          maps[i]["num_probe_atoms"] = len(open(self.maps[i]["atominfofile"]).readlines()) - 1 # -1 for header line
-          os.system(f"rm {self.maps[i]['atominfofile']}")
-          del self.maps[i]["atominfofile"]
-        #TODO: num_probe_atoms should depend on map selectors
+        for i in range(len(maps)):
+          maps[i]["num_probe_atoms"] = len(open(maps[i]["atominfofile"]).readlines()) - 1 # -1 for header line
+          # os.system(f"rm {maps[i]['atominfofile']}")
+          # del self.maps[i]["atominfofile"] # it makes errors with multiprocessing
+          logger.debug(f"num_probe_atoms {i} {maps[i]['num_probe_atoms']}")
+
+        self.maps = maps
 
         return self
 
