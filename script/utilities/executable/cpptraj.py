@@ -1,3 +1,4 @@
+import copy
 import tempfile
 import os
 from subprocess import getoutput as gop
@@ -29,7 +30,8 @@ class Cpptraj(object):
     def run(self, basedir, prefix, box_center=[0.,0.,0.], box_size=80, interval=1, 
             traj_start=1, traj_stop="last", traj_offset=1,
             maps=[{"suffix":"nVH", "selector":"(!@VIS)&(!@H*)"}]):
-        #TODO: self.SOMETHING is (probably) sometimes contaminated by other threads (multiprocessing by threading)
+        #TODO: input "maps" variable should be a read-only list (shared between threads)
+        maps = copy.deepcopy(maps)
         self.basedir = basedir
         self.prefix = prefix
         self.voxel = [box_size, interval] * 3 # x, y, z
@@ -78,7 +80,8 @@ class Cpptraj(object):
           maps[i]["num_probe_atoms"] = len(open(maps[i]["atominfofile"]).readlines()) - 1 # -1 for header line
           # os.system(f"rm {maps[i]['atominfofile']}")
           # del self.maps[i]["atominfofile"] # it makes errors with multiprocessing
-          logger.debug(f"num_probe_atoms {i} {maps[i]['num_probe_atoms']}")
+          logger.debug(f"num_probe_atoms {i} {maps[i]['num_probe_atoms']} {maps[i]['atominfofile']}")
+        logger.debug(f"{self.trajectory}")
 
         self.maps = maps
 
