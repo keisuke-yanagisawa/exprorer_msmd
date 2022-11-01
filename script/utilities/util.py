@@ -3,7 +3,6 @@ import random
 import string
 import os
 
-import GPUtil
 import yaml
 
 from .logger import logger
@@ -55,28 +54,6 @@ def expand_index(ind_info):
             st, ed, offset = int(st), int(ed), int(offset)
             ret.extend(list(range(st, ed+1, offset)))
     return ret
-
-def get_gpuids():
-    gpuids = set(GPUtil.getAvailable(limit=math.inf))
-    logger.info(f"{len(gpuids)} GPUs are detected")
-    if os.getenv("CUDA_VISIBLE_DEVICES") is not None:
-        logger.info(f"CUDA_VISIBLE_DEVICES detected")
-        cvd = [int(s) for s in os.getenv("CUDA_VISIBLE_DEVICES", default="").split(",")]
-        gpuids &= set(cvd)
-        gpuids = list(gpuids)
-
-    if len(gpuids) == 0:
-        logger.warn(f"No GPU is allowed/existed to use")
-        logger.warn(f"Switch to CPU-only mode, it greatly decreases the simulation speed")
-    else:
-        logger.info(f"GPU IDs of {gpuids} will be used")
-    
-    ngpus = len(gpuids)
-    if ngpus == 0: # there is only CPU
-        gpuids = [-1]
-        ngpus = 1
-    
-    return list(gpuids)
 
 def set_default(setting):
     if not "multiprocessing" in setting["general"]:
