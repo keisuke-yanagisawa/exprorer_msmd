@@ -1,0 +1,17 @@
+#!/bin/bash
+#------- qsub option -----------
+#PBS -A {GROUP}
+#PBS -q {QTYPE}
+#PBS -N JOB{runID}_{JOB_NAME}
+#PBS -l elapstim_req={TIME_LENGTH}
+#PBS -v OMP_NUM_THREADS=24
+#------- Program execution -----------
+
+comm_singularity=""
+if [ {use_singularity} = "True" ] ; then
+  {singularity_prerequirement}
+  SINGULARITY_OPTIONS="--bind {singularity_bind}"
+  comm_singularity="singularity exec --nv $SINGULARITY_OPTIONS {singularity_sifpath}"
+fi
+
+$comm_singularity {PATH_EXPRORER_MSMD} --iter-index {ITER_INDEX} {YAML}

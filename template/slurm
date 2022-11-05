@@ -1,0 +1,17 @@
+#!/bin/bash
+#SBATCH -J JOB{runID}_{JOB_NAME}
+# SBATCH -p {QTYPE}
+# SBATCH -N 1
+#SBATCH --gres=gpu:{NGPUS}
+#SBATCH --get-user-env
+#SBATCH -o JOB{runID}_{JOB_NAME}.out
+#SBATCH -e JOB{runID}_{JOB_NAME}.err
+
+comm_singularity=""
+if [ {use_singularity} = "True" ] ; then
+  {singularity_prerequirement}
+  SINGULARITY_OPTIONS="--bind {singularity_bind}"
+  comm_singularity="singularity exec --nv $SINGULARITY_OPTIONS {singularity_sifpath}"
+fi
+
+$comm_singularity {PATH_EXPRORER_MSMD} --iter-index {ITER_INDEX} {YAML}
