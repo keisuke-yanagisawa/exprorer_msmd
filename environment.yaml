@@ -1,0 +1,12 @@
+use_singularity: True
+singularity:
+  sifpath: /mnt/fs/yanagisawa/workspace/9999_git_repositories/exprorer_msmd/.devcontainer/Singularity.sif
+  bind: "/mnt/ghosts:/mnt/ghosts"
+  prerequirement: "module load singularity"
+
+use_scheduler: True
+scheduler:
+  type: Slurm # Slurm, PBS
+  group: CHEMINFO
+  qtype: defq
+  maxtime: 24:00:00
