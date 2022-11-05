@@ -139,3 +139,5 @@ dmypy.json
 
 **test**
 **rmsd.dat
+**.out
+**.err

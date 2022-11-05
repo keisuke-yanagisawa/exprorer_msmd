@@ -8,7 +8,7 @@ from .logger import logger
 
 
 def get_gpuids(ignore_cuda_visible_devices=False):
-    gpuids = set(GPUtil.getAvailable(limit=math.inf))
+    gpuids = set(GPUtil.getAvailable(maxLoad=math.inf, maxMemory=math.inf, limit=math.inf))
     logger.info(f"{len(gpuids)} GPUs are detected")
     if (ignore_cuda_visible_devices==False) and (os.getenv("CUDA_VISIBLE_DEVICES") is not None):
         logger.info(f"CUDA_VISIBLE_DEVICES detected")

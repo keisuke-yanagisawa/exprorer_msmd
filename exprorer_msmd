@@ -8,6 +8,7 @@ import pathlib
 from joblib import Parallel, delayed
 
 from script.utilities import util
+from script.utilities.GPUtil import get_gpuids
 from script.genpmap_main import gen_pmap
 from script.utilities.pmd import convert as pmd_convert
 from script.generate_msmd_system import generate_msmd_system
@@ -30,6 +31,12 @@ def preprocess(index, setting, debug=False):
     top = f"{prepdirpath}/{JOB_NAME}.top"
     gro = f"{prepdirpath}/{JOB_NAME}.gro"
     pdb = f"{prepdirpath}/{JOB_NAME}.pdb"
+
+    if os.path.exists(top) \
+       and os.path.exists(gro) \
+       and os.path.exists(pdb):
+      return top, gro, pdb
+
 
     exe_gromacs = setting["general"]["executables"]["gromacs"]
  
@@ -141,6 +148,7 @@ if __name__ == "__main__":
     parser.add_argument("--skip-simulation", action="store_true")
     parser.add_argument("--skip-postprocess", action="store_true")
     parser.add_argument("--version", action="version", version=VERSION)
+    parser.add_argument("--iter-index", help=argparse.SUPPRESS) # overwrite iter_index of config yaml
     args = parser.parse_args()
 
     # initial logger level is "warn"
@@ -151,7 +159,9 @@ if __name__ == "__main__":
 
     logger.info(f"read yaml: {args.setting_yaml}")
     setting = util.parse_yaml(args.setting_yaml)
-    indices = util.expand_index(setting["general"]["iter_index"])
+    if args.iter_index is not None:
+        setting["general"]["iter_index"] = args.iter_index
+    indices = set(util.expand_index(setting["general"]["iter_index"]))
 
     jobname = setting["general"]["name"]
     workdir = setting["general"]["workdir"]
@@ -160,12 +170,13 @@ if __name__ == "__main__":
 
     # Count num. of GPUs and allocate CPU cores to each GPU
     # Raise EnvironmentError if GPU is not available
-    gpuids = util.get_gpuids()
+    gpuids = get_gpuids()
     ngpus = len(gpuids)
     if setting["general"]["multiprocessing"] == False:
         ngpus=1
     ncpus = os.cpu_count()
-    ncpus_per_gpu = ncpus // ngpus
+    ncpus = 1 if ncpus is None else ncpus
+    ncpus_per_gpu = ncpus // len(get_gpuids(ignore_cuda_visible_devices=True))
     if ncpus_per_gpu == 0:
         raise EnvironmentError("The number of CPU threads must be "
         "equal to or greater than the number of available GPUs")
@@ -208,4 +219,4 @@ if __name__ == "__main__":
             for idx, top, traj in zip(indices, tops, trajectories)
         )
     else:
-        None # there is no output by Parallel - postprocess
+        pass # there is no output by Parallel - postprocess
