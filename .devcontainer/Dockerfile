@@ -8,6 +8,7 @@ ARG PATH="/miniconda3/bin:${PATH}"
 RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
 RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
 RUN apt-get update
+RUN apt-get install -y make
 # RUN apt-get upgrade
 
 RUN apt-get install -y wget && rm -rf /var/lib/apt/lists/*
