@@ -114,7 +114,9 @@ def gen_pmap(dirpath, setting_general, setting_input, setting_pmap, traj, top, d
             frames=cpptraj_obj.frames,
             normalize=setting_pmap["normalization"])
         if setting_pmap["normalization"]=="GFE":
-            mean_proba = map["num_probe_atoms"] / cpptraj_obj.last_volume
+            struct_obj = uPDB.get_structure(ref_struct)
+            protein_volume = uPDB.estimate_exclute_volume(struct_obj)
+            mean_proba = map["num_probe_atoms"] / (cpptraj_obj.last_volume - protein_volume) 
             pmap_path = convert_to_gfe(pmap_path, mean_proba, 
                                        temperature=300) #TODO: read temperature from setting
         pmap_paths.append(pmap_path)
