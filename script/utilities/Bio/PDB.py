@@ -7,12 +7,15 @@ version: 1.3.0
 last update: 1 Jul, 2022
 Authors: Keisuke Yanagisawa
 """
+import collections
 import gzip
 import numpy as np
 from Bio import PDB
 from collections.abc import Iterable
 import tempfile
 import io
+
+from ..scipy.spatial_func import estimate_volume
 
 class MultiModelPDBReader(object):
     """
@@ -375,3 +378,47 @@ def save(structs, path) -> None:
     io = PDB.PDBIO()
     io.set_structure(out_structure)
     io.save(path)
+
+
+_ATOMIC_RADII = collections.defaultdict(lambda: 2.0)
+_ATOMIC_RADII.update(
+    {
+        "H": 1.200,
+        "HE": 1.400,
+        "C": 1.700,
+        "N": 1.550,
+        "O": 1.520,
+        "F": 1.470,
+        "NA": 2.270,
+        "MG": 1.730,
+        "P": 1.800,
+        "S": 1.800,
+        "CL": 1.750,
+        "K": 2.750,
+        "CA": 2.310,
+        "NI": 1.630,
+        "CU": 1.400,
+        "ZN": 1.390,
+        "SE": 1.900,
+        "BR": 1.850,
+        "CD": 1.580,
+        "I": 1.980,
+        "HG": 1.550,
+    }
+)
+def estimate_exclute_volume(prot: PDB.Model) -> float:
+      """
+      VdW半径に基づいてタンパク質の排除体積を計算
+      タンパク質は原子種類に応じて処理し、
+      溶媒は炭素原子1つ分の大きさであるとする
+      """
+      coords = []
+      radii  = []
+      for atom in prot.get_atoms():
+        if not atom.get_parent().resname in ["HOH", "WAT"]:
+          coords.append(atom.get_coord())
+          radii.append(_ATOMIC_RADII[atom.element])
+      coords = np.array(coords)
+      radii  = np.array(radii)
+      radii += _ATOMIC_RADII["C"] # solvents' VdW radius: estimated by carbon radius.
+      return estimate_volume(coords, radii)
