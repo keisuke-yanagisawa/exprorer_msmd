@@ -10,10 +10,6 @@
         "mhutchie.git-graph",
         "shd101wyy.markdown-preview-enhanced"
     ],
-    "mounts": [
-        "source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/root/.ssh,type=bind",
-        "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gitconfig,target=/root/.gitconfig,type=bind"
-    ],
     "settings": {
         "python.analysis.typeCheckingMode": "basic",
         "python.pythonPath": "/miniconda3/bin/python"
