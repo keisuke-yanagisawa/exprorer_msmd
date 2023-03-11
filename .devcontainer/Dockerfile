@@ -28,3 +28,21 @@ RUN mamba install -y -c conda-forge \
     jinja2=3.0.3 griddataformats=0.7.0 \
     parmed=3.4.3 git=2.35.1 pyyaml=6.0 \
     tqdm=4.62.3 scikit-learn=1.0.2 gputil=1.4.0 joblib=1.1.0 
+RUN mamba install -y -c conda-forge flake8 autopep8
+
+#### v2
+RUN mamba install -y -c conda-forge openmm cudatoolkit 
+RUN mamba install -y -c conda-forge mdanalysis
+RUN mamba install -y -c conda-forge nglview 
+RUN mamba install -y "ipywidgets>=7.6.0,<8"
+RUN mamba install -y -c conda-forge pdbfixer
+RUN mamba install -y -c conda-forge openmoltools
+RUN mamba install -y -c conda-forge openmmforcefields
+RUN mamba install -y -c conda-forge parmed
+RUN mamba install -y -c conda-forge openbabel
+
+
+
+RUN echo "mkdir -p /root/.ssh" >> /etc/bash.bashrc
+RUN echo "cp /root/.ssh_host/* /root/.ssh/" >> /etc/bash.bashrc
+RUN echo "chmod 600 /root/.ssh/*" >> /etc/bash.bashrc
