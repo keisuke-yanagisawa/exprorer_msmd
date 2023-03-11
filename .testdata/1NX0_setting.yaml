@@ -1,8 +1,8 @@
 general:
   iter_index: 0
   # iter_index: 1-2,4,5-9:2 # MSMD indices to be calculated / Notation 1-2 => 1,2  5-9:2 => 5,7,9
-  workdir: ../output/test # output directory / absolute path or relative path from THIS YAML FILE
-  name: small_case
+  workdir: output # output directory / absolute path or relative path from THIS YAML FILE
+  name: 1NX0_RAA
   # loglevel: debug # not implemented
   executables:
     python  : python
@@ -13,7 +13,7 @@ general:
 
 input:
   protein:
-    pdb : 1F47B.pdb # relative path from THIS YAML FILE
+    pdb : 1NX0F.pdb # relative path from THIS YAML FILE
     ssbond : # disulfide bonds of the protein structure
       # - [54, 192] # format: [resi_from, resi_to] 
       # - [231, 10]
@@ -22,16 +22,16 @@ input:
     ### assigned if they are not provided
     # mol2 : A11.mol2 # relative path from THIS YAML FILE
     # pdb  : A11.pdb  # relative path from THIS YAML FILE
-    cid  : A11
+    cid  : RAA
     atomtype: gaff2
-    molar: 0
+    molar: 0.25
 
 exprorer_msmd:
   title    : EXPRORER protocol
   general  :
-    dt          : 0.002
-    temperature : 300
-    pressure    : 1.0
+    # dt          : 0.002
+    # temperature : 300
+    # pressure    : 1.0
     seed        : 42
     pbc         : xyz
 
@@ -164,31 +164,35 @@ exprorer_msmd:
       title     : Production Run
       type      : production
       define    : ""
-      nsteps    : 400000
-      nstxtcout : 100 # steps
-      nstenergy : 100 # steps
-      nstlog    : 100 # steps
+      nsteps    : 20000000
+      nstxtcout : 5000 # steps
+      nstenergy : 5000 # steps
+      nstlog    : 5000 # steps
       # ref_t     : 300
       pcoupl    : Parrinello-Rahman
       # ref_p     : 1.0
 
-  pmap: # PMAP generation
-    valid_dist: 5 # PMAP valid distance from protein atoms
-    snapshots: pr|2001-4001:1 # steps / "NAME" trajectory will be used with "NAME|" 
-
-
-
-protein_hotspot:
-  pmap_aggregation: max # max is only the option so far
+map: # MAP generation
+  type: pmap
+  # valid_dist: 5            # PMAP valid distance from protein atoms
+  snapshot: 2001-4001:1 # steps / "NAME" trajectory will be used with "NAME|" 
+  maps:
+    - suffix: nVH
+      selector: (!@VIS)&(!@H*)
+    - suffix: nV
+      selector: (!@VIS)
+    - suffix: SCHA
+      selector: (@C1)|(@C3)|(@C4)|(@C5)|(@N2)|(@C6)|(@N3)|(@N4)
+  map_size: 80 # 80 A * 80 A * 80 A
+  aggregation: max
+  normalization: snapshot
 
 probe_profile:
-  pmap_aggregation: max # max is only the option
   resenv: # Extract residue environments around probe molecules
     threshold: 0.2 # probability threshold of "preferred" residue environment
-    env_dist: 4    # residue environment distance from a probe molecule
-    # snapshots: 2001-4001:1
-    snapshots: pr|2001-4001:50 # reduce calculation cost (but less environments)
-    align: [" C1 ", " C2 ", " C3 ", " O1 "] # all heavy atoms are used if "align" is not defined
+    # env_dist: 4    # residue environment distance from a probe molecule
+    snapshots: 2001-4001:50 # reduce calculation cost (but less environments)
+    #align: [" C1 ", " C2 ", " C3 ", " O1 "] # all heavy atoms are used if "align" is not defined
 
   profile:
     types:
