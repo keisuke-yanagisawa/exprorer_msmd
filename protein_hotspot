@@ -1,22 +1,19 @@
 #!/usr/bin/env python
 
+from script.utilities.logger import logger
 import argparse
-import os 
+import os
 
-import GPUtil
-from joblib import Parallel, delayed
-import yaml
 
 from script.utilities import util
 VERSION = "0.1.0"
 
-from script.utilities.logger import logger
 
 def protein_hotspot(setting):
     basedirpath = setting["general"]["workdir"]
     JOB_NAME = setting["general"]["name"]
     WORK_DIR = os.path.dirname(util.getabsolutepath(__file__))
-    exe_python  = setting["general"]["executables"]["python"]
+    exe_python = setting["general"]["executables"]["python"]
 
     logger.info("PMAP aggregation: mapPMAP")
     for map in setting["map"]["maps"]:
@@ -26,6 +23,7 @@ def protein_hotspot(setting):
         {basedirpath}/maxPMAP_{JOB_NAME}_{map['suffix']}.dx
         """)
         logger.info(f"Output file: {basedirpath}/maxPMAP_{JOB_NAME}_{map['suffix']}.dx")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

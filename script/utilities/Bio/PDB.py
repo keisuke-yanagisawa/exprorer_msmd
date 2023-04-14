@@ -17,6 +17,7 @@ import io
 
 from ..scipy.spatial_func import estimate_volume
 
+
 class MultiModelPDBReader(object):
     """
     多数のモデルが含まれるPDBファイルを
@@ -24,7 +25,7 @@ class MultiModelPDBReader(object):
     iteratorに対応し、1つずつ読んでくれる。
     一応get_modelもあるが、これの実装は雑なので注意。
     """
-    
+
     def _init_fileobj(self):
         self.model_positions = []
         self.fileend = False
@@ -36,7 +37,7 @@ class MultiModelPDBReader(object):
                     self.file.tell() - len(l.encode())
                 )
                 break
-            
+
     def __init__(self, file, header="MODEL"):
         self.file = open(file)
         self.model_positions = []
@@ -46,7 +47,7 @@ class MultiModelPDBReader(object):
 
     def __del__(self):
         self.file.close()
-        
+
     def get_model(self, idx):
         """
         get a model with 0-origin
@@ -54,28 +55,28 @@ class MultiModelPDBReader(object):
         It will do sequential search, thus the computation complexity is O(N), not O(1)
         """
         if idx < 0:
-            raise IndexError(f"{self.header} index out of range")                
-            
-        while (len(self.model_positions) <= idx+1):
+            raise IndexError(f"{self.header} index out of range")
+
+        while (len(self.model_positions) <= idx + 1):
             if self.fileend:
-                raise IndexError(f"{self.header} index out of range")                
+                raise IndexError(f"{self.header} index out of range")
             self.model_positions.append(self._next())
         self.file.seek(self.model_positions[idx])
 
         with tempfile.NamedTemporaryFile("w") as f:
             n_bytes_to_be_read \
-              = self.model_positions[idx+1] - self.model_positions[idx]
+                = self.model_positions[idx + 1] - self.model_positions[idx]
             self.file.seek(self.model_positions[idx])
             f.write(self.file.read(n_bytes_to_be_read))
             f.flush()
             return get_structure(f.name)
-        
+
     def _next(self) -> int:
         """
         get next STARTING point
         """
 
-        if(self.fileend):
+        if (self.fileend):
             return None
 
         self.file.seek(self.model_positions[-1])
@@ -96,12 +97,13 @@ class MultiModelPDBReader(object):
     def __iter__(self):
         self._init_fileobj()
         return self
-            
+
     def __next__(self):
         try:
-            return self.get_model(len(self.model_positions)-1)
-        except IndexError as e:
+            return self.get_model(len(self.model_positions) - 1)
+        except IndexError:
             raise StopIteration
+
 
 class PDBIOhelper():
     """
@@ -109,10 +111,11 @@ class PDBIOhelper():
     PDBIOクラスは全てのモデルを一旦メモリ上に載せる設計ですが、
     これは1つずつモデルを保存していきます。
     """
+
     def __init__(self, path):
         self.path = path
         self.open()
-        
+
     def __enter__(self):
         return self
 
@@ -126,12 +129,12 @@ class PDBIOhelper():
     def close(self):
         self.fo.close()
         del self.fo
-        
+
     def save(self, pdb_object):
-        if not "fo" in dir(self):
+        if "fo" not in dir(self):
             exit(1)
             # TODO raise error
-            
+
         model_lst = []
         if pdb_object.level == "S":
             for model in pdb_object:
@@ -148,14 +151,14 @@ class PDBIOhelper():
             model.serial_num = self.n_models
             model.id = model.serial_num - 1
             out_structure.add(model)
-            
+
         pdbio = PDB.PDBIO(use_model_flag=True)
         pdbio.set_structure(out_structure)
         with io.StringIO() as f:
             pdbio.save(f, write_end=False)
             f.seek(0)
             self.fo.write(f.read())
-        
+
 
 def get_structure(filepath: str, structname="") -> PDB.Structure:
     """
@@ -208,15 +211,15 @@ def get_attr(model, attr, sele=None):
     """
     method = None
     if attr == "resid":
-        method = lambda a: get_resi(a)
+        def method(a): return get_resi(a)
     elif attr == "resname":
-        method = lambda a: get_resname(a)
+        def method(a): return get_resname(a)
     elif attr == "coord":
-        method = lambda a: a.get_coord()
+        def method(a): return a.get_coord()
     elif attr == "element":
-        method = lambda a: a.element
+        def method(a): return a.element
     elif attr == "fullname":
-        method = lambda a: a.fullname
+        def method(a): return a.fullname
     else:
         raise NotImplementedError(f"attr {attr} is not implemented")
 
@@ -284,12 +287,12 @@ def get_resi(atom: PDB.Atom) -> int:
 def is_hetero(atom: PDB.Atom) -> bool:
     """
     Check whether the provided Bio.PDB.Atom instance is a hetero atom.
-    
+
     Parameters
     ----------
     atom : Bio.PDB.Atom
         An atom object.
-        
+
     Returns
     -------
     bool
@@ -346,6 +349,7 @@ def set_attr(model: PDB.Model, attr: str, lst, sele=None):
                 raise NotImplementedError(f"set_attr(attr={attr}) is not implemented")
             lst_idx += 1
 
+
 def save(structs, path) -> None:
     """
     Set attribute to Bio.PDB.Model object.
@@ -368,13 +372,13 @@ def save(structs, path) -> None:
         with tempfile.NamedTemporaryFile(suffix=".pdb") as fp:
             io.save(fp.name)
             mod_structs.append(get_structure(fp.name)[0])
-        
+
     out_structure = PDB.Structure.Structure("")
     for struct in mod_structs:
         struct.id = len(out_structure)
         struct.serial_num = struct.id + 1
         out_structure.add(struct)
-    
+
     io = PDB.PDBIO()
     io.set_structure(out_structure)
     io.save(path)
@@ -406,19 +410,21 @@ _ATOMIC_RADII.update(
         "HG": 1.550,
     }
 )
+
+
 def estimate_exclute_volume(prot: PDB.Model) -> float:
-      """
-      VdW半径に基づいてタンパク質の排除体積を計算
-      タンパク質は原子種類に応じて処理し、
-      溶媒は炭素原子1つ分の大きさであるとする
-      """
-      coords = []
-      radii  = []
-      for atom in prot.get_atoms():
+    """
+    VdW半径に基づいてタンパク質の排除体積を計算
+    タンパク質は原子種類に応じて処理し、
+    溶媒は炭素原子1つ分の大きさであるとする
+    """
+    coords = []
+    radii = []
+    for atom in prot.get_atoms():
         if not atom.get_parent().resname in ["HOH", "WAT"]:
-          coords.append(atom.get_coord())
-          radii.append(_ATOMIC_RADII[atom.element])
-      coords = np.array(coords)
-      radii  = np.array(radii)
-      radii += _ATOMIC_RADII["C"] # solvents' VdW radius: estimated by carbon radius.
-      return estimate_volume(coords, radii)
+            coords.append(atom.get_coord())
+            radii.append(_ATOMIC_RADII[atom.element])
+    coords = np.array(coords)
+    radii = np.array(radii)
+    radii += _ATOMIC_RADII["C"]  # solvents' VdW radius: estimated by carbon radius.
+    return estimate_volume(coords, radii)

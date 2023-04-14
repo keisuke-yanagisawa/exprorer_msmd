@@ -4,6 +4,7 @@ from logging import DEBUG, ERROR, WARN, INFO, CRITICAL
 
 __DEFAULT_LOG_LEVEL__ = WARN
 
+
 class Logger:
     def __init__(self, path=""):
         self.logger = getLogger()
@@ -17,10 +18,10 @@ class Logger:
         self.logger.addHandler(self.handler)
 
         # file
-        if(path != ""):
-            self.handler = handlers.RotatingFileHandler(filename = path,
-                                                   maxBytes = 1048576,
-                                                   backupCount = 3)
+        if (path != ""):
+            self.handler = handlers.RotatingFileHandler(filename=path,
+                                                        maxBytes=1048576,
+                                                        backupCount=3)
             self.handler.setLevel(__DEFAULT_LOG_LEVEL__)
             self.handler.setFormatter(formatter)
             self.logger.addHandler(self.handler)
@@ -49,7 +50,7 @@ class Logger:
             self.logger.setLevel(INFO)
             self.handler.setLevel(INFO)
         elif level.lower() == "warn" \
-            or level.lower() == "warning":
+                or level.lower() == "warning":
             self.logger.setLevel(WARN)
             self.handler.setLevel(WARN)
         elif level.lower() == "error":
@@ -60,6 +61,7 @@ class Logger:
             self.handler.setLevel(CRITICAL)
         else:
             self.warn(f"level '{level}' is invalid.")
-            self.warn(f"logger level has not been changed.")
+            self.warn("logger level has not been changed.")
+
 
 logger = Logger()

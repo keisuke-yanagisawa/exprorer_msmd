@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
+from script.utilities.logger import logger
 import argparse
 import tempfile
-import os 
+import os
 import pathlib
 
 from joblib import Parallel, delayed
@@ -19,12 +20,10 @@ from script.mdrun import prepare_sequence, prepare_md_files
 
 VERSION = "0.2.0"
 
-from script.utilities.logger import logger
 
 def preprocess(index, setting, debug=False):
-    prepdirpath  = f'{setting["general"]["workdir"]}/system{index}/prep'
+    prepdirpath = f'{setting["general"]["workdir"]}/system{index}/prep'
     pathlib.Path(prepdirpath).mkdir(parents=True, exist_ok=True)
-    
 
     PROBE_ID = setting["input"]["probe"]["cid"]
     JOB_NAME = setting["general"]["name"]
@@ -35,16 +34,15 @@ def preprocess(index, setting, debug=False):
     if os.path.exists(top) \
        and os.path.exists(gro) \
        and os.path.exists(pdb):
-      return top, gro, pdb
-
+        return top, gro, pdb
 
     exe_gromacs = setting["general"]["executables"]["gromacs"]
- 
+
     # create a protein-water-probe system
     _, tmptop = tempfile.mkstemp(suffix=".top")
     _, tmpgro = tempfile.mkstemp(suffix=".gro")
     parm7, rst7 = generate_msmd_system(setting, debug=debug)
-    pmd_convert(parm7, tmptop, inxyz=rst7, outxyz=tmpgro)    
+    pmd_convert(parm7, tmptop, inxyz=rst7, outxyz=tmpgro)
 
     # add virtual atoms for pseudo repulsion between probes
     top_string = open(tmptop).read()
@@ -54,8 +52,8 @@ def preprocess(index, setting, debug=False):
 
     # define position restraints of heavy atoms
     top_string = add_posredefine2top(
-        top_string, 
-        gro_string, 
+        top_string,
+        gro_string,
         PROBE_ID
     )
 
@@ -73,22 +71,22 @@ def preprocess(index, setting, debug=False):
 
     return top, gro, pdb
 
+
 def execute_single_simulation(index, setting, gpuid, ncpus, top, gro, pdb, debug=False):
     """
     Execute a single MSMD simulation with preprocessing and postprocessing.
     """
 
-    simdirpath  = f'{setting["general"]["workdir"]}/system{index}/simulation'
+    simdirpath = f'{setting["general"]["workdir"]}/system{index}/simulation'
     pathlib.Path(simdirpath).mkdir(parents=True, exist_ok=True)
-    
+
     JOB_NAME = setting["general"]["name"]
 
     exe_gromacs = setting["general"]["executables"]["gromacs"]
 
-    
     os.system(f"cp {top} {simdirpath}/input.top")
     os.system(f"cp {gro} {simdirpath}/input.gro")
-    os.system(f"cp {pdb} {simdirpath}/input.pdb") # is it needed?
+    os.system(f"cp {pdb} {simdirpath}/input.pdb")  # is it needed?
     top = f"{simdirpath}/input.top"
     gro = f"{simdirpath}/input.gro"
     pdb = f"{simdirpath}/input.pdb"
@@ -102,7 +100,7 @@ def execute_single_simulation(index, setting, gpuid, ncpus, top, gro, pdb, debug
     """)
 
     setting["exprorer_msmd"]["sequence"] = prepare_sequence(
-        setting["exprorer_msmd"]["sequence"], 
+        setting["exprorer_msmd"]["sequence"],
         setting["exprorer_msmd"]["general"]
     )
 
@@ -126,17 +124,19 @@ def execute_single_simulation(index, setting, gpuid, ncpus, top, gro, pdb, debug
 
     return f"{simdirpath}/{JOB_NAME}.xtc"
 
+
 def postprocess(index, setting, top, traj, debug=False):
-    sysdirpath  = f'{setting["general"]["workdir"]}/system{index}'
+    sysdirpath = f'{setting["general"]["workdir"]}/system{index}'
 
     # generate pmap files
-    gen_pmap(sysdirpath, 
-             setting["general"], 
+    gen_pmap(sysdirpath,
+             setting["general"],
              setting["input"],
-             setting["map"], 
-             traj=traj, 
-             top=top, 
+             setting["map"],
+             traj=traj,
+             top=top,
              debug=debug)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -148,7 +148,7 @@ if __name__ == "__main__":
     parser.add_argument("--skip-simulation", action="store_true")
     parser.add_argument("--skip-postprocess", action="store_true")
     parser.add_argument("--version", action="version", version=VERSION)
-    parser.add_argument("--iter-index", help=argparse.SUPPRESS) # overwrite iter_index of config yaml
+    parser.add_argument("--iter-index", help=argparse.SUPPRESS)  # overwrite iter_index of config yaml
     args = parser.parse_args()
 
     # initial logger level is "warn"
@@ -172,14 +172,14 @@ if __name__ == "__main__":
     # Raise EnvironmentError if GPU is not available
     gpuids = get_gpuids()
     ngpus = len(gpuids)
-    if setting["general"]["multiprocessing"] == False:
-        ngpus=1
+    if not setting["general"]["multiprocessing"]:
+        ngpus = 1
     ncpus = os.cpu_count()
     ncpus = 1 if ncpus is None else ncpus
     ncpus_per_gpu = ncpus // len(get_gpuids(ignore_cuda_visible_devices=True))
     if ncpus_per_gpu == 0:
         raise EnvironmentError("The number of CPU threads must be "
-        "equal to or greater than the number of available GPUs")
+                               "equal to or greater than the number of available GPUs")
 
     logger.info(f"{ncpus} threads are detected")
     logger.info(f"{ngpus} parallel execution with {ncpus_per_gpu} CPU threads per process")
@@ -188,14 +188,14 @@ if __name__ == "__main__":
     # n_jobs = num of CPU cores, not num of GPUs
     if not args.skip_preprocess:
         files = Parallel(n_jobs=ncpus, backend='threading')(
-            delayed(preprocess)(idx, setting, debug=args.debug) 
+            delayed(preprocess)(idx, setting, debug=args.debug)
             for idx in indices
         )
         tops = [elem[0] for elem in files]
         gros = [elem[1] for elem in files]
         pdbs = [elem[2] for elem in files]
     else:
-        prepdirpath  = '{workdir}/system{index}/prep'
+        prepdirpath = '{workdir}/system{index}/prep'
         tops = [prepdirpath.format(workdir=workdir, index=idx) + f"/{jobname}.top" for idx in indices]
         gros = [prepdirpath.format(workdir=workdir, index=idx) + f"/{jobname}.gro" for idx in indices]
         pdbs = [prepdirpath.format(workdir=workdir, index=idx) + f"/{jobname}.pdb" for idx in indices]
@@ -204,19 +204,19 @@ if __name__ == "__main__":
     if not args.skip_simulation:
         gpuids = (gpuids * len(indices))[:len(indices)]
         trajectories = Parallel(n_jobs=ngpus, backend='threading')(
-            delayed(execute_single_simulation)(idx, setting, gpuid, ncpus_per_gpu, top=top, gro=gro, pdb=pdb, debug=args.debug) 
+            delayed(execute_single_simulation)(idx, setting, gpuid, ncpus_per_gpu, top=top, gro=gro, pdb=pdb, debug=args.debug)
             for idx, gpuid, top, gro, pdb in zip(indices, gpuids, tops, gros, pdbs)
         )
-    else: 
-        simdirpath  = '{workdir}/system{index}/simulation'
+    else:
+        simdirpath = '{workdir}/system{index}/simulation'
         trajectories = [simdirpath.format(workdir=workdir, index=idx) + f"/{jobname}.xtc" for idx in indices]
 
     # postprocess (generate PMAPs)
     # n_jobs = num of CPU cores, not num of GPUs
     if not args.skip_postprocess:
         Parallel(n_jobs=ncpus, backend='threading')(
-            delayed(postprocess)(idx, setting, top=top, traj=traj, debug=args.debug) 
+            delayed(postprocess)(idx, setting, top=top, traj=traj, debug=args.debug)
             for idx, top, traj in zip(indices, tops, trajectories)
         )
     else:
-        pass # there is no output by Parallel - postprocess
+        pass  # there is no output by Parallel - postprocess
