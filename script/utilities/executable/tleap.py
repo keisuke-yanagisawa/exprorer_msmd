@@ -30,13 +30,13 @@ class TLeap(object):
         _, inputfile = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_INP)
         data = {
             "LIGAND_PARAM": f"leaprc.{self.at}",
-            "SS_BONDS":     self.ssbonds,
-            "PROBE_ID":     self.cid,
-            "PROBE_PATH":   self.probe_path,
-            "OUTPUT":       self.oprefix,
-            "SYSTEM_PATH":  self.box_path,
+            "SS_BONDS": self.ssbonds,
+            "PROBE_ID": self.cid,
+            "PROBE_PATH": self.probe_path,
+            "OUTPUT": self.oprefix,
+            "SYSTEM_PATH": self.box_path,
             "PROBE_FRCMOD": self.frcmod,
-            "SIZE":         self.size
+            "SIZE": self.size
         }
 
         env = jinja2.Environment(loader=jinja2.FileSystemLoader(f"{os.path.dirname(__file__)}/template"))
@@ -50,7 +50,7 @@ class TLeap(object):
         logger.info(output)
         try:
             final_charge_info = [s.strip() for s in output.split("\n")
-                                if s.strip().startswith("Total unperturbed charge")][0]
+                                 if s.strip().startswith("Total unperturbed charge")][0]
         except IndexError as e:
             logger.error(e)
             logger.error(output)

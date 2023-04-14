@@ -1,4 +1,3 @@
-import math
 import random
 import string
 import os
@@ -10,9 +9,10 @@ from .logger import logger
 
 def getabsolutepath(path):
     path = expandpath(path)
-    if not path.startswith("/"): # relative path
+    if not path.startswith("/"):  # relative path
         path = os.getcwd() + "/" + path
     return path
+
 
 def expandpath(path):
     path = os.path.expanduser(path)
@@ -37,7 +37,7 @@ def expand_index(ind_info):
     # Thus this process is needed
     if type(ind_info) == int:
         return [ind_info]
-    
+
     ret = []
     elems = ind_info.split(",")
     for elem in elems:
@@ -47,63 +47,66 @@ def expand_index(ind_info):
         elif elem.find(":") == -1:
             st, ed = elem.split("-")
             st, ed = int(st), int(ed)
-            ret.extend(list(range(st, ed+1)))
+            ret.extend(list(range(st, ed + 1)))
         else:
             window, offset = elem.split(":")
             st, ed = window.split("-")
             st, ed, offset = int(st), int(ed), int(offset)
-            ret.extend(list(range(st, ed+1, offset)))
+            ret.extend(list(range(st, ed + 1, offset)))
     return ret
 
+
 def set_default(setting):
-    if not "multiprocessing" in setting["general"]:
-        setting["general"]["multiprocessing"] = True    
-    if not "valid_dist" in setting["map"]:
+    if "multiprocessing" not in setting["general"]:
+        setting["general"]["multiprocessing"] = True
+    if "valid_dist" not in setting["map"]:
         setting["map"]["valid_dist"] = 5
-    if not "env_dist" in setting["probe_profile"]:
+    if "env_dist" not in setting["probe_profile"]:
         setting["probe_profile"]["env_dist"] = 4
-    if not "dt" in setting["exprorer_msmd"]["general"]:
+    if "dt" not in setting["exprorer_msmd"]["general"]:
         setting["exprorer_msmd"]["general"]["dt"] = 0.002
-    if not "temperature" in setting["exprorer_msmd"]["general"]:
+    if "temperature" not in setting["exprorer_msmd"]["general"]:
         setting["exprorer_msmd"]["general"]["temperature"] = 300
-    if not "pressure" in setting["exprorer_msmd"]["general"]:
+    if "pressure" not in setting["exprorer_msmd"]["general"]:
         setting["exprorer_msmd"]["general"]["pressure"] = 1.0
-    if not "seed" in setting["exprorer_msmd"]["general"]:
+    if "seed" not in setting["exprorer_msmd"]["general"]:
         setting["exprorer_msmd"]["general"]["seed"] = -1
 
+
 def ensure_compatibility_v1_1(setting):
-    if not "map" in setting:
+    if "map" not in setting:
         setting["map"] = setting["exprorer_msmd"]["pmap"]
         setting["map"]["snapshot"] = setting["exprorer_msmd"]["pmap"]["snapshots"]
     setting["map"]["snapshot"] = setting["map"]["snapshot"].split("|")[-1]
-    if not "maps" in setting["map"]:
+    if "maps" not in setting["map"]:
         setting["map"]["maps"] = [
             {"suffix": "nVH", "selector": "(!@VIS)&(!@H*)"}
         ]
-    if not "map_size" in setting["map"]:
+    if "map_size" not in setting["map"]:
         setting["map"]["map_size"] = 80
-    if not "aggregation" in setting["map"]:
+    if "aggregation" not in setting["map"]:
         setting["map"]["aggregation"] = "max"
-    if not "normalization" in setting["map"]:
+    if "normalization" not in setting["map"]:
         setting["map"]["normalization"] = "total"
 
+
 def parse_yaml(yamlpath):
-    YAML_PATH = getabsolutepath(yamlpath) 
+    YAML_PATH = getabsolutepath(yamlpath)
     YAML_DIR_PATH = os.path.dirname(YAML_PATH)
     with open(YAML_PATH) as fin:
-        setting = yaml.safe_load(fin)
+        setting: dict = yaml.safe_load(fin)  # type: ignore
 
     ensure_compatibility_v1_1(setting)
     set_default(setting)
 
-    if not "mol2" in setting["input"]["probe"] \
+    if "mol2" not in setting["input"]["probe"] \
        or setting["input"]["probe"]["mol2"] is None:
         setting["input"]["probe"]["mol2"] \
-            = setting["input"]["probe"]["cid"]+".mol2"
-    if not "pdb" in setting["input"]["probe"] \
+            = setting["input"]["probe"]["cid"] + ".mol2"
+    if "pdb" not in setting["input"]["probe"] \
        or setting["input"]["probe"]["pdb"] is None:
         setting["input"]["probe"]["pdb"] \
-            = setting["input"]["probe"]["cid"]+".pdb"
+            = setting["input"]["probe"]["cid"] + ".pdb"
 
     setting["general"]["workdir"] = setting["general"]["workdir"] \
         if setting["general"]["workdir"].startswith("/") \
