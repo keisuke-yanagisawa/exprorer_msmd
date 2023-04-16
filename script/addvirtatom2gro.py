@@ -13,7 +13,8 @@ def center_of_mass(atoms):
     for a in atoms:
         tot_weight += a.atomic_mass
         tot_coordinates += a.atomic_mass * a.point
-    return tot_coordinates/tot_weight
+    return tot_coordinates / tot_weight
+
 
 def addvirtatom2gro(gro_string, probe_id):
     with tempfile.TemporaryDirectory() as tmpdirpath:
@@ -35,6 +36,7 @@ def addvirtatom2gro(gro_string, probe_id):
 
     logger.info(f"the system has {gro.molar(probe_id):.3f} M of {probe_id} cosolvents")
     return str(gro)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="add virtual atoms to a gro file")

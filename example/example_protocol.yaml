@@ -55,7 +55,7 @@ exprorer_msmd:
       title         : Heating system from 0 K to 300 K
       type          : heating
       define        : -DPOSRES1000
-      nsteps        : 100000
+      nsteps        : 10000
       nstxtcout     : 500 # steps
       nstlog        : 500 # steps
       nstenergy     : 500 # steps
@@ -68,7 +68,7 @@ exprorer_msmd:
       title     : Equilibration stage 1 - 10 kcal/mol/A^2 constraints
       type      : equilibration
       define    : -DPOSRES1000
-      nsteps    : 50000
+      nsteps    : 5000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
       nstenergy : 500 # steps
@@ -80,7 +80,7 @@ exprorer_msmd:
       title     : Equilibration stage 2 - 5.0 kcal/mol/A^2 constraints
       type      : equilibration
       define    : -DPOSRES500
-      nsteps    : 50000
+      nsteps    : 5000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
       nstenergy : 500 # steps
@@ -92,7 +92,7 @@ exprorer_msmd:
       title     : Equilibration stage 3 - 2.0 kcal/mol/A^2 constraints
       type      : equilibration
       define    : -DPOSRES200
-      nsteps    : 50000
+      nsteps    : 5000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
       nstenergy : 500 # steps
@@ -104,7 +104,7 @@ exprorer_msmd:
       title     : Equilibration stage 4 - 1.0 kcal/mol/A^2 constraints
       type      : equilibration
       define    : -DPOSRES100
-      nsteps    : 50000
+      nsteps    : 5000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
       nstenergy : 500 # steps
@@ -116,7 +116,7 @@ exprorer_msmd:
       title     : Equilibration stage 5 - 0.5 kcal/mol/A^2 constraints
       type      : equilibration
       define    : -DPOSRES50
-      nsteps    : 50000
+      nsteps    : 5000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
       nstenergy : 500 # steps
@@ -128,7 +128,7 @@ exprorer_msmd:
       title     : Equilibration stage 6 - 0.2 kcal/mol/A^2 constraints
       type      : equilibration
       define    : -DPOSRES20
-      nsteps    : 50000
+      nsteps    : 5000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
       nstenergy : 500 # steps
@@ -140,7 +140,7 @@ exprorer_msmd:
       title     : Equilibration stage 7 - 0.1 kcal/mol/A^2 constraints
       type      : equilibration
       define    : -DPOSRES10
-      nsteps    : 50000
+      nsteps    : 5000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
       nstenergy : 500 # steps
@@ -152,7 +152,7 @@ exprorer_msmd:
       title     : Equilibration stage 8 - no constraints
       type      : equilibration
       define    : ""
-      nsteps    : 50000
+      nsteps    : 5000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
       nstenergy : 500 # steps
@@ -164,10 +164,10 @@ exprorer_msmd:
       title     : Production Run
       type      : production
       define    : ""
-      nsteps    : 20000
-      nstxtcout : 5 # steps
-      nstenergy : 2 # steps
-      nstlog    : 5 # steps
+      nsteps    : 200000
+      nstxtcout : 50 # steps
+      nstenergy : 20 # steps
+      nstlog    : 50 # steps
       # ref_t     : 300
       pcoupl    : Parrinello-Rahman
       # ref_p     : 1.0

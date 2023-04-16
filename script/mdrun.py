@@ -1,10 +1,6 @@
 #! /usr/bin/python3
 
 import argparse
-import configparser
-import pathlib
-import subprocess
-import shutil
 import jinja2
 import yaml
 import os
@@ -12,6 +8,7 @@ import os
 from .utilities.logger import logger
 
 VERSION = "1.0.0"
+
 
 def gen_mdp(protocol_dict, MD_DIR):
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
@@ -27,14 +24,15 @@ def gen_mdp(protocol_dict, MD_DIR):
     with open(f"{MD_DIR}/{protocol_dict['name']}.mdp", "w") as fout:
         fout.write(template.render(protocol_dict))
 
+
 def gen_mdrun_job(step_names, name, path, top, gro, out_traj, post_comm=""):
     data = {
-        "NAME"         : name,
-        "TOP"          : top,
-        "GRO"          : gro,
-        "OUT_TRAJ"     : out_traj,
-        "POST_COMMAND" : post_comm,
-        "STEP_NAMES"   : " ".join(step_names)
+        "NAME": name,
+        "TOP": top,
+        "GRO": gro,
+        "OUT_TRAJ": out_traj,
+        "POST_COMMAND": post_comm,
+        "STEP_NAMES": " ".join(step_names)
     }
 
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
@@ -44,11 +42,10 @@ def gen_mdrun_job(step_names, name, path, top, gro, out_traj, post_comm=""):
     logger.debug(f"generate {path}")
 
 
-
 def prepare_sequence(sequence, general):
     ret = []
     for i, step in enumerate(sequence):
-        tmp = {"define":"", "name":f"step{i+1}"}
+        tmp = {"define": "", "name": f"step{i+1}"}
         tmp.update(general)
         tmp.update(step)
         step = tmp
@@ -56,11 +53,13 @@ def prepare_sequence(sequence, general):
         logger.info(ret)
     return ret
 
+
 def prepare_md_files(sequence, targetdir, jobname, top, gro, out_traj):
     for step in sequence:
         gen_mdp(step, targetdir)
     gen_mdrun_job([d["name"] for d in sequence],
                   jobname, f"{targetdir}/mdrun.sh", top, gro, out_traj)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="run gromacs jobs automatically")
@@ -74,7 +73,7 @@ if __name__ == "__main__":
         yamldata = yaml.safe_load(fin)
 
     yamldata["exprorer_msmd"]["sequence"] = prepare_sequence(
-        yamldata["exprorer_msmd"]["sequence"], 
+        yamldata["exprorer_msmd"]["sequence"],
         yamldata["exprorer_msmd"]["general"]
     )
 
