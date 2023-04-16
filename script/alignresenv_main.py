@@ -1,20 +1,18 @@
 import argparse
-import tempfile
-from Bio import PDB
 from tqdm import tqdm
 
 from utilities.Bio import PDB as uPDB
 from utilities.Bio.sklearn_interface import SuperImposer
-from utilities.scipy.spatial.transform import Rotation
 
 DESCRIPTION = """
 superimpose structures in accordance with specific atoms
 """
 
+
 def align_res_env(ipdb, resn, opdb, focused=[]):
     def selector(a):
         cond1 = uPDB.get_attr(a, "resname") == resn
-        cond2 = len(focused)==0 or uPDB.get_attr(a, "fullname") in focused
+        cond2 = len(focused) == 0 or uPDB.get_attr(a, "fullname") in focused
         return cond1 and cond2
 
     ref = uPDB.get_structure(ipdb[0])[0].copy()
@@ -34,8 +32,8 @@ def align_res_env(ipdb, resn, opdb, focused=[]):
                 uPDB.set_attr(model, "coord", sup.transform(all_coords))
 
                 pdbio.save(model)
-                # print(len(pdbio))   
-    return opdb 
+                # print(len(pdbio))
+    return opdb
 
 
 VERBOSE = None
@@ -54,4 +52,3 @@ if __name__ == "__main__":
     VERBOSE = args.verbose
     DEBUG = args.debug
     align_res_env(args.ipdb, args.resn, args.opdb, args.focused)
-
