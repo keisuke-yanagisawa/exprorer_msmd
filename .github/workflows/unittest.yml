@@ -1,0 +1,22 @@
+name: unittest
+
+on: [push]
+
+jobs:
+  buildx:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Build
+        uses: docker/build-push-action@master
+        with:
+          context: .devcontainer
+      
+      - name: Unittest
+        run: |
+          cd script
+          make unittest
+      
