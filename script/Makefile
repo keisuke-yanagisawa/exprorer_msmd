@@ -1,2 +1,2 @@
 unittest:
-	python -m pytest .
+	coverage run -m pytest .
