@@ -8,18 +8,39 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Create image tag for cache
+        id: imagetag
+        run: |
+          VARIANT=${{ github.sha }}
+          TAG="${NAME_IMAGE}:${VARIANT}"
+          echo "::set-output name=TAG::${TAG}"
+
+      - name: Enable cache
+        id: cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.PATH_CACHE }}
+          key: ${{ steps.imagetag.outputs.TAG }}
+          restore-keys: ${{ env.NAME_IMAGE }}
+
       - name: Build
         uses: docker/build-push-action@master
         with:
           context: .devcontainer
-          tags: exprorer_msmd
+          tags: ${{ steps.imagetag.outputs.TAG }}
+          cache-from: type=local,src=${{ env.PATH_CACHE }}
+          cache-to: type=local,dest=${{ env.PATH_CACHE }}-new,mode=max
           push: false
-      
+          load: true
+
       - name: Unittest
         uses: addnab/docker-run-action@v3
         with:
           image: exprorer_msmd
           run: |
+            ls
+            pwd
             cd script
             make unittest
       
