@@ -33,3 +33,5 @@ RUN pip install coverage pytest
 # change permission to read ssh settings if exists
 RUN chown root:$USER /root/.ssh/config || true
 RUN chmod 600        /root/.ssh/config || true
+
+SHELL ["/bin/bash", "-c"]
