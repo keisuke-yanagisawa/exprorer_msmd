@@ -6,17 +6,20 @@ jobs:
   buildx:
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@v3
-      -
-        name: Build
+      - name: Build
         uses: docker/build-push-action@master
         with:
           context: .devcontainer
+          tags: exprorer_msmd
+          push: false
       
       - name: Unittest
-        run: |
-          cd script
-          make unittest
+        uses: addnab/docker-run-action@v3
+        with:
+          image: exprorer_msmd
+          run: |
+            cd script
+            make unittest
       
