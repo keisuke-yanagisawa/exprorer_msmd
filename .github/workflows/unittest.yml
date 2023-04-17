@@ -20,7 +20,7 @@ jobs:
         id: cache
         uses: actions/cache@v2
         with:
-          path: ${{ env.PATH_CACHE }}
+          path: /tmp/.buildx-cache
           key: ${{ steps.imagetag.outputs.TAG }}
           restore-keys: ${{ env.NAME_IMAGE }}
 
@@ -29,8 +29,8 @@ jobs:
         with:
           context: .devcontainer
           tags: ${{ steps.imagetag.outputs.TAG }}
-          cache-from: type=local,src=${{ env.PATH_CACHE }}
-          cache-to: type=local,dest=${{ env.PATH_CACHE }}-new,mode=max
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache -new,mode=max
           push: false
           load: true
 
