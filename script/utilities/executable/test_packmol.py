@@ -66,3 +66,30 @@ class TestPackmol(TestCase):
                         box_size=20,
                         molar=0.1)
             packmol.run()
+
+    def test_cosolvent_is_not_pdb(self):
+        with self.assertRaises(RuntimeError):
+            packmol = Packmol()
+            packmol.set(protein_pdb="utilities/executable/test_data/tripeptide.pdb",
+                        cosolv_pdb="utilities/executable/test_data/A11.mol2",
+                        box_size=20,
+                        molar=0.1)
+            packmol.run()
+
+    def test_cosolvent_file_contains_non_cosolvent(self):
+        with self.assertRaises(RuntimeError):
+            packmol = Packmol()
+            packmol.set(protein_pdb="utilities/executable/test_data/tripeptide.pdb",
+                        cosolv_pdb="utilities/executable/test_data/tripeptide.pdb",
+                        box_size=20,
+                        molar=0.1)
+            packmol.run()
+
+    def test_protein_file_contains_non_protein(self):
+        with self.assertRaises(RuntimeError):
+            packmol = Packmol()
+            packmol.set(protein_pdb="utilities/executable/test_data/A11.pdb",
+                        cosolv_pdb="utilities/executable/test_data/A11.pdb",
+                        box_size=20,
+                        molar=0.1)
+            packmol.run()
