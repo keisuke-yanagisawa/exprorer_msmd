@@ -1,0 +1,2 @@
+unittest:
+	python -m pytest .
