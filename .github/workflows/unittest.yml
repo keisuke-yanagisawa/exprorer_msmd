@@ -22,4 +22,4 @@ jobs:
           options: -v ${{ github.workspace }}:/work
           run: |
             cd /work/script
-            make unittest
+            python -m pytest .
