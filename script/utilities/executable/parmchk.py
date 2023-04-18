@@ -21,6 +21,8 @@ class Parmchk(object):
         self.frcmod_user_define = self.frcmod is not None
         if self.frcmod is None:
             _, self.frcmod = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_FRCMOD)
+
+        os.makedirs(os.path.dirname(self.frcmod), exist_ok=True)  # mkdir -p
         command = Command(f"{self.exe} -i {self.mol2} -f mol2 -o {self.frcmod} -s {self.at_id}")
         logger.debug(command)
         logger.info(command.run())
@@ -28,5 +30,5 @@ class Parmchk(object):
 
     def __del__(self):
         if not self.frcmod_user_define:
-            logger.debug("[Parmchk] delete: ", self.frcmod)
+            logger.debug(f"[Parmchk] delete: {self.frcmod}")
             os.remove(self.frcmod)

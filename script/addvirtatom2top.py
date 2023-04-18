@@ -11,6 +11,7 @@ VIS      VIS          0.00000  0.00000   V     0.00000e+00   0.00000e+00 ; virtu
 VIS   VIS    1  2.000000e+00   4.184000e-06
 """
 
+
 def addvirtatom2top(top_string, probe_names, sigma=2, epsilon=4.184e-6):
     ret = []
     curr_section = None
@@ -32,7 +33,7 @@ def addvirtatom2top(top_string, probe_names, sigma=2, epsilon=4.184e-6):
                     {natoms+1: 5d}   2  {' '.join([str(x) for x in range(1, natoms+1)])}
                     """)
                 natoms = 0
-            curr_section = l[l.find("[")+1:l.find("]")].strip()
+            curr_section = l[l.find("[") + 1:l.find("]")].strip()
             if curr_section == "moleculetype":
                 now_mol = None
         elif curr_section == "atoms" and l != "":

@@ -1,8 +1,8 @@
 #! /usr/bin/python3
 
-import argparse
+
 import jinja2
-import yaml
+
 import os
 
 from .utilities.logger import logger
@@ -61,24 +61,26 @@ def prepare_md_files(sequence, targetdir, jobname, top, gro, out_traj):
                   jobname, f"{targetdir}/mdrun.sh", top, gro, out_traj)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="run gromacs jobs automatically")
-    parser.add_argument("--version", action="version", version=VERSION)
+# import argparse
+# import yaml
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(description="run gromacs jobs automatically")
+#     parser.add_argument("--version", action="version", version=VERSION)
 
-    parser.add_argument("-dir")
-    parser.add_argument("yaml")
-    args = parser.parse_args()
+#     parser.add_argument("-dir")
+#     parser.add_argument("yaml")
+#     args = parser.parse_args()
 
-    with open(args.yaml) as fin:
-        yamldata = yaml.safe_load(fin)
+#     with open(args.yaml) as fin:
+#         yamldata = yaml.safe_load(fin)
 
-    yamldata["exprorer_msmd"]["sequence"] = prepare_sequence(
-        yamldata["exprorer_msmd"]["sequence"],
-        yamldata["exprorer_msmd"]["general"]
-    )
+#     yamldata["exprorer_msmd"]["sequence"] = prepare_sequence(
+#         yamldata["exprorer_msmd"]["sequence"],
+#         yamldata["exprorer_msmd"]["general"]
+#     )
 
-    prepare_md_files(
-        yamldata["exprorer_msmd"]["sequence"],
-        args.dir,
-        yamldata["general"]["name"]
-    )
+#     prepare_md_files(
+#         yamldata["exprorer_msmd"]["sequence"],
+#         args.dir,
+#         yamldata["general"]["name"]
+#     )

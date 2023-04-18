@@ -111,7 +111,7 @@ class Packmol(object):
         template = env.get_template("packmol.in")
         with open(inp, "w") as fout:
             fout.write(template.render(data))
-        command = Command(f"{self.exe} < {inp}")
+        command = Command(f"{self.exe} < {inp} > result.log")
         logger.debug(command)
         logger.info(command.run())
         return self
