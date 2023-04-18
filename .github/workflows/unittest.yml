@@ -19,6 +19,7 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: exprorer_msmd
+          options: -v ${{ github.workspace }}:/work
           run: |
-            cd /home/runner/work/exprorer_msmd/exprorer_msmd/script
+            cd /work/script
             make unittest
