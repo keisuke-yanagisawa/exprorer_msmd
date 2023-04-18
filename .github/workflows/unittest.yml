@@ -17,7 +17,7 @@ jobs:
         id: imagetag
         run: |
           VARIANT=${{ github.sha }}
-          TAG="${NAME_IMAGE}:${VARIANT}"
+          TAG="${{ env.NAME_IMAGE }}:${VARIANT}"
           echo "::set-output name=TAG::${TAG}"
 
       - name: Enable cache
