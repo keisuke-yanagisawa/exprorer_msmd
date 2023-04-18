@@ -23,7 +23,7 @@ def align_res_env(ipdb, resn, opdb, focused=[]):
     with uPDB.PDBIOhelper(opdb) as pdbio:
         for src in ipdb:
             struct = uPDB.get_structure(src)
-            for i, model in enumerate(tqdm(struct, desc="[align res. env.]", disable=not (VERBOSE or DEBUG))):
+            for model in tqdm(struct, desc="[align res. env.]", disable=not (VERBOSE or DEBUG)):
 
                 # print(struct, i)
                 probe_coords = uPDB.get_attr(model, "coord", sele=selector)

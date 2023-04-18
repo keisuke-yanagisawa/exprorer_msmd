@@ -1,14 +1,9 @@
 #!/usr/bin/python3
 
 import argparse
-import configparser
 import tempfile
-from os.path import basename, dirname
 import os
 from subprocess import getoutput as gop
-
-from scipy import constants
-import jinja2
 
 from .utilities import util
 from .utilities.executable import Parmchk, Packmol, TLeap
@@ -24,7 +19,7 @@ source leaprc.water.tip3p
 
 prot = loadPDB {pdbfile}
 
-addIons2 prot Na+ 0 
+addIons2 prot Na+ 0
 addIons2 prot Cl- 0
 solvateBox prot TIP3PBOX 10.0
 
@@ -35,19 +30,19 @@ saveAmberParm prot {tmp_prefix}.parm7 {tmp_prefix}.rst7
 quit
 """
 
+
 def protein_pdb_preparation(pdbfile):
     _, tmp1 = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)
     gop(f"grep -v OXT {pdbfile} | grep -v ANISOU > {tmp1}")
     return tmp1
 
+
 def calculate_boxsize(pdbfile):
     tmpdir = tempfile.mkdtemp()
-    tmp_prefix=f"{tmpdir}/{const.TMP_PREFIX}"
+    tmp_prefix = f"{tmpdir}/{const.TMP_PREFIX}"
     with open(f"{tmp_prefix}.in", "w") as fout:
         fout.write(tmp_leap.format(pdbfile=pdbfile, tmp_prefix=tmp_prefix))
     logger.info(gop(f"tleap -f {tmp_prefix}.in | tee {tmp_prefix}.in.result"))
-    center_str = gop(f"cat {tmp_prefix}.in.result | grep The\ center | cut -d: -f2 | sed s/,//g")
-    center = [float(s) for s in center_str.split()]
     box_size_str = gop(f"tail -n 1 {tmp_prefix}.rst7 | cut -c -36")
     try:
         box_size = [float(s) for s in box_size_str.split()]
@@ -56,10 +51,11 @@ def calculate_boxsize(pdbfile):
         logger.error("cat leap.log")
         logger.error(open("leap.log").read())
         exit(1)
-        
+
     box_size = max(box_size)
 
     return box_size
+
 
 def create_frcmod(setting_probe, debug=False):
     cmol = setting_probe["mol2"]
@@ -70,15 +66,16 @@ def create_frcmod(setting_probe, debug=False):
         .run(frcmod=cfrcmod)
     return cfrcmod
 
+
 def create_system(setting_protein, setting_probe, probe_frcmod, debug=False):
-    pdbpath    = protein_pdb_preparation(setting_protein["pdb"])
-    boxsize    = calculate_boxsize(pdbpath)
-    ssbonds    = setting_protein["ssbond"]
-    cmol       = setting_probe["mol2"]
-    cpdb       = setting_probe["pdb"]
-    cid        = setting_probe["cid"]
-    atomtype   = setting_probe["atomtype"]
-    probemolar = float( setting_probe["molar"] )
+    pdbpath = protein_pdb_preparation(setting_protein["pdb"])
+    boxsize = calculate_boxsize(pdbpath)
+    ssbonds = setting_protein["ssbond"]
+    cmol = setting_probe["mol2"]
+    cpdb = setting_probe["pdb"]
+    cid = setting_probe["cid"]
+    atomtype = setting_probe["atomtype"]
+    probemolar = float(setting_probe["molar"])
 
     _, box_pdb = tempfile.mkstemp(suffix=".pdb")
     Packmol(debug=debug) \
@@ -86,8 +83,8 @@ def create_system(setting_protein, setting_probe, probe_frcmod, debug=False):
         .run(box_pdb)
 
     tleap_obj = TLeap(debug=debug) \
-                    .set(cid, cmol, probe_frcmod, box_pdb, 
-                        boxsize, ssbonds, atomtype)
+        .set(cid, cmol, probe_frcmod, box_pdb,
+             boxsize, ssbonds, atomtype)
 
     while True:
         _, fileprefix = tempfile.mkstemp(suffix="")
@@ -102,12 +99,14 @@ def create_system(setting_protein, setting_probe, probe_frcmod, debug=False):
 
     return tleap_obj.parm7, tleap_obj.rst7
 
+
 def generate_msmd_system(setting, debug=False):
     cfrcmod = create_frcmod(setting["input"]["probe"], debug=debug)
-    parm7, rst7 = create_system(setting["input"]["protein"], 
-                                setting["input"]["probe"], 
+    parm7, rst7 = create_system(setting["input"]["protein"],
+                                setting["input"]["probe"],
                                 cfrcmod, debug=debug)
     return parm7, rst7
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
