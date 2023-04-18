@@ -20,7 +20,5 @@ jobs:
         with:
           image: exprorer_msmd
           run: |
-            ls
-            pwd
-            cd script
+            cd /home/runner/work/exprorer_msmd/exprorer_msmd/script
             make unittest
