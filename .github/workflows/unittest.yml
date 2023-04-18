@@ -34,7 +34,7 @@ jobs:
           context: .devcontainer
           tags: ${{ steps.imagetag.outputs.TAG }}
           cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache -new,mode=max
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
           push: false
           load: true
 
