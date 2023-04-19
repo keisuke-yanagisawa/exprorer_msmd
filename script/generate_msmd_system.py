@@ -5,11 +5,11 @@ import tempfile
 import os
 from subprocess import getoutput as gop
 
-from .utilities import util
-from .utilities.executable import Parmchk, Packmol, TLeap
-from .utilities import const
-from .utilities.pmd import convert as pmd_convert
-from .utilities.logger import logger
+from utilities import util
+from utilities.executable import Parmchk, Packmol, TLeap
+from utilities import const
+from utilities.pmd import convert as pmd_convert
+from utilities.logger import logger
 
 VERSION = "2.0.0"
 
@@ -37,23 +37,26 @@ def protein_pdb_preparation(pdbfile):
     return tmp1
 
 
-def calculate_boxsize(pdbfile):
+def __calculate_boxsize(pdbfile):
     tmpdir = tempfile.mkdtemp()
     tmp_prefix = f"{tmpdir}/{const.TMP_PREFIX}"
     with open(f"{tmp_prefix}.in", "w") as fout:
         fout.write(tmp_leap.format(pdbfile=pdbfile, tmp_prefix=tmp_prefix))
     logger.info(gop(f"tleap -f {tmp_prefix}.in | tee {tmp_prefix}.in.result"))
-    box_size_str = gop(f"tail -n 1 {tmp_prefix}.rst7 | cut -c -36")
+    return calculate_boxsize(f"{tmp_prefix}.rst7")
+
+
+def calculate_boxsize(rst7):
+    "get longest box size from rst7 file"
+    box_size_str = gop(f"tail -n 1 {rst7} | cut -c -36")
     try:
         box_size = [float(s) for s in box_size_str.split()]
     except ValueError as e:
         logger.error(e)
         logger.error("cat leap.log")
         logger.error(open("leap.log").read())
-        exit(1)
-
+        raise e
     box_size = max(box_size)
-
     return box_size
 
 
@@ -67,9 +70,9 @@ def create_frcmod(setting_probe, debug=False):
     return cfrcmod
 
 
-def create_system(setting_protein, setting_probe, probe_frcmod, debug=False):
+def create_system(setting_protein, setting_probe, probe_frcmod, debug=False, seed=-1):
     pdbpath = protein_pdb_preparation(setting_protein["pdb"])
-    boxsize = calculate_boxsize(pdbpath)
+    boxsize = __calculate_boxsize(pdbpath)
     ssbonds = setting_protein["ssbond"]
     cmol = setting_probe["mol2"]
     cpdb = setting_probe["pdb"]
@@ -80,7 +83,7 @@ def create_system(setting_protein, setting_probe, probe_frcmod, debug=False):
     _, box_pdb = tempfile.mkstemp(suffix=".pdb")
     Packmol(debug=debug) \
         .set(pdbpath, cpdb, boxsize, probemolar) \
-        .run(box_pdb)
+        .run(box_pdb, seed=seed)
 
     tleap_obj = TLeap(debug=debug) \
         .set(cid, cmol, probe_frcmod, box_pdb,
@@ -100,11 +103,12 @@ def create_system(setting_protein, setting_probe, probe_frcmod, debug=False):
     return tleap_obj.parm7, tleap_obj.rst7
 
 
-def generate_msmd_system(setting, debug=False):
+def generate_msmd_system(setting, debug=False, seed=-1):
     cfrcmod = create_frcmod(setting["input"]["probe"], debug=debug)
     parm7, rst7 = create_system(setting["input"]["protein"],
                                 setting["input"]["probe"],
-                                cfrcmod, debug=debug)
+                                cfrcmod, debug=debug,
+                                seed=seed)
     return parm7, rst7
 
 
@@ -130,6 +134,6 @@ if __name__ == "__main__":
     # else: logger level is "warn"
 
     setting = util.parse_yaml(args.setting_yaml)
-    parm7, rst7 = generate_msmd_system(setting, args.debug)
+    parm7, rst7 = generate_msmd_system(setting, args.debug, args.seed)
     pmd_convert(parm7, f"{args.output_prefix}.top",
                 inxyz=rst7, outxyz=f"{args.output_prefix}.gro")
