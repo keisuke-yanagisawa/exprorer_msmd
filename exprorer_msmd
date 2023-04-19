@@ -41,7 +41,7 @@ def preprocess(index, setting, debug=False):
     # create a protein-water-probe system
     _, tmptop = tempfile.mkstemp(suffix=".top")
     _, tmpgro = tempfile.mkstemp(suffix=".gro")
-    parm7, rst7 = generate_msmd_system(setting, debug=debug)
+    parm7, rst7 = generate_msmd_system(setting, debug=debug, seed=index)
     pmd_convert(parm7, tmptop, inxyz=rst7, outxyz=tmpgro)
 
     # add virtual atoms for pseudo repulsion between probes
