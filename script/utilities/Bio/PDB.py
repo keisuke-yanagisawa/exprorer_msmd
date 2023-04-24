@@ -9,6 +9,7 @@ Authors: Keisuke Yanagisawa
 """
 import collections
 import gzip
+from typing import Optional
 import numpy as np
 from Bio import PDB
 from collections.abc import Iterable
@@ -31,14 +32,14 @@ class MultiModelPDBReader(object):
         self.fileend = False
         self.file.seek(0)
         while True:
-            l = self.file.readline()
-            if l.startswith(self.header):
+            line = self.file.readline()
+            if line.startswith(self.header):
                 self.model_positions.append(
-                    self.file.tell() - len(l.encode())
+                    self.file.tell() - len(line.encode())
                 )
                 break
 
-    def __init__(self, file, header="MODEL"):
+    def __init__(self, file: str, header: str = "MODEL"):
         self.file = open(file)
         self.model_positions = []
         self.fileend = False
@@ -48,7 +49,7 @@ class MultiModelPDBReader(object):
     def __del__(self):
         self.file.close()
 
-    def get_model(self, idx):
+    def get_model(self, idx: int):
         """
         get a model with 0-origin
         Note that it uses idx, not MODEL ID.
@@ -82,12 +83,12 @@ class MultiModelPDBReader(object):
         self.file.seek(self.model_positions[-1])
 
         while True:
-            l = self.file.readline()
-            if l == "":
+            line = self.file.readline()
+            if line == "":
                 self.fileend = True
                 break
-            elif l.startswith(self.header):
-                cur = self.file.tell() - len(l.encode())
+            elif line.startswith(self.header):
+                cur = self.file.tell() - len(line.encode())
                 if cur == self.model_positions[-1]:
                     continue
                 self.file.seek(cur)
@@ -112,7 +113,7 @@ class PDBIOhelper():
     これは1つずつモデルを保存していきます。
     """
 
-    def __init__(self, path):
+    def __init__(self, path: str):
         self.path = path
         self.open()
 
@@ -132,8 +133,7 @@ class PDBIOhelper():
 
     def save(self, pdb_object):
         if "fo" not in dir(self):
-            exit(1)
-            # TODO raise error
+            raise ValueError("File is not opened. Please call open() first.")
 
         model_lst = []
         if pdb_object.level == "S":
@@ -182,7 +182,7 @@ def get_structure(filepath: str, structname="") -> PDB.Structure:
     return PDB.PDBParser(QUIET=True).get_structure(structname, fileobj)
 
 
-def get_attr(model, attr, sele=None):
+def get_attr(model: PDB.Model, attr: str, sele: Optional[str] = None):
     """
     Get attribute from Bio.PDB.Model object.
     {"resid", "resname", "coord", "element", "fullname"} 
