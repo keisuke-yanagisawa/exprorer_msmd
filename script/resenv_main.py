@@ -9,6 +9,7 @@ from tqdm import tqdm
 from joblib import Parallel, delayed
 import tempfile
 from Bio import PDB
+from Bio.PDB.Entity import Entity
 from utilities.Bio import PDB as uPDB
 
 VERSION = "0.3.0"
@@ -19,7 +20,11 @@ Output: residue environments
 """
 
 
-def compute_SR_probe_resis(model, dx, resn, threshold, lt=False):
+def compute_SR_probe_resis(model: Entity,
+                           dx,
+                           resn,
+                           threshold,
+                           lt=False):
     """
     SR : Specified region
     return: set()

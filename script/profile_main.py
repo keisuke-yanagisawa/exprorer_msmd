@@ -1,6 +1,7 @@
 import argparse
 import tempfile
 import os
+from typing import List
 import numpy as np
 from tqdm import tqdm
 import gridData
@@ -8,6 +9,7 @@ import gridData
 from utilities.Bio import PDB as uPDB
 from utilities import const
 from Bio import PDB
+from Bio.PDB.Structure import Structure
 
 DESCRIPTION = """
 generate residue interaction profile of a probe of interest
@@ -25,7 +27,8 @@ residue_type_dict = {
 }
 
 
-def atomtype_select(struct, atoms):
+def atomtype_select(struct: Structure,
+                    atoms: List[str]):
     class AtomTypeSelect(PDB.Select):
         def __init__(self, atoms):
             self.atomtypes = atoms
@@ -43,7 +46,9 @@ def atomtype_select(struct, atoms):
     return struct
 
 
-def res_int_profile(ipdb, atoms, oprefix):
+def res_int_profile(ipdb: str,
+                    atoms: List[str],
+                    oprefix: str):
     struct = uPDB.get_structure(ipdb)
     struct = atomtype_select(struct, atoms)
 

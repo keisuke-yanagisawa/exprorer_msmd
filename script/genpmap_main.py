@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os
+from typing import Optional
 
 from scipy import constants
 
@@ -10,11 +11,22 @@ from utilities import GridUtil
 from utilities.Bio import PDB as uPDB
 import gridData
 import numpy as np
+import numpy.typing as npt
 
 VERSION = "1.0.0"
 
 
-def mask_generator(ref_struct, reference_grid, distance=None):
+def mask_generator(ref_struct: str,
+                   reference_grid: gridData.Grid,
+                   distance: Optional[float] = None) -> gridData.Grid:
+    """
+    input
+        ref_struct: path to reference structure
+        reference_grid: gridData.Grid object
+        distance: distance threshold for mask
+    output:
+        mask: gridData.Grid object containing boolean values
+    """
     mask = GridUtil.gen_distance_grid(reference_grid, ref_struct)
     # print(np.max(mask.grid), np.min(mask.grid), distance)
     if distance is not None:
@@ -24,7 +36,10 @@ def mask_generator(ref_struct, reference_grid, distance=None):
     return mask
 
 
-def convert_to_proba(g, mask_grid=None, normalize="snapshot", frames=1):
+def convert_to_proba(g: gridData.Grid,
+                     mask_grid: Optional[npt.NDArray] = None,
+                     normalize: str = "snapshot",
+                     frames: int = 1) -> gridData.Grid:
     if mask_grid is not None:
         values = g.grid[np.where(mask_grid)]
         # print(np.sum(g.grid), np.sum(values), np.where(mask_grid))
@@ -39,7 +54,9 @@ def convert_to_proba(g, mask_grid=None, normalize="snapshot", frames=1):
     return g
 
 
-def convert_to_gfe(grid_path, mean_proba, temperature=300):
+def convert_to_gfe(grid_path: str,
+                   mean_proba: float,
+                   temperature: float = 300) -> str:
     pmap = gridData.Grid(grid_path)
     pmap.grid = np.where(pmap.grid <= 0, 1e-10, pmap.grid)  # avoid log(0)
     pmap.grid = -(constants.R / constants.calorie / constants.kilo) * temperature * np.log(pmap.grid / mean_proba)
@@ -57,7 +74,11 @@ def convert_to_gfe(grid_path, mean_proba, temperature=300):
     return gfe_path
 
 
-def convert_to_pmap(grid_path, ref_struct, valid_distance, normalize="snapshot", frames=1):
+def convert_to_pmap(grid_path: str,
+                    ref_struct: str,
+                    valid_distance: float,
+                    normalize: str = "snapshot",
+                    frames: int = 1):
     grid = gridData.Grid(grid_path)
     mask = mask_generator(ref_struct, grid, valid_distance)
     pmap = convert_to_proba(grid, mask.grid, frames=frames, normalize=normalize)
@@ -68,7 +89,7 @@ def convert_to_pmap(grid_path, ref_struct, valid_distance, normalize="snapshot",
     return pmap_path
 
 
-def parse_snapshot_setting(string):
+def parse_snapshot_setting(string: str):
     offset = "1"  # default parameter
     if len(string.split(":")) != 1:        # ofset is an option
         string, offset = string.split(":")
@@ -76,7 +97,13 @@ def parse_snapshot_setting(string):
     return start, stop, offset
 
 
-def gen_pmap(dirpath, setting_general, setting_input, setting_pmap, traj, top, debug=False):
+def gen_pmap(dirpath: str,
+             setting_general: dict,
+             setting_input: dict,
+             setting_pmap: dict,
+             traj: str,
+             top: str,
+             debug=False):
 
     traj_start, traj_stop, traj_offset \
         = parse_snapshot_setting(setting_pmap["snapshot"])

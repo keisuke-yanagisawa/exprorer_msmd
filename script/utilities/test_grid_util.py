@@ -1,8 +1,6 @@
 from unittest import TestCase
-from utilities.util import parse_yaml, expand_index
 from utilities.GridUtil import gen_distance_grid
 import gridData
-from utilities.Bio import PDB as uPDB
 
 
 class TestGenDistanceGrid(TestCase):

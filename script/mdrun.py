@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 
 
+from typing import List
 import jinja2
 
 import os
@@ -10,7 +11,8 @@ from .utilities.logger import logger
 VERSION = "1.0.0"
 
 
-def gen_mdp(protocol_dict, MD_DIR):
+def gen_mdp(protocol_dict: dict,
+            MD_DIR: str):
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
     template = env.get_template(f"./template/{protocol_dict['type']}.mdp")
 
@@ -25,7 +27,13 @@ def gen_mdp(protocol_dict, MD_DIR):
         fout.write(template.render(protocol_dict))
 
 
-def gen_mdrun_job(step_names, name, path, top, gro, out_traj, post_comm=""):
+def gen_mdrun_job(step_names: List[str],
+                  name: str,
+                  path: str,
+                  top: str,
+                  gro: str,
+                  out_traj: str,
+                  post_comm: str = ""):
     data = {
         "NAME": name,
         "TOP": top,
@@ -54,7 +62,12 @@ def prepare_sequence(sequence, general):
     return ret
 
 
-def prepare_md_files(sequence, targetdir, jobname, top, gro, out_traj):
+def prepare_md_files(sequence: List[dict],
+                     targetdir: str,
+                     jobname: str,
+                     top: str,
+                     gro: str,
+                     out_traj: str):
     for step in sequence:
         gen_mdp(step, targetdir)
     gen_mdrun_job([d["name"] for d in sequence],

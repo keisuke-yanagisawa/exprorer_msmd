@@ -26,7 +26,7 @@ class Cpptraj(object):
         return self
 
     def run(self, basedir, prefix, box_center=[0., 0., 0.], box_size=80, interval=1,
-            traj_start=1, traj_stop="last", traj_offset=1,
+            traj_start: str = "1", traj_stop="last", traj_offset: str = "1",
             maps=[{"suffix": "nVH", "selector": "(!@VIS)&(!@H*)"}]):
         # TODO: input "maps" variable should be a read-only list (shared between threads)
         maps = copy.deepcopy(maps)
