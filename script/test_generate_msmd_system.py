@@ -1,5 +1,5 @@
 from unittest import TestCase
-from generate_msmd_system import calculate_boxsize, generate_msmd_system
+from generate_msmd_system import calculate_boxsize, generate_msmd_system, _create_frcmod
 from utilities import util
 import os
 
@@ -36,3 +36,29 @@ class TestGenerateMsmdSystem(TestCase):
         rst7_str = open(rst7).read()
         expected_rst7 = open("test_data/tripeptide_A11.rst7").read()
         self.assertEqual(rst7_str, expected_rst7)
+
+
+class TestCreateFrcmod(TestCase):
+    def __init__(self, *args, **kwargs):
+        super(TestCreateFrcmod, self).__init__(*args, **kwargs)
+        self.mol2file = "test_data/A11.mol2"
+        self.atomtype = "gaff2"
+
+    def test_create_frcmod(self):
+        frcmod_path = _create_frcmod(self.mol2file, self.atomtype)
+
+        frcmod_str = open(frcmod_path).read()
+        expected_frcmod = open("test_data/A11.frcmod").read()
+        self.assertEqual(frcmod_str, expected_frcmod)
+
+    def test_invalid_atomtype(self):
+        with self.assertRaises(ValueError):
+            _create_frcmod(self.mol2file, "INVALID")
+
+    def test_mol2file_does_not_exist(self):
+        with self.assertRaises(FileNotFoundError):
+            _create_frcmod("INVALID", self.atomtype)
+
+    def test_invalid_mol2file(self):
+        with self.assertRaises(ValueError):
+            _create_frcmod("test_data/A11.pdb", self.atomtype)

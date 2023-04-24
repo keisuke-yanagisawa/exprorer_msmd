@@ -47,7 +47,10 @@ def __calculate_boxsize(pdbfile):
 
 
 def calculate_boxsize(rst7):
-    "get longest box size from rst7 file"
+    """
+    get longest box size from rst7 file
+    """
+
     box_size_str = gop(f"tail -n 1 {rst7} | cut -c -36")
     try:
         box_size = [float(s) for s in box_size_str.split()]
@@ -60,12 +63,10 @@ def calculate_boxsize(rst7):
     return box_size
 
 
-def create_frcmod(setting_probe, debug=False):
-    cmol = setting_probe["mol2"]
-    atomtype = setting_probe["atomtype"]
+def _create_frcmod(mol2file, atomtype, debug=False):
     _, cfrcmod = tempfile.mkstemp(suffix=".frcmod")
     Parmchk(debug=debug) \
-        .set(cmol, atomtype) \
+        .set(mol2file, atomtype) \
         .run(frcmod=cfrcmod)
     return cfrcmod
 
@@ -104,7 +105,9 @@ def create_system(setting_protein, setting_probe, probe_frcmod, debug=False, see
 
 
 def generate_msmd_system(setting, debug=False, seed=-1):
-    cfrcmod = create_frcmod(setting["input"]["probe"], debug=debug)
+    cfrcmod = _create_frcmod(setting["input"]["probe"]["mol2"],
+                             setting["input"]["probe"]["atomtype"],
+                             debug=debug)
     parm7, rst7 = create_system(setting["input"]["protein"],
                                 setting["input"]["probe"],
                                 cfrcmod, debug=debug,
