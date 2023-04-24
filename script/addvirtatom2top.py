@@ -1,4 +1,5 @@
 import argparse
+from typing import List
 
 VERSION = "1.0.0"
 
@@ -12,14 +13,17 @@ VIS   VIS    1  2.000000e+00   4.184000e-06
 """
 
 
-def addvirtatom2top(top_string, probe_names, sigma=2, epsilon=4.184e-6):
+def addvirtatom2top(top_string: str,
+                    probe_names: List[str],
+                    sigma: float = 2,
+                    epsilon: float = 4.184e-6):
     ret = []
     curr_section = None
     now_mol = None
     natoms = 0
     for line in top_string.split("\n"):
-        l = line.split(";")[0].strip()
-        if l.startswith("["):
+        line = line.split(";")[0].strip()
+        if line.startswith("["):
             prev_section = curr_section
             if prev_section == "atomtypes":
                 ret.append(
@@ -33,13 +37,13 @@ def addvirtatom2top(top_string, probe_names, sigma=2, epsilon=4.184e-6):
                     {natoms+1: 5d}   2  {' '.join([str(x) for x in range(1, natoms+1)])}
                     """)
                 natoms = 0
-            curr_section = l[l.find("[") + 1:l.find("]")].strip()
+            curr_section = line[line.find("[") + 1:line.find("]")].strip()
             if curr_section == "moleculetype":
                 now_mol = None
-        elif curr_section == "atoms" and l != "":
+        elif curr_section == "atoms" and line != "":
             natoms += 1
-        elif curr_section == "moleculetype" and now_mol is None and l != "":
-            now_mol = l.split()[0].strip()
+        elif curr_section == "moleculetype" and now_mol is None and line != "":
+            now_mol = line.split()[0].strip()
 
         ret.append(line)
     ret = "\n".join(ret)

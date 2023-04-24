@@ -1,6 +1,7 @@
 import argparse
+from typing import List
 from tqdm import tqdm
-
+from Bio.PDB.Atom import Atom
 from utilities.Bio import PDB as uPDB
 from utilities.Bio.sklearn_interface import SuperImposer
 
@@ -9,8 +10,11 @@ superimpose structures in accordance with specific atoms
 """
 
 
-def align_res_env(ipdb, resn, opdb, focused=[]):
-    def selector(a):
+def align_res_env(ipdb: str,
+                  resn: str,
+                  opdb: str,
+                  focused: List[str] = []):
+    def selector(a: Atom):
         cond1 = uPDB.get_attr(a, "resname") == resn
         cond2 = len(focused) == 0 or uPDB.get_attr(a, "fullname") in focused
         return cond1 and cond2

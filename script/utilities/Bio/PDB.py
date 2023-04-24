@@ -9,7 +9,7 @@ Authors: Keisuke Yanagisawa
 """
 import collections
 import gzip
-from typing import Optional
+from typing import Callable, Optional
 import numpy as np
 from Bio import PDB
 from collections.abc import Iterable
@@ -182,7 +182,9 @@ def get_structure(filepath: str, structname="") -> PDB.Structure:
     return PDB.PDBParser(QUIET=True).get_structure(structname, fileobj)
 
 
-def get_attr(model: PDB.Model, attr: str, sele: Optional[str] = None):
+def get_attr(model: PDB.Model,
+             attr: str,
+             sele: Optional[Callable[[PDB.Atom], bool]] = None):
     """
     Get attribute from Bio.PDB.Model object.
     {"resid", "resname", "coord", "element", "fullname"} 

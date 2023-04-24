@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+from typing import List
 
 from utilities.logger import logger
 from gridData import Grid
@@ -9,11 +10,11 @@ import numpy as np
 VERSION = "1.0.0"
 
 
-def check(gs):
+def check(gs: List[Grid]):
     return True
 
 
-def grid_max(gs):
+def grid_max(gs: List[Grid]):
     # TODO: check all grids have the same voxel fields
     if not check(gs):
         logger.error("ERROR: Grid(s) have different voxel fields")
@@ -24,7 +25,8 @@ def grid_max(gs):
     return ret
 
 
-def gen_max_pmap(inpaths, outpath):
+def gen_max_pmap(inpaths: List[str],
+                 outpath: str):
     gs = [Grid(n) for n in inpaths]
     max_pmap = grid_max(gs)
     max_pmap.export(outpath, type="double")

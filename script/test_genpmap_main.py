@@ -1,8 +1,6 @@
 from unittest import TestCase
 from genpmap_main import mask_generator
-from utilities import util
 import gridData
-from utilities.Bio import PDB as uPDB
 from utilities import GridUtil
 import numpy as np
 

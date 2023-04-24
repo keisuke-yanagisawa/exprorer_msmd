@@ -1,9 +1,10 @@
+from typing import List
 from scipy import constants
 
 VERSION = "2.0.0"
 
 
-def position_restraint(atom_id_list):
+def position_restraint(atom_id_list: List[int]):
     ret_str = "; Position restraint\n"
     for weight in [1000, 500, 200, 100, 50, 20, 10, 0]:
         ret_str += f'#ifdef POSRES{weight}\n'
@@ -17,7 +18,10 @@ def position_restraint(atom_id_list):
     return "\n" + ret_str + "\n"
 
 
-def gen_atom_id_list(gro_string, target, RES, INV):
+def gen_atom_id_list(gro_string: str,
+                     target: str,
+                     RES: List[str],
+                     INV: bool = False):
     atom_id_list = []
 
     MOLECULE = target == "molecule"
@@ -42,7 +46,8 @@ def gen_atom_id_list(gro_string, target, RES, INV):
     return atom_id_list
 
 
-def embed_posre(top_string, atom_id_list):
+def embed_posre(top_string: str,
+                atom_id_list: List[int]):
     ret = []
     curr_section = None
     mol_count = 0
@@ -60,7 +65,9 @@ def embed_posre(top_string, atom_id_list):
     return ret
 
 
-def add_posredefine2top(top_string, gro_string, cid):
+def add_posredefine2top(top_string: str,
+                        gro_string: str,
+                        cid: str):
     atom_id_list = gen_atom_id_list(
         gro_string,
         "protein",

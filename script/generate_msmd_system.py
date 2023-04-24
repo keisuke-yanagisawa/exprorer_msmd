@@ -31,13 +31,21 @@ quit
 """
 
 
-def protein_pdb_preparation(pdbfile):
+def protein_pdb_preparation(pdbfile: str) -> str:
+    """
+    remove OXT and ANISOU from pdbfile to avoid tleap error
+    -----
+    input
+        pdbfile: path to pdb file
+    output
+        tmp1: path to pdb file without OXT and ANISOU
+    """
     _, tmp1 = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)
     gop(f"grep -v OXT {pdbfile} | grep -v ANISOU > {tmp1}")
     return tmp1
 
 
-def __calculate_boxsize(pdbfile):
+def __calculate_boxsize(pdbfile: str) -> float:
     tmpdir = tempfile.mkdtemp()
     tmp_prefix = f"{tmpdir}/{const.TMP_PREFIX}"
     with open(f"{tmp_prefix}.in", "w") as fout:
@@ -46,7 +54,7 @@ def __calculate_boxsize(pdbfile):
     return calculate_boxsize(f"{tmp_prefix}.rst7")
 
 
-def calculate_boxsize(rst7):
+def calculate_boxsize(rst7: str):
     """
     get longest box size from rst7 file
     """
@@ -63,7 +71,9 @@ def calculate_boxsize(rst7):
     return box_size
 
 
-def _create_frcmod(mol2file, atomtype, debug=False):
+def _create_frcmod(mol2file: str,
+                   atomtype: str,
+                   debug: bool = False):
     _, cfrcmod = tempfile.mkstemp(suffix=".frcmod")
     Parmchk(debug=debug) \
         .set(mol2file, atomtype) \
@@ -71,7 +81,11 @@ def _create_frcmod(mol2file, atomtype, debug=False):
     return cfrcmod
 
 
-def create_system(setting_protein, setting_probe, probe_frcmod, debug=False, seed=-1):
+def create_system(setting_protein: dict,
+                  setting_probe: dict,
+                  probe_frcmod: str,
+                  debug: bool = False,
+                  seed: int = -1):
     pdbpath = protein_pdb_preparation(setting_protein["pdb"])
     boxsize = __calculate_boxsize(pdbpath)
     ssbonds = setting_protein["ssbond"]
@@ -104,7 +118,9 @@ def create_system(setting_protein, setting_probe, probe_frcmod, debug=False, see
     return tleap_obj.parm7, tleap_obj.rst7
 
 
-def generate_msmd_system(setting, debug=False, seed=-1):
+def generate_msmd_system(setting: dict,
+                         debug: bool = False,
+                         seed: int = -1):
     cfrcmod = _create_frcmod(setting["input"]["probe"]["mol2"],
                              setting["input"]["probe"]["atomtype"],
                              debug=debug)

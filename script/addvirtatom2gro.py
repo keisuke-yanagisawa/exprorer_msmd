@@ -1,22 +1,25 @@
 
 import tempfile
+from typing import List
 
 from .utilities import gromacs
 from .utilities.logger import logger
-
+import numpy.typing as npt
+import numpy as np
 VERSION = "1.0.0"
 
 
-def center_of_mass(atoms):
+def center_of_mass(atoms: List[gromacs.Gro_atom]) -> npt.NDArray:
     tot_weight = 0
-    tot_coordinates = 0
+    tot_coordinates = np.array([0, 0, 0])
     for a in atoms:
         tot_weight += a.atomic_mass
         tot_coordinates += a.atomic_mass * a.point
     return tot_coordinates / tot_weight
 
 
-def addvirtatom2gro(gro_string: str, probe_id: str):
+def addvirtatom2gro(gro_string: str,
+                    probe_id: str):
     with tempfile.TemporaryDirectory() as tmpdirpath:
         with open(f"{tmpdirpath}/tmp.gro", "w") as fout:
             fout.write(gro_string)
