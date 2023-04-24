@@ -1,3 +1,4 @@
+from typing import List
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 import argparse
@@ -82,8 +83,9 @@ def wrapper(model, dx, resn, threshold, lt, env_distance):
     return ret_env_structs
 
 
-def resenv(grid, ipdb, resn, opdb,
-           threshold=0.2, lt=False, env_distance=4, n_jobs=1):
+def resenv(grid: str, ipdb: List[str], resn: str, opdb: str,
+           threshold: float = 0.2, lt: bool = False,
+           env_distance: float = 4, n_jobs: int = 1):
     dx = gridData.Grid(grid)
 
     out_helper = uPDB.PDBIOhelper(opdb)

@@ -4,10 +4,10 @@ import os
 
 from scipy import constants
 
-from .utilities import util
-from .utilities.executable import Cpptraj
-from .utilities import GridUtil
-from .utilities.Bio import PDB as uPDB
+from utilities import util
+from utilities.executable import Cpptraj
+from utilities import GridUtil
+from utilities.Bio import PDB as uPDB
 import gridData
 import numpy as np
 
