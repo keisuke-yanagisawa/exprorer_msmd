@@ -1,7 +1,7 @@
 from unittest import TestCase
-from genpmap_main import mask_generator
+from script.genpmap_main import mask_generator
 import gridData
-from utilities import GridUtil
+from script.utilities import GridUtil
 import numpy as np
 
 
@@ -9,8 +9,8 @@ class TestMaskGenerator(TestCase):
     def __init__(self, *args, **kwargs):
         super(TestMaskGenerator, self).__init__(*args, **kwargs)
         self.grid = gridData.Grid()
-        self.grid.load("test_data/small_grid.dx")
-        self.ref_struct = "test_data/tripeptide.pdb"
+        self.grid.load("script/test_data/small_grid.dx")
+        self.ref_struct = "script/test_data/tripeptide.pdb"
 
     def test_generate_mask_distance_none(self):
         mask = mask_generator(self.ref_struct, self.grid, distance=None)

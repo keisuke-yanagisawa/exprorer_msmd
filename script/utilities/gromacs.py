@@ -22,7 +22,7 @@ class Gro_atom():
         self.point = np.array([])
         self.velocity = np.array([])
         self.comment = ""
-        self.atomic_mass = 0
+        self.atomic_mass = 0.0
 
         if string != "":
             self.parse(string)

@@ -11,7 +11,7 @@ VERSION = "1.0.0"
 
 def center_of_mass(atoms: List[gromacs.Gro_atom]) -> npt.NDArray:
     tot_weight = 0
-    tot_coordinates = np.array([0, 0, 0])
+    tot_coordinates = np.array([0.0, 0.0, 0.0])
     for a in atoms:
         tot_weight += a.atomic_mass
         tot_coordinates += a.atomic_mass * a.point

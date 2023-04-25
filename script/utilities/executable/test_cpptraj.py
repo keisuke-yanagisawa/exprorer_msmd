@@ -1,5 +1,5 @@
 from unittest import TestCase
-from utilities.executable.cpptraj import Cpptraj
+from script.utilities.executable.cpptraj import Cpptraj
 
 
 class TestCpptraj(TestCase):
