@@ -5,11 +5,11 @@ import tempfile
 import os
 from subprocess import getoutput as gop
 
-from utilities import util
-from utilities.executable import Parmchk, Packmol, TLeap
-from utilities import const
-from utilities.pmd import convert as pmd_convert
-from utilities.logger import logger
+from script.utilities import util
+from script.utilities.executable import Parmchk, Packmol, TLeap
+from script.utilities import const
+from script.utilities.pmd import convert as pmd_convert
+from script.utilities.logger import logger
 
 VERSION = "2.0.0"
 

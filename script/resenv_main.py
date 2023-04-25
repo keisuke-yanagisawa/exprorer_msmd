@@ -102,6 +102,9 @@ def resenv(grid: str, ipdb: List[str], resn: str, opdb: str,
             for model in tqdm(reader, desc="[extract res. env.]", disable=not (VERBOSE or DEBUG))
         )
 
+        if lst_of_lst is None:
+            continue
+
         for lst in lst_of_lst:
             for struct in lst:
                 out_helper.save(struct)

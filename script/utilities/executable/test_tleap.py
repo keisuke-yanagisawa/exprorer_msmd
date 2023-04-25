@@ -1,5 +1,5 @@
 from unittest import TestCase
-from utilities.executable.tleap import TLeap
+from script.utilities.executable.tleap import TLeap
 
 
 class TestTLeap(TestCase):

@@ -1,6 +1,6 @@
 import subprocess
 from unittest import TestCase
-from utilities.executable.execute import Command
+from script.utilities.executable.execute import Command
 
 
 class TestExecute(TestCase):

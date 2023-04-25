@@ -5,10 +5,10 @@ from typing import Optional
 
 from scipy import constants
 
-from utilities import util
-from utilities.executable import Cpptraj
-from utilities import GridUtil
-from utilities.Bio import PDB as uPDB
+from script.utilities import util
+from script.utilities.executable import Cpptraj
+from script.utilities import GridUtil
+from script.utilities.Bio import PDB as uPDB
 import gridData
 import numpy as np
 import numpy.typing as npt
