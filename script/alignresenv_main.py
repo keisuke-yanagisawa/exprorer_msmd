@@ -15,8 +15,8 @@ def align_res_env(ipdb: str,
                   opdb: str,
                   focused: List[str] = []):
     def selector(a: Atom):
-        cond1 = uPDB.get_attr(a, "resname") == resn
-        cond2 = len(focused) == 0 or uPDB.get_attr(a, "fullname") in focused
+        cond1 = uPDB.get_atom_attr(a, "resname") == resn
+        cond2 = len(focused) == 0 or uPDB.get_atom_attr(a, "fullname") in focused
         return cond1 and cond2
 
     ref = uPDB.get_structure(ipdb[0])[0].copy()

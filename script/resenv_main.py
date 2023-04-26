@@ -2,14 +2,13 @@ from typing import List
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 import argparse
-import io
 import gridData
 from scipy .spatial import distance
 from tqdm import tqdm
 from joblib import Parallel, delayed
 import tempfile
 from Bio import PDB
-from Bio.PDB.Entity import Entity
+from Bio.PDB.Model import Model
 from utilities.Bio import PDB as uPDB
 
 VERSION = "0.3.0"
@@ -20,7 +19,7 @@ Output: residue environments
 """
 
 
-def compute_SR_probe_resis(model: Entity,
+def compute_SR_probe_resis(model: Model,
                            dx,
                            resn,
                            threshold,
@@ -70,8 +69,7 @@ def wrapper(model, dx, resn, threshold, lt, env_distance):
                                      sele=lambda a: uPDB.get_resi(a) == resi)
         environment_resis = set(
             uPDB.get_attr(model, "resid",
-                          sele=lambda a: np.min(distance.cdist([a.get_coord()], probe_coords)) < env_distance
-                          and uPDB.get_resname(a) != resn)
+                          sele=lambda a: np.min(distance.cdist([a.get_coord()], probe_coords)) < env_distance and uPDB.get_resname(a) != resn)
         )
 
         if len(environment_resis - water_resis) == 0:

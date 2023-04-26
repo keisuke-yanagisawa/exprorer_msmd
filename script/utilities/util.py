@@ -1,25 +1,35 @@
 import random
 import string
 import os
+from typing import Union
 
 import yaml
 
 from .logger import logger
 
 
-def getabsolutepath(path):
+def getabsolutepath(path: str) -> str:
+    """
+    Get absolute path from relative path
+    """
     path = expandpath(path)
     if not path.startswith("/"):  # relative path
         path = os.getcwd() + "/" + path
     return path
 
 
-def expandpath(path):
+def expandpath(path: str) -> str:
+    """
+    Expand ~ and $HOME and other environment variables
+    """
     path = os.path.expanduser(path)
     return os.path.expandvars(path)
 
 
-def randomname(n):
+def randomname(n: int):
+    """
+    Generate random string of length n
+    """
     randlst = [random.choice(string.ascii_letters + string.digits) for i in range(n)]
     return "".join(randlst)
 
@@ -32,10 +42,10 @@ def dat_dump(dat):
 
 
 # Notation 1-2 => 1,2  5-9:2 => 5,7,9
-def expand_index(ind_info):
+def expand_index(ind_info: Union[str, int]):
     # single element will be parsed as integer in yaml.safe_load
     # Thus this process is needed
-    if type(ind_info) == int:
+    if isinstance(ind_info, int):
         return [ind_info]
 
     ret = []
@@ -56,7 +66,10 @@ def expand_index(ind_info):
     return ret
 
 
-def set_default(setting):
+def set_default(setting: dict) -> None:
+    """
+    Set default values (in place) for some fields in setting
+    """
     if "multiprocessing" not in setting["general"]:
         setting["general"]["multiprocessing"] = True
     if "valid_dist" not in setting["map"]:
@@ -73,7 +86,11 @@ def set_default(setting):
         setting["exprorer_msmd"]["general"]["seed"] = -1
 
 
-def ensure_compatibility_v1_1(setting):
+def ensure_compatibility_v1_1(setting: dict):
+    """
+    Ensure compatibility with exprorer_msmd v1.1
+    """
+
     if "map" not in setting:
         setting["map"] = setting["exprorer_msmd"]["pmap"]
         setting["map"]["snapshot"] = setting["exprorer_msmd"]["pmap"]["snapshots"]
@@ -90,7 +107,7 @@ def ensure_compatibility_v1_1(setting):
         setting["map"]["normalization"] = "total"
 
 
-def parse_yaml(yamlpath):
+def parse_yaml(yamlpath: str) -> dict:
     YAML_PATH = getabsolutepath(yamlpath)
     YAML_DIR_PATH = os.path.dirname(YAML_PATH)
     with open(YAML_PATH) as fin:
