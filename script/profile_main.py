@@ -3,7 +3,7 @@ import tempfile
 import os
 from typing import List
 import numpy as np
-from tqdm import tqdm
+import numpy.typing as npt
 import gridData
 
 from utilities.Bio import PDB as uPDB
@@ -27,14 +27,14 @@ residue_type_dict = {
 }
 
 
-def atomtype_select(struct: Structure,
-                    atoms: List[str]):
+def __atomtype_select(struct: Structure,
+                      atoms: List[str]):
     class AtomTypeSelect(PDB.Select):
         def __init__(self, atoms):
             self.atomtypes = atoms
 
         def accept_atom(self, atom):
-            return uPDB.get_attr(atom, "fullname") in self.atomtypes
+            return uPDB.get_atom_attr(atom, "fullname") in self.atomtypes
 
     _, tmp = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)
     io = PDB.PDBIO()
@@ -46,43 +46,44 @@ def atomtype_select(struct: Structure,
     return struct
 
 
-def res_int_profile(ipdb: str,
-                    atoms: List[str],
-                    oprefix: str):
-    struct = uPDB.get_structure(ipdb)
-    struct = atomtype_select(struct, atoms)
-
-    lim = np.array([[10000, -10000]] * 3, dtype=float)
+def get_all_atom_coordinates(struct: Structure) -> npt.NDArray[np.float64]:
     coords = []
-    names = []
-    for m in tqdm(struct, desc="[generate res. int. profile]", disable=not (VERBOSE or DEBUG)):
+    for m in struct:
         for a in m.get_atoms():
-            lim[:, 0] = np.min([lim[:, 0], a.coord], axis=0)
-            lim[:, 1] = np.max([lim[:, 1], a.coord], axis=0)
             coords.append(a.coord)
+    return np.array(coords)
+
+
+def get_all_atom_names(struct: Structure) -> npt.NDArray[np.str_]:
+    names = []
+    for m in struct:
+        for a in m.get_atoms():
             names.append(uPDB.get_resname(a))
-    coords = np.array(coords)
-    names = np.array(names)
+    return np.array(names)
 
-    for k, v in residue_type_dict.items():
-        mesh_type = k
-        applicables = [s in v for s in names]
-        # print(np.array(applicables).shape)
-        target_coords = coords[np.where(applicables)]
-        # print(target_coords.shape)
 
-        target_lim = np.zeros(lim.shape)
-        target_lim[:, 0] = np.floor(lim[:, 0])
-        target_lim[:, 1] = np.ceil(lim[:, 1]) + 1
+def create_residue_interaction_profile(ipdb: str,
+                                       atoms: List[str],
+                                       residue_lst: List[str]) -> gridData.Grid:
 
-        x_range = np.arange(*target_lim[0, :], 1)
-        y_range = np.arange(*target_lim[1, :], 1)
-        z_range = np.arange(*target_lim[2, :], 1)
+    struct = uPDB.get_structure(ipdb)
+    struct = __atomtype_select(struct, atoms)
 
-        hist, bins = np.histogramdd(target_coords, [x_range, y_range, z_range])
+    coords = get_all_atom_coordinates(struct)
+    names = get_all_atom_names(struct)
+    min_xyz = np.min(coords, axis=0)
+    max_xyz = np.max(coords, axis=0)
 
-        g = gridData.Grid(hist, edges=bins)
-        g.export(f"{oprefix}_{mesh_type}.dx", type="short")
+    applicables = [s in residue_lst for s in names]
+    target_coords = coords[np.where(applicables)]
+
+    x_range = np.arange(np.floor(min_xyz[0]), np.ceil(max_xyz[0]) + 1, 1)
+    y_range = np.arange(np.floor(min_xyz[1]), np.ceil(max_xyz[1]) + 1, 1)
+    z_range = np.arange(np.floor(min_xyz[2]), np.ceil(max_xyz[2]) + 1, 1)
+
+    hist, bins = np.histogramdd(target_coords, [x_range, y_range, z_range])
+
+    return gridData.Grid(hist, edges=bins)
 
 
 if __name__ == "__main__":
@@ -101,4 +102,6 @@ if __name__ == "__main__":
     VERBOSE = args.verbose
     DEBUG = args.debug
 
-    res_int_profile(args.ipdb, args.atoms, args.oprefix)
+    for k, v in residue_type_dict.items():
+        g = create_residue_interaction_profile(args.ipdb, args.atoms, v)
+        g.export(f"{args.oprefix}_{k}.dx", type="short")

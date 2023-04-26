@@ -9,7 +9,7 @@ Authors: Keisuke Yanagisawa
 """
 import collections
 import gzip
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Optional, Union
 import numpy as np
 from Bio import PDB
 from collections.abc import Iterable
@@ -185,9 +185,49 @@ def get_structure(filepath: str, structname="") -> Structure:
     return PDB.PDBParser(QUIET=True).get_structure(structname, fileobj)
 
 
+def get_atom_attr(atom: Atom,
+                  attr: str) -> Union[int, str, npt.NDArray[np.float_], tuple]:
+    """
+    Get attribute from Bio.PDB.Atom object.
+    {"resid", "resname", "coord", "element", "fullname"}
+    are only acceptable as ``attr`` so far.
+    Other attributes raises NotImplementedError.
+
+    Parameters
+    ----------
+    atom : Atom
+        An atom object.
+    attr : str
+        An attribute name which will be obtained.
+
+    Returns
+    -------
+    int or str or np.array or tuple
+        An attribute of the atom.
+
+    Raises
+    ------
+    NotImplementedError
+        If the ``attr`` is not "resid", "resname", coord", "element", nor "fullname".
+    """
+
+    if attr == "resid":
+        return get_resi(atom)
+    elif attr == "resname":
+        return get_resname(atom)
+    elif attr == "coord":
+        return atom.get_coord()
+    elif attr == "element":
+        return atom.element
+    elif attr == "fullname":
+        return atom.fullname
+    else:
+        raise NotImplementedError(f"Attribute {attr} is not supported yet.")
+
+
 def get_attr(model: Model,
              attr: str,
-             sele: Optional[Callable[[Atom], bool]] = None):
+             sele: Optional[Callable[[Atom], bool]] = None) -> npt.NDArray[Any]:
     """
     Get attribute from Bio.PDB.Model object.
     {"resid", "resname", "coord", "element", "fullname"} 
@@ -196,7 +236,7 @@ def get_attr(model: Model,
 
     Parameters
     ----------
-    model : Bio.PDB.Model
+    model : Model
         A model object.
     attr : str
         An attribute name which will be obtained.
@@ -214,28 +254,12 @@ def get_attr(model: Model,
     NotImplementedError
         If the ``attr`` is not "resid", "resname", coord", "element", nor "fullname".
     """
-    method = None
-    if attr == "resid":
-        def method(a: Atom) -> int: return get_resi(a)
-    elif attr == "resname":
-        def method(a: Atom) -> str: return get_resname(a)
-    elif attr == "coord":
-        def method(a: Atom) -> npt.NDArray: return a.get_coord()
-    elif attr == "element":
-        def method(a: Atom) -> str: return a.element
-    elif attr == "fullname":
-        def method(a: Atom) -> tuple: return a.fullname
-    else:
-        raise NotImplementedError(f"attr {attr} is not implemented")
 
-    if isinstance(model, Atom):
-        return method(model)
-    else:
-        data = []
-        for atom in model.get_atoms():
-            if sele is None or sele(atom):
-                data.append(method(atom))
-        return np.array(data)
+    data = []
+    for atom in model.get_atoms():
+        if sele is None or sele(atom):
+            data.append(get_atom_attr(atom, attr))
+    return np.array(data)
 
 
 def get_resname(atom: Atom) -> str:
@@ -252,7 +276,7 @@ def get_resname(atom: Atom) -> str:
     str
         A residue name of the atom of interest.
     """
-    return atom.get_parent().get_resname()
+    return atom.get_parent().get_resname()  # type: ignore
 
 
 def is_water(atom: Atom) -> bool:
@@ -323,7 +347,7 @@ def is_hydrogen(atom: Atom) -> bool:
     return atom.get_fullname()[1] == "H"
 
 
-def set_attr(model: Model, attr: str, lst: list, sele=None) -> None:
+def set_attr(model: Model, attr: str, lst: npt.NDArray, sele=None) -> None:
     """
     Set attribute to Bio.PDB.Model object.
     attr == "coord" is only acceptable so far.
