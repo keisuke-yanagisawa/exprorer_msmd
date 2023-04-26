@@ -6,8 +6,8 @@ import numpy as np
 import numpy.typing as npt
 import gridData
 
-from utilities.Bio import PDB as uPDB
-from utilities import const
+from script.utilities.Bio import PDB as uPDB
+from script.utilities import const
 from Bio import PDB
 from Bio.PDB.Structure import Structure
 
