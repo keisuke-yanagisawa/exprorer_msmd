@@ -1,32 +1,35 @@
 import argparse
+import tempfile
 from typing import List
 from tqdm import tqdm
 from Bio.PDB.Atom import Atom
-from utilities.Bio import PDB as uPDB
-from utilities.Bio.sklearn_interface import SuperImposer
+from Bio.PDB.Structure import Structure
+from Bio.PDB.Model import Model
+from script.utilities.Bio import PDB as uPDB
+from script.utilities.Bio.sklearn_interface import SuperImposer
 
 DESCRIPTION = """
 superimpose structures in accordance with specific atoms
 """
 
 
-def align_res_env(ipdb: str,
+def align_res_env(structs: List[Structure],
+                  reference: Model,
                   resn: str,
-                  opdb: str,
                   focused: List[str] = []):
+
     def selector(a: Atom):
         cond1 = uPDB.get_atom_attr(a, "resname") == resn
         cond2 = len(focused) == 0 or uPDB.get_atom_attr(a, "fullname") in focused
         return cond1 and cond2
 
-    ref = uPDB.get_structure(ipdb[0])[0].copy()
-    ref_probe_c_coords = uPDB.get_attr(ref, "coord", sele=selector)
+    ref_probe_c_coords = uPDB.get_attr(reference, "coord", sele=selector)
     # print(ref_probe_c_coords)
 
     sup = SuperImposer()
-    with uPDB.PDBIOhelper(opdb) as pdbio:
-        for src in ipdb:
-            struct = uPDB.get_structure(src)
+    _, tmppdb = tempfile.mkstemp(suffix=".pdb")
+    with uPDB.PDBIOhelper(tmppdb) as pdbio:
+        for struct in structs:
             for model in tqdm(struct, desc="[align res. env.]", disable=not (VERBOSE or DEBUG)):
 
                 # print(struct, i)
@@ -37,7 +40,8 @@ def align_res_env(ipdb: str,
 
                 pdbio.save(model)
                 # print(len(pdbio))
-    return opdb
+
+    return uPDB.get_structure(tmppdb)
 
 
 VERBOSE = None
@@ -49,10 +53,17 @@ if __name__ == "__main__":
     parser.add_argument("-opdb", required=True, help="output file path")
     parser.add_argument("-v", dest="verbose", action="store_true")
     parser.add_argument("--focused", nargs="+", default=[],
-                        help="please write ' CA ' or like that")
+                        help="focused atoms for probe alignment. please write ' CA ' or like that")
 
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
     VERBOSE = args.verbose
     DEBUG = args.debug
-    align_res_env(args.ipdb, args.resn, args.opdb, args.focused)
+
+    ref_struct = uPDB.get_structure(args.ipdb[0])[0].copy()  # all structures are superimposed to this
+    structures = [uPDB.get_structure(src) for src in args.ipdb]
+
+    aligned = align_res_env(structures, ref_struct, args.resn, args.focused)
+    with uPDB.PDBIOhelper(args.opdb) as pdbio:
+        for model in aligned:
+            pdbio.save(model)
