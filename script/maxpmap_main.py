@@ -3,7 +3,7 @@
 import argparse
 from typing import List
 
-from utilities.logger import logger
+from script.utilities.logger import logger
 from gridData import Grid
 import numpy as np
 
@@ -27,24 +27,11 @@ def grid_max(gs: List[Grid]):
 
 def gen_max_pmap(inpaths: List[str],
                  outpath: str):
+    """
+    Generate max pmap file from multiple pmap files
+    Note that input/output is dx FILEs not grid objects
+    """
     gs = [Grid(n) for n in inpaths]
     max_pmap = grid_max(gs)
     max_pmap.export(outpath, type="double")
     return outpath
-
-
-DEBUG = None  # global variable
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="generate PMAPs")
-    parser.add_argument("pmap_paths", nargs="+",
-                        help="PMAPs will be integrated")
-    parser.add_argument("mappmap_path",
-                        help="destination path to output max-PMAP")
-
-    parser.add_argument("--debug", action="store_true")
-    parser.add_argument("--version", action="version", version=VERSION)
-    args = parser.parse_args()
-    DEBUG = args.debug  # assign to a global variable
-
-    max_pmap_path = gen_max_pmap(args.pmap_paths, args.mappmap_path)
