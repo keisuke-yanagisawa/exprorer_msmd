@@ -9,7 +9,7 @@ from joblib import Parallel, delayed
 import tempfile
 from Bio import PDB
 from Bio.PDB.Model import Model
-from utilities.Bio import PDB as uPDB
+from script.utilities.Bio import PDB as uPDB
 
 VERSION = "0.3.0"
 DESCRIPTION = """
@@ -88,7 +88,7 @@ def wrapper(model, dx, resn, threshold, lt, env_distance):
 
 def resenv(grid: str, ipdb: List[str], resn: str, opdb: str,
            threshold: float = 0.2, lt: bool = False,
-           env_distance: float = 4, n_jobs: int = 1):
+           env_distance: float = 4, n_jobs: int = 1, verbose=False):
     dx = gridData.Grid(grid)
 
     out_helper = uPDB.PDBIOhelper(opdb)
@@ -97,7 +97,7 @@ def resenv(grid: str, ipdb: List[str], resn: str, opdb: str,
 
         lst_of_lst = Parallel(n_jobs=n_jobs)(
             delayed(wrapper)(model, dx, resn, threshold, lt, env_distance)
-            for model in tqdm(reader, desc="[extract res. env.]", disable=not (VERBOSE or DEBUG))
+            for model in tqdm(reader, desc="[extract res. env.]", disable=not verbose)
         )
 
         if lst_of_lst is None:
@@ -106,30 +106,3 @@ def resenv(grid: str, ipdb: List[str], resn: str, opdb: str,
         for lst in lst_of_lst:
             for struct in lst:
                 out_helper.save(struct)
-
-
-VERBOSE = None
-DEBUG = None
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=DESCRIPTION)
-    parser.add_argument("-grid", required=True, help="input max-PMAP")
-    parser.add_argument("-ipdb", required=True, nargs="+", help="input snapshot pdb file")
-    parser.add_argument("-resn", required=True, help="probe residue name")
-    parser.add_argument("-opdb", required=True, help="output pdb file")
-    parser.add_argument("-lt,--less-than", dest="lt", action="store_true",
-                        help="extract environment being less than threshold instead of greater than")
-    parser.add_argument("-v", dest="verbose", action="store_true")
-
-    parser.add_argument("--threshold", default=0.2, type=float,
-                        help="probability threshold")  # preferable protein surface
-    parser.add_argument("--env-distance", default=4, type=int,
-                        help="radius of the environment (distance from probe atoms)")
-    parser.add_argument("--njobs", default=1, type=int)
-    parser.add_argument("--debug", action="store_true")
-    parser.add_argument("--version", action="version", version=VERSION)
-    args = parser.parse_args()
-
-    VERBOSE = args.verbose  # assign to a global variable
-    DEBUG = args.debug   # assign to a global variable
-    resenv(args.grid, args.ipdb, args.resn, args.opdb,
-           args.threshold, args.lt, args.env_distance, args.njobs)
