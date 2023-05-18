@@ -1,4 +1,3 @@
-import argparse
 from typing import List
 
 VERSION = "1.0.0"
@@ -16,7 +15,12 @@ VIS   VIS    1  2.000000e+00   4.184000e-06
 def addvirtatom2top(top_string: str,
                     probe_names: List[str],
                     sigma: float = 2,
-                    epsilon: float = 4.184e-6):
+                    epsilon: float = 4.184e-6) -> str:
+    """
+    Add definition of a virtual atom to a top file
+    Pseudo repulsion term (VIS-VIS nonbond LJ parameter) is added to the top file.
+    """
+
     ret = []
     curr_section = None
     now_mol = None

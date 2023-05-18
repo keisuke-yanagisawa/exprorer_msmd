@@ -1,4 +1,3 @@
-import argparse
 import tempfile
 from typing import List
 from tqdm import tqdm
@@ -17,7 +16,7 @@ def align_res_env(structs: List[Structure],
                   reference: Model,
                   resn: str,
                   focused: List[str] = [],
-                  verbose: bool = False):
+                  verbose: bool = False) -> Structure:
 
     def selector(a: Atom):
         cond1 = uPDB.get_atom_attr(a, "resname") == resn
