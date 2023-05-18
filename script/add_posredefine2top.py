@@ -76,23 +76,3 @@ def add_posredefine2top(top_string: str,
     )
     ret = embed_posre(top_string, atom_id_list)
     return ret
-
-
-# import argparse
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser(description="add position restraints for topology file")
-#     parser.add_argument("-i", required=True, help="input topology file")
-#     parser.add_argument("-o", required=True, help="output topology file")
-#     parser.add_argument("--version", action="version", version=VERSION)
-#     args = parser.parse_args()
-
-#     with open(args.i) as fin:
-#         top_string = fin.read()
-
-#     with open(args.gro) as fin:
-#         gro_string = fin.read()
-
-#     top_string = add_posredefine2top(top_string, gro_string, cid)
-
-#     with open(args.o, "w") as fout:
-#         fout.write(top_string)

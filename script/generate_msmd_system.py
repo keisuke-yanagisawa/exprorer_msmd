@@ -129,30 +129,3 @@ def generate_msmd_system(setting: dict,
                                 cfrcmod, debug=debug,
                                 seed=seed)
     return parm7, rst7
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="generate .parm7 and .rst7 files with cosolvent box")
-    parser.add_argument("-setting-yaml", help="yaml file for the MSMD")
-    parser.add_argument("-oprefix", dest="output_prefix", required=True)
-
-    parser.add_argument("--seed", default=-1, type=int)
-    parser.add_argument("--no-rm-temp", action="store_true", dest="no_rm_temp_flag",
-                        help="the flag not to remove all temporal files")
-
-    parser.add_argument("-v,--verbose", dest="verbose", action="store_true")
-    parser.add_argument("--debug", action="store_true")
-    parser.add_argument("--version", action="version", version=VERSION)
-    args = parser.parse_args()
-
-    if args.debug:
-        logger.setLevel("debug")
-    elif args.verbose:
-        logger.setLevel("info")
-    # else: logger level is "warn"
-
-    setting = util.parse_yaml(args.setting_yaml)
-    parm7, rst7 = generate_msmd_system(setting, args.debug, args.seed)
-    pmd_convert(parm7, f"{args.output_prefix}.top",
-                inxyz=rst7, outxyz=f"{args.output_prefix}.gro")
