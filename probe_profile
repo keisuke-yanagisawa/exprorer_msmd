@@ -6,9 +6,9 @@ import argparse
 import os
 
 from joblib import Parallel, delayed
-from subprocess import getoutput as gop
 from script.utilities.Bio import PDB as uPDB
 from script.alignresenv_main import align_res_env
+from script.resenv_main import resenv
 from script import maxpmap_main
 
 from script.utilities import util
@@ -40,15 +40,12 @@ def extract_residue_environment(index, setting):
     WORK_DIR = os.path.dirname(util.getabsolutepath(__file__))
 
     # TODO: threshold should be configured
-    os.system(f"""
-    {exe_python} {WORK_DIR}/script/resenv_main.py \
-    -grid {basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx \
-    -ipdb {sysdirpath}/{JOB_NAME}_woWAT_10ps.pdb \
-    -resn {PROBE_ID} \
-    --threshold 0.001 \
-    -opdb {sysdirpath}/resenv_{JOB_NAME}.pdb \
-    -v
-    """)
+    resenv(grid=f"{basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx",
+           ipdb=[f"{sysdirpath}/{JOB_NAME}_woWAT_10ps.pdb"],
+           resn=PROBE_ID,
+           opdb=f"{sysdirpath}/resenv_{JOB_NAME}.pdb",
+           threshold=0.001,
+    )
 
 
 def align_residue_environment(setting):
