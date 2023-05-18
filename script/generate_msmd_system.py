@@ -1,12 +1,10 @@
 #!/usr/bin/python3
 
-import argparse
 import tempfile
 import os
 from subprocess import getoutput as gop
 from typing import Tuple
 
-from script.utilities import util
 from script.utilities.executable import Parmchk, Packmol, TLeap
 from script.utilities import const
 from script.utilities.logger import logger
@@ -94,7 +92,7 @@ def create_system(setting_protein: dict,
                   setting_probe: dict,
                   probe_frcmod: str,
                   debug: bool = False,
-                  seed: int = -1)-> Tuple[str, str]:
+                  seed: int = -1) -> Tuple[str, str]:
     """
     create system from protein and probe
     """

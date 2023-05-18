@@ -12,7 +12,7 @@ from script.utilities.Bio import PDB as uPDB
 
 VERSION = "0.3.0"
 DESCRIPTION = """
-Extract probe which is on high-probability region 
+Extract probe which is on high-probability region
 with its environment
 Output: residue environments
 """

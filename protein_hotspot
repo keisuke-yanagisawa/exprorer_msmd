@@ -3,11 +3,11 @@
 import glob
 from script.utilities.logger import logger
 import argparse
-import os
 from script import maxpmap
 
 from script.utilities import util
 VERSION = "0.1.0"
+
 
 def protein_hotspot(setting):
     basedirpath = setting["general"]["workdir"]
