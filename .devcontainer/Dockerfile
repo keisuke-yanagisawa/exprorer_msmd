@@ -29,9 +29,9 @@ RUN mamba install -y -c conda-forge \
     tqdm=4.62.3 scikit-learn=1.0.2 gputil=1.4.0 joblib=1.1.0 
 RUN pip install coverage pytest
 
-# ====== settings for git / ssh =======
-# change permission to read ssh settings if exists
-RUN chown root:$USER /root/.ssh/config || true
-RUN chmod 600        /root/.ssh/config || true
+RUN mamba install -y -c conda-forge flake8 autopep8
 
-SHELL ["/bin/bash", "-c"]
+# ====== settings for git / ssh =======
+RUN echo "mkdir -p /root/.ssh" >> /etc/bash.bashrc
+RUN echo "cp /root/.ssh_host/* /root/.ssh/" >> /etc/bash.bashrc
+RUN echo "chmod 600 /root/.ssh/*" >> /etc/bash.bashrc
