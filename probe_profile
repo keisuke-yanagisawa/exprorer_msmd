@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
 from script.utilities.logger import logger
-from script.profile_main import residue_type_dict, create_residue_interaction_profile
+from script.profile import residue_type_dict, create_residue_interaction_profile
 import argparse
 import os
 
 from joblib import Parallel, delayed
 from script.utilities.Bio import PDB as uPDB
-from script.alignresenv_main import align_res_env
-from script.resenv_main import resenv
-from script import maxpmap_main
+from script.alignresenv import align_res_env
+from script.resenv import resenv
+from script import maxpmap
 
 from script.utilities import util
 import glob
@@ -24,7 +24,7 @@ def gen_maxpmap(setting):
     JOB_NAME = setting["general"]["name"]
 
     logger.info("PMAP aggregation: mapPMAP")
-    maxpmap_main.gen_max_pmap(
+    maxpmap.gen_max_pmap(
         glob.glob(f"{basedirpath}/system*/PMAP_{JOB_NAME}_nVH.dx"),
         f"{basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx"
     )
@@ -53,7 +53,7 @@ def align_residue_environment(setting):
     PROBE_ID = setting["input"]["probe"]["cid"]
     JOB_NAME = setting["general"]["name"]
 
-    # logger.debug("alignresenv_main start")
+    # logger.debug("alignresenv start")
 
     pdbfiles = glob.glob(f"{basedirpath}/system*/resenv_{JOB_NAME}.pdb")
     ref_struct = uPDB.get_structure(pdbfiles[0])[0].copy()  # all structures are superimposed to this
@@ -64,7 +64,7 @@ def align_residue_environment(setting):
         for model in aligned:
             pdbio.save(model)
 
-    logger.debug("alignresenv_main end")
+    logger.debug("alignresenv end")
 
 
 def gen_residue_interaction_profile(setting):

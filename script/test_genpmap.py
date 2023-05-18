@@ -1,5 +1,5 @@
 from unittest import TestCase
-from script.genpmap_main import mask_generator
+from script.genpmap import mask_generator
 import gridData
 from script.utilities import GridUtil
 import numpy as np

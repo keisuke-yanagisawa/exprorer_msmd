@@ -4,7 +4,7 @@ import glob
 from script.utilities.logger import logger
 import argparse
 import os
-from script import maxpmap_main
+from script import maxpmap
 
 from script.utilities import util
 VERSION = "0.1.0"
@@ -15,7 +15,7 @@ def protein_hotspot(setting):
 
     logger.info("PMAP aggregation: mapPMAP")
     for map in setting["map"]["maps"]:
-        maxpmap_main.gen_max_pmap(
+        maxpmap.gen_max_pmap(
             glob.glob(f"{basedirpath}/system*/PMAP_{JOB_NAME}_{map['suffix']}.dx"),
             f"{basedirpath}/maxPMAP_{JOB_NAME}_{map['suffix']}.dx"
         )

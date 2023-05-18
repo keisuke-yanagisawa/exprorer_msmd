@@ -1,5 +1,5 @@
 from unittest import TestCase
-from script.maxpmap_main import grid_max
+from script.maxpmap import grid_max
 import gridData
 
 class TestMaskGenerator(TestCase):

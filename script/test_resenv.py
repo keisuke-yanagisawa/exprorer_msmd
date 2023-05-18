@@ -1,5 +1,5 @@
 from unittest import TestCase
-from script.resenv_main import resenv
+from script.resenv import resenv
 
 class TestResenvMain(TestCase):
     def __init__(self, *args, **kwargs):
