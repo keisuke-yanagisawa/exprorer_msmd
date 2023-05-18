@@ -1,53 +1,82 @@
 # EXPRORER_MSMD
 
-MSMD (mixed-solvent molecular dynamics) engine and analysis tools
+Repository that combines the Mixed-Solvent Molecular Dynamics (MSMD) simulation engine and analysis tools.
 
-## Requirements
+## System Description
 
-Below requirements are written as `.devcontainer/Dockerfile`. You may use docker container.
+A system for performing MSMD using GROMACS automatically.
 
-- python 3 (`$PYTHON`)
-  - Several modules are needed (an example of installation is shown below).
+## Usage Guide
+
+### Environment Setup
+
+This GitHub repository includes Docker files, which can be used to easily create an executable environment.
+
+The notable applications used inside are:
+
+- Python 3 (`$PYTHON`)
+  - Refer to `.devcontainer/Dockerfile` for the libraries used.
 - AmberTools 20 (`$TLEAP`, `$CPPTRAJ`)
-  - It is needed for use of `tleap` and `cpptraj`
 - Gromacs 2021.5 (`$GMX`)
-- packmol 18.169 (`$PACKMOL`)
+- Packmol 18.169 (`$PACKMOL`)
 
-## Preparation
+### Performing MSMD Simulations (`exprorer_msmd`)
 
-### Preparation of container environment
+Prepare a YAML file that defines the protein, mixed-solvent (probe) molecules, and simulation protocol (e.g., `example/example_protocol.yaml`). By executing the following command, the system will automatically perform the system setup, simulation, and create a spatial probability distribution map (PMAP).
 
-- Docker: The container can be built with `Dockerfile`.
-- Singularity: Firstly, convert `Dockerfile` to a Singularity Recipe with Singularity Python. Then, build the container with Singularity.
-It can be used with Docker. Below instruction is for user who will not use Docker.
-
-### Test execution
-If all settings goes well, below commands run MD calculations.
 ```
-cd /PATH/TO/exprorer_msmd
-./exprorer_msmd   example/example_protocol.yaml # prepare a system & execute MSMD simulation
-./protein_hotspot example/example_protocol.yaml # construct a probability map on protein surface
-./probe_profile   example/example_protocol.yaml # construct an interaction profile of a probe
+./exprorer_msmd example/example_protocol.yaml
 ```
 
-## How to modify config files
 
-### To change the number of runs / the length of each production run
+It should be noted that the simulation procedure consists of three parts:
 
-1. Modify the protocol yaml file.
+- Preprocessing to create the MSMD system (**preprocess**)
+- Simulation using GROMACS (**simulation**)
+- Postprocessing to generate PMAP files from simulation results (**postprocess**)
 
-### To do CMD with a different protein
+Each part can be skipped using the flags `--skip-preprocess`, `--skip-simulation`, and `--skip-postprocess`, respectively.
 
-1. Prepare the protein `.pdb` file
-  - Residue IDs must be 1-origin and must not any jump of residue IDs.
-2．Modify or make a protocol file with settings of `input` - `protein`. 
+### Analysis of MSMD Simulation Results
 
-### To do CMD with a different probe (cosolvent)
+#### Checking the Simulation Trajectory
 
-1. Prepare probe `.mol2` and `.pdb` files
-2．Modify or make a protocol file with settings of `input` - `probe`.
+When executing `./exprorer_msmd`, `system` folders will be created in the output directory for each independent run. Within this folder, several PDB files such as `[project_name]_woWAT_10ps.pdb` will be generated, which represent the MSMD trajectory. You can use PyMOL to open these files and visualize the movements of the protein and probe molecules during the simulation (water molecules are excluded).
 
-## Calculation cost
+#### Protein Hotspot Exploration (`protein_hotspot`)
 
-- 3.5 hrs for 40 ns simulation (with 37,763 atoms of example protocol) on Cygnus, Tsukuba University (Xeon Gold 6126 + Tesla V100)
-  - 70 GPU hrs for 20 runs of 40 ns simulation
+This step involves exploring the regions on the protein surface where the probe molecules are most likely to be found, known as protein hotspots.
+
+```
+./protein_hotspot example/example_protocol.yaml
+```
+
+This command will generate voxel files in OpenDX format, such as `maxPMAP_[project_name]_nV.dx`, in the root directory of the output. These voxel files are created to align with the input protein structure. You can load them in PyMOL and visualize them using the `isomesh` command.
+
+The resulting visualization may resemble the following image (showing multiple probe calculation results overlaid):
+
+![Protein Hotspot Exploration](https://i.imgur.com/bzxz0K6.png)
+
+EXPRORER[^1] uses these results to calculate the similarity between voxels and between probes.
+
+[^1]: **Keisuke Yanagisawa**, Yoshitaka Moriwaki, Tohru Terada, Kentaro Shimizu. "EXPRORER: Rational Cosolvent Set Construction Method for Cosolvent Molecular Dynamics Using Large-Scale Computation", *Journal of Chemical Information and Modeling*, **61**: 2744-2753, 2021/06. DOI: [10.1021/acs.jcim.1c00134](https://doi.org/10.1021/acs.jcim.1c00134)
+
+#### Obtaining the Residue Environment around Probe Molecules[^2] (`probe_profile`)
+
+In contrast to the hotspot analysis mentioned earlier, this step involves visualizing the residues that are most likely to be found around the probe molecules.
+
+```
+./protein_hotspot example/example_protocol.yaml
+```
+
+This command will generate eight voxel files in OpenDX format, such as `[project_name]_[probe_name]_mesh_anion.dx`, in the root directory of the output. These voxel files are created to align with the `alignedresenv_[project_name].pdb` file, and you can visualize them in PyMOL using the `isomesh` command.
+
+The resulting visualization may resemble the following image:
+![Residue Environment Exploration](https://i.imgur.com/4QIZxhW.png)
+
+[^2]: **Keisuke Yanagisawa**, Ryunosuke Yoshino, Genki Kudo, Takatsugu Hirokawa. "Inverse Mixed-Solvent Molecular Dynamics for Visualization of the Residue Interaction Profile of Molecular Probes", *International Journal of Molecular Sciences*, **23**: 4749, 2022/04. DOI: [10.3390/ijms23094749](https://doi.org/10.3390/ijms23094749)
+
+## Editing the YAML File
+
+All configurations are specified in the YAML file.
+(Under construction)
