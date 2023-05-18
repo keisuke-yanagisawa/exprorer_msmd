@@ -85,23 +85,3 @@ def create_residue_interaction_profile(ipdb: str,
 
     return gridData.Grid(hist, edges=bins)
 
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=DESCRIPTION)
-    parser.add_argument("-ipdb", required=True,
-                        help="input file path")
-    parser.add_argument("-oprefix", required=True,
-                        help="output file prefix")
-    parser.add_argument("-atom", dest="atoms",
-                        help="atomtype to be focused on",
-                        nargs="+", default=[" CB "])
-    parser.add_argument("-v", dest="verbose", action="store_true")
-
-    parser.add_argument("--debug", action="store_true")
-    args = parser.parse_args()
-    VERBOSE = args.verbose
-    DEBUG = args.debug
-
-    for k, v in residue_type_dict.items():
-        g = create_residue_interaction_profile(args.ipdb, args.atoms, v)
-        g.export(f"{args.oprefix}_{k}.dx", type="short")

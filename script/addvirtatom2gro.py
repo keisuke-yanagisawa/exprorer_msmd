@@ -39,22 +39,3 @@ def addvirtatom2gro(gro_string: str,
 
     logger.info(f"the system has {gro.molar(probe_id):.3f} M of {probe_id} cosolvents")
     return str(gro)
-
-# import argparse
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser(description="add virtual atoms to a gro file")
-#     parser.add_argument("-v,--version", action="version", version=VERSION)
-#     parser.add_argument("-i", required=True, help="input gro file")
-#     parser.add_argument("-o", required=True, help="output gro file")
-#     parser.add_argument("-cname", required=True, help="cosolvent res name")
-#     parser.add_argument("-vname", default="VIS", help="virtual interaction site atom name")
-#     args = parser.parse_args()
-
-#     infile = args.i
-#     outfile = args.o
-
-#     with open(infile) as fin:
-#         gro_string = fin.read()
-#     gro_string = addvirtatom2gro(gro_string, args.cname)
-#     with open(outfile, "w") as fout:
-#         fout.write(gro_string)

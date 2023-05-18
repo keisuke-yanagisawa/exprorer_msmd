@@ -48,24 +48,3 @@ def addvirtatom2top(top_string: str,
         ret.append(line)
     ret = "\n".join(ret)
     return ret
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="modify topology records")
-    parser.add_argument("-v,--version", action="version", version=VERSION)
-    parser.add_argument("-i", required=True, help="input topology file")
-    parser.add_argument("-o", required=True, help="output topology file")
-    parser.add_argument("-cname", required=True, nargs="+", help="cosolvent name")
-    # parser.add_argument("-sigma", type=float, default=2,
-    #                     help="sigma for virtual repulsion [nm]")
-    # parser.add_argument("-epsilon", type=float, default=4.184e-6,
-    #                     help="epsilon for virtual repulsion ")
-    args = parser.parse_args()
-
-    probe_names = args.cname
-
-    with open(args.i) as fin:
-        top_string = fin.read()
-    ret = addvirtatom2top(top_string, probe_names)
-    with open(args.o, "w") as fout:
-        fout.write(ret)

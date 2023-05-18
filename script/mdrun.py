@@ -72,28 +72,3 @@ def prepare_md_files(sequence: List[dict],
         gen_mdp(step, targetdir)
     gen_mdrun_job([d["name"] for d in sequence],
                   jobname, f"{targetdir}/mdrun.sh", top, gro, out_traj)
-
-
-# import argparse
-# import yaml
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser(description="run gromacs jobs automatically")
-#     parser.add_argument("--version", action="version", version=VERSION)
-
-#     parser.add_argument("-dir")
-#     parser.add_argument("yaml")
-#     args = parser.parse_args()
-
-#     with open(args.yaml) as fin:
-#         yamldata = yaml.safe_load(fin)
-
-#     yamldata["exprorer_msmd"]["sequence"] = prepare_sequence(
-#         yamldata["exprorer_msmd"]["sequence"],
-#         yamldata["exprorer_msmd"]["general"]
-#     )
-
-#     prepare_md_files(
-#         yamldata["exprorer_msmd"]["sequence"],
-#         args.dir,
-#         yamldata["general"]["name"]
-#     )

@@ -16,7 +16,8 @@ superimpose structures in accordance with specific atoms
 def align_res_env(structs: List[Structure],
                   reference: Model,
                   resn: str,
-                  focused: List[str] = []):
+                  focused: List[str] = [],
+                  verbose: bool = False):
 
     def selector(a: Atom):
         cond1 = uPDB.get_atom_attr(a, "resname") == resn
@@ -30,7 +31,7 @@ def align_res_env(structs: List[Structure],
     _, tmppdb = tempfile.mkstemp(suffix=".pdb")
     with uPDB.PDBIOhelper(tmppdb) as pdbio:
         for struct in structs:
-            for model in tqdm(struct, desc="[align res. env.]", disable=not (VERBOSE or DEBUG)):
+            for model in tqdm(struct, desc="[align res. env.]", disable=not verbose):
 
                 # print(struct, i)
                 probe_coords = uPDB.get_attr(model, "coord", sele=selector)
@@ -42,28 +43,3 @@ def align_res_env(structs: List[Structure],
                 # print(len(pdbio))
 
     return uPDB.get_structure(tmppdb)
-
-
-VERBOSE = None
-DEBUG = None
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=DESCRIPTION)
-    parser.add_argument("-ipdb", required=True, nargs="+", help="input file path")
-    parser.add_argument("-resn", required=True, help="residue name of the probe")
-    parser.add_argument("-opdb", required=True, help="output file path")
-    parser.add_argument("-v", dest="verbose", action="store_true")
-    parser.add_argument("--focused", nargs="+", default=[],
-                        help="focused atoms for probe alignment. please write ' CA ' or like that")
-
-    parser.add_argument("--debug", action="store_true")
-    args = parser.parse_args()
-    VERBOSE = args.verbose
-    DEBUG = args.debug
-
-    ref_struct = uPDB.get_structure(args.ipdb[0])[0].copy()  # all structures are superimposed to this
-    structures = [uPDB.get_structure(src) for src in args.ipdb]
-
-    aligned = align_res_env(structures, ref_struct, args.resn, args.focused)
-    with uPDB.PDBIOhelper(args.opdb) as pdbio:
-        for model in aligned:
-            pdbio.save(model)
