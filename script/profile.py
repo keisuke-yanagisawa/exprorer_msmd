@@ -1,4 +1,3 @@
-import argparse
 import tempfile
 import os
 from typing import List

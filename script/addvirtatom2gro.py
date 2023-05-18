@@ -10,6 +10,9 @@ VERSION = "1.0.0"
 
 
 def center_of_mass(atoms: List[gromacs.Gro_atom]) -> npt.NDArray:
+    """
+    Calculate the center of mass of a list of atoms
+    """
     tot_weight = 0
     tot_coordinates = np.array([0.0, 0.0, 0.0])
     for a in atoms:
@@ -19,7 +22,11 @@ def center_of_mass(atoms: List[gromacs.Gro_atom]) -> npt.NDArray:
 
 
 def addvirtatom2gro(gro_string: str,
-                    probe_id: str):
+                    probe_id: str) -> str:
+    """
+    Add virtual atoms to a gro file
+    Virtual atoms are added to the center of mass of each probe
+    """
     with tempfile.TemporaryDirectory() as tmpdirpath:
         with open(f"{tmpdirpath}/tmp.gro", "w") as fout:
             fout.write(gro_string)

@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-import argparse
 from typing import List
 
 from script.utilities.logger import logger

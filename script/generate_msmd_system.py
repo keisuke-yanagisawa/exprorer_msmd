@@ -4,11 +4,11 @@ import argparse
 import tempfile
 import os
 from subprocess import getoutput as gop
+from typing import Tuple
 
 from script.utilities import util
 from script.utilities.executable import Parmchk, Packmol, TLeap
 from script.utilities import const
-from script.utilities.pmd import convert as pmd_convert
 from script.utilities.logger import logger
 
 VERSION = "2.0.0"
@@ -54,7 +54,7 @@ def __calculate_boxsize(pdbfile: str) -> float:
     return calculate_boxsize(f"{tmp_prefix}.rst7")
 
 
-def calculate_boxsize(rst7: str):
+def calculate_boxsize(rst7: str) -> float:
     """
     get longest box size from rst7 file
     """
@@ -73,7 +73,16 @@ def calculate_boxsize(rst7: str):
 
 def _create_frcmod(mol2file: str,
                    atomtype: str,
-                   debug: bool = False):
+                   debug: bool = False) -> str:
+    """
+    create frcmod file from mol2 file
+    -----
+    input
+        mol2file: path to mol2 file
+        atomtype: atom type (GAFF / GAFF2)
+    output
+        cfrcmod: path to frcmod file
+    """
     _, cfrcmod = tempfile.mkstemp(suffix=".frcmod")
     Parmchk(debug=debug) \
         .set(mol2file, atomtype) \
@@ -85,7 +94,10 @@ def create_system(setting_protein: dict,
                   setting_probe: dict,
                   probe_frcmod: str,
                   debug: bool = False,
-                  seed: int = -1):
+                  seed: int = -1)-> Tuple[str, str]:
+    """
+    create system from protein and probe
+    """
     pdbpath = protein_pdb_preparation(setting_protein["pdb"])
     boxsize = __calculate_boxsize(pdbpath)
     ssbonds = setting_protein["ssbond"]
@@ -120,7 +132,18 @@ def create_system(setting_protein: dict,
 
 def generate_msmd_system(setting: dict,
                          debug: bool = False,
-                         seed: int = -1):
+                         seed: int = -1) -> Tuple[str, str]:
+    """
+    generate msmd system
+    -----
+    input
+        setting: setting json (dict)
+        debug: debug mode
+        seed: random seed
+    output
+        parm7: path to parm7 file
+        rst7: path to rst7 file
+    """
     cfrcmod = _create_frcmod(setting["input"]["probe"]["mol2"],
                              setting["input"]["probe"]["atomtype"],
                              debug=debug)

@@ -4,7 +4,10 @@ from scipy import constants
 VERSION = "2.0.0"
 
 
-def position_restraint(atom_id_list: List[int]):
+def position_restraint(atom_id_list: List[int]) -> str:
+    """
+    generate a string defining position restraint records
+    """
     ret_str = "; Position restraint\n"
     for weight in [1000, 500, 200, 100, 50, 20, 10, 0]:
         ret_str += f'#ifdef POSRES{weight}\n'
@@ -21,7 +24,11 @@ def position_restraint(atom_id_list: List[int]):
 def gen_atom_id_list(gro_string: str,
                      target: str,
                      RES: List[str],
-                     INV: bool = False):
+                     INV: bool = False) -> List[int]:
+    """
+    generate a list of atom ids for a given residue name
+    if INV == True, then a list of atom ids NOT in RES is returned
+    """
     atom_id_list = []
 
     MOLECULE = target == "molecule"
@@ -47,7 +54,10 @@ def gen_atom_id_list(gro_string: str,
 
 
 def embed_posre(top_string: str,
-                atom_id_list: List[int]):
+                atom_id_list: List[int]) -> str:
+    """
+    embed position restraint records into a given topology string
+    """
     ret = []
     curr_section = None
     mol_count = 0
@@ -67,12 +77,15 @@ def embed_posre(top_string: str,
 
 def add_posredefine2top(top_string: str,
                         gro_string: str,
-                        cid: str):
+                        cid: str) -> str:
+    """
+    add position restraint records to a given topology string
+    """
+
     atom_id_list = gen_atom_id_list(
         gro_string,
         "protein",
         ["WAT", "Na+", "Cl-", "CA", "MG", "ZN", "CU", cid],
         True
     )
-    ret = embed_posre(top_string, atom_id_list)
-    return ret
+    return embed_posre(top_string, atom_id_list)

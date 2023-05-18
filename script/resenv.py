@@ -1,7 +1,6 @@
 from typing import List
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
-import argparse
 import gridData
 from scipy .spatial import distance
 from tqdm import tqdm
