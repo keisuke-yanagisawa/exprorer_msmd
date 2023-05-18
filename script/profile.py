@@ -83,4 +83,3 @@ def create_residue_interaction_profile(ipdb: str,
     hist, bins = np.histogramdd(target_coords, [x_range, y_range, z_range])
 
     return gridData.Grid(hist, edges=bins)
-

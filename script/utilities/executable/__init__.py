@@ -1,3 +1,4 @@
+# flake8: noqa
 from .packmol import Packmol
 from .parmchk import Parmchk
 from .tleap import TLeap

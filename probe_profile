@@ -3,7 +3,6 @@
 from script.utilities.logger import logger
 from script.profile import residue_type_dict, create_residue_interaction_profile
 import argparse
-import os
 
 from joblib import Parallel, delayed
 from script.utilities.Bio import PDB as uPDB
@@ -32,12 +31,10 @@ def gen_maxpmap(setting):
 
 
 def extract_residue_environment(index, setting):
-    exe_python = setting["general"]["executables"]["python"]
     basedirpath = setting["general"]["workdir"]
     sysdirpath = f'{basedirpath}/system{index}'
     PROBE_ID = setting["input"]["probe"]["cid"]
     JOB_NAME = setting["general"]["name"]
-    WORK_DIR = os.path.dirname(util.getabsolutepath(__file__))
 
     # TODO: threshold should be configured
     resenv(grid=f"{basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx",
@@ -45,7 +42,7 @@ def extract_residue_environment(index, setting):
            resn=PROBE_ID,
            opdb=f"{sysdirpath}/resenv_{JOB_NAME}.pdb",
            threshold=0.001,
-    )
+           )
 
 
 def align_residue_environment(setting):
