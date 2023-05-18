@@ -1,5 +1,5 @@
 general:
-  iter_index: 0
+  iter_index: 0,1
   # iter_index: 1-2,4,5-9:2 # MSMD indices to be calculated / Notation 1-2 => 1,2  5-9:2 => 5,7,9
   workdir: ../output/example_protocol # output directory / absolute path or relative path from THIS YAML FILE
   name: TEST_PROJECT
@@ -164,10 +164,10 @@ exprorer_msmd:
       title     : Production Run
       type      : production
       define    : ""
-      nsteps    : 5000
-      nstxtcout : 50 # steps
-      nstenergy : 20 # steps
-      nstlog    : 50 # steps
+      nsteps    : 100000
+      nstxtcout : 100 # steps
+      nstenergy : 40 # steps
+      nstlog    : 100 # steps
       # ref_t     : 300
       pcoupl    : Parrinello-Rahman
       # ref_p     : 1.0
@@ -175,7 +175,7 @@ exprorer_msmd:
 map: # MAP generation
   type: pmap
   # valid_dist: 5            # PMAP valid distance from protein atoms
-  snapshot: 51-101:1 # steps / "NAME" trajectory will be used with "NAME|" 
+  snapshot: 1-101:1 # steps / "NAME" trajectory will be used with "NAME|" 
   maps:
     - suffix: nVH
       selector: (!@VIS)&(!@H*)
@@ -189,7 +189,7 @@ probe_profile:
   resenv: # Extract residue environments around probe molecules
     threshold: 0.2 # probability threshold of "preferred" residue environment
     # env_dist: 4    # residue environment distance from a probe molecule
-    snapshots: 51-101:2 # reduce calculation cost (but less environments)
+    snapshots: 1-101:1 # reduce calculation cost (but less environments)
     align: [" C1 ", " C2 ", " C3 ", " O1 "] # all heavy atoms are used if "align" is not defined
 
   profile:
