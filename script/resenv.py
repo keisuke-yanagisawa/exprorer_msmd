@@ -19,13 +19,29 @@ Output: residue environments
 
 
 def compute_SR_probe_resis(model: Model,
-                           dx,
-                           resn,
-                           threshold,
-                           lt=False):
+                           dx: gridData.Grid,
+                           resn: str,
+                           threshold: float,
+                           lt: bool = False):
     """
-    SR : Specified region
-    return: set()
+    This function enumerates the residue numbers `resis` of probe molecules 
+    located in regions that exceed the `threshold` value.
+    ------
+    input:
+        model: Model
+            A snapshot of a molecular dynamics simulation
+            containing probe molecules
+        dx: gridData.Grid,
+            A grid data containing values of a property of interest
+        resn: str,
+            A residue name of probe molecules
+        threshold: float,
+            A threshold value to determine the regions
+        lt: bool = False
+            If True, the regions with values less than the threshold are selected
+    output:
+        resis: set
+            A set of residue numbers of probe molecules
     """
     resis = uPDB.get_attr(model, "resid",
                           sele=lambda a: uPDB.get_resname(a) == resn and not uPDB.is_hydrogen(a))
@@ -55,7 +71,12 @@ class Selector(PDB.Select):
         return self.sele(atom)
 
 
-def wrapper(model, dx, resn, threshold, lt, env_distance):
+def wrapper(model: Model,
+            dx: gridData.Grid,
+            resn: str,
+            threshold: float,
+            lt: bool,
+            env_distance: float):
     water_resis = set(
         uPDB.get_attr(model, "resid", sele=uPDB.is_water)
     )
