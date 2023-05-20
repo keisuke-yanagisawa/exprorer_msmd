@@ -27,7 +27,7 @@ residue_type_dict = {
 
 
 def __atomtype_select(struct: Structure,
-                      atoms: List[str]):
+                      atoms: List[str]) -> Structure:
     class AtomTypeSelect(PDB.Select):
         def __init__(self, atoms):
             self.atomtypes = atoms
