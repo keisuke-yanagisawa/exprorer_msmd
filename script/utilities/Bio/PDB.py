@@ -441,7 +441,7 @@ _ATOMIC_RADII.update(
 )
 
 
-def estimate_exclute_volume(prot: Model) -> float:
+def estimate_exclute_volume(prot: Union[Structure, Model]) -> float:
     """
     VdW半径に基づいてタンパク質の排除体積を計算
     タンパク質は原子種類に応じて処理し、
