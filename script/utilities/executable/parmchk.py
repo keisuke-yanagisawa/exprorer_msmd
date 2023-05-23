@@ -12,6 +12,12 @@ class Parmchk(object):
         self.debug = debug
 
     def set(self, mol2, at):
+        if at not in self.at_indices:
+            raise ValueError(f"atomtype {at} is not supported")
+        if not os.path.exists(mol2):
+            raise FileNotFoundError(f"{mol2} does not exist")
+        if not os.path.splitext(mol2)[1][1:] == "mol2":
+            raise ValueError(f"{mol2} is not mol2 file")
         self.at_id = self.at_indices[at]
         self.mol2 = mol2
         return self
