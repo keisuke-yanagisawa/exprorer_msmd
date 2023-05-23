@@ -58,13 +58,7 @@ def calculate_boxsize(rst7: str) -> float:
     """
 
     box_size_str = gop(f"tail -n 1 {rst7} | cut -c -36")
-    try:
-        box_size = [float(s) for s in box_size_str.split()]
-    except ValueError as e:
-        logger.error(e)
-        logger.error("cat leap.log")
-        logger.error(open("leap.log").read())
-        raise e
+    box_size = [float(s) for s in box_size_str.split()]
     box_size = max(box_size)
     return box_size
 
