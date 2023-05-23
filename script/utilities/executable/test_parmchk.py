@@ -29,6 +29,6 @@ class TestParmchk(TestCase):
     def test_at_is_not_supported(self):
         parmchk = Parmchk()
         with self.assertRaises(ValueError):
-            parmchk.set(mol2="script/utilities/executable/test_data/A11.mol2",
+            parmchk.set(mol2=self.probe_mol2,
                         at="NOT_SUPPORTED_ID")
             parmchk.run()
