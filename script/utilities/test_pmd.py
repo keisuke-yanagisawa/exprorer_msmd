@@ -1,4 +1,4 @@
-import os
+import tempfile
 from unittest import TestCase
 from script.utilities import pmd
 
@@ -10,9 +10,8 @@ class TestConversion(TestCase):
         self.xyzfile = "script/utilities/test_data/pmd/system.rst7"
 
     def test_run_convert(self):
-        os.system("mkdir -p script/utilities/test_data/pmd/output")
-        out_top = "script/utilities/test_data/pmd/output/system.top"
-        out_gro = "script/utilities/test_data/pmd/output/system.gro"
+        _, out_top = tempfile.mkstemp(suffix=".top")
+        _, out_gro = tempfile.mkstemp(suffix=".gro")
         pmd.convert(self.topfile, out_top, self.xyzfile, out_gro)
 
         expected_top = "script/utilities/test_data/pmd/system.top"
@@ -24,8 +23,7 @@ class TestConversion(TestCase):
                          open(expected_gro).read())
 
     def test_run_convert_top_only(self):
-        os.system("mkdir -p script/utilities/test_data/pmd/output")
-        out_top = "script/utilities/test_data/pmd/output/system.top"
+        _, out_top = tempfile.mkstemp(suffix=".top")
         pmd.convert(self.topfile, out_top)
 
         expected_top = "script/utilities/test_data/pmd/system.top"

@@ -1,3 +1,4 @@
+import tempfile
 from unittest import TestCase
 from script.utilities.executable.parmchk import Parmchk
 
@@ -5,16 +6,17 @@ from script.utilities.executable.parmchk import Parmchk
 class TestParmchk(TestCase):
     def __init__(self, *args, **kwargs):
         super(TestParmchk, self).__init__(*args, **kwargs)
+        self.probe_mol2 = "script/utilities/executable/test_data/A11.mol2"
+        self.expected_probe_frcmod = "script/utilities/executable/test_data/A11.frcmod"
 
     def test_parmchk(self):
+        _, tmp_frcmod = tempfile.mkstemp(suffix=".frcmod")
         parmchk = Parmchk()
-        parmchk.set(mol2="script/utilities/executable/test_data/A11.mol2",
-                    at="gaff2")
-        parmchk.run(frcmod="script/utilities/executable/test_data/output/A11.frcmod")
-        with open("script/utilities/executable/test_data/A11.frcmod", "r") as f:
-            expected = f.read()
-        with open("script/utilities/executable/test_data/output/A11.frcmod", "r") as f:
-            actual = f.read()
+        parmchk.set(mol2=self.probe_mol2, at="gaff2")
+        parmchk.run(frcmod=tmp_frcmod)
+
+        expected = open(self.expected_probe_frcmod, "r").read()
+        actual = open(tmp_frcmod, "r").read()
         self.assertEqual(expected, actual)
 
     def test_file_does_not_exist(self):

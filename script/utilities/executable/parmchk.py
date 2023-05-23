@@ -24,7 +24,6 @@ class Parmchk(object):
 
     def run(self, frcmod=None):
         self.frcmod = frcmod
-        self.frcmod_user_define = self.frcmod is not None
         if self.frcmod is None:
             _, self.frcmod = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_FRCMOD)
 
@@ -33,8 +32,3 @@ class Parmchk(object):
         logger.debug(command)
         logger.info(command.run())
         return self
-
-    def __del__(self):
-        if not self.frcmod_user_define:
-            logger.debug(f"[Parmchk] delete: {self.frcmod}")
-            os.remove(self.frcmod)
