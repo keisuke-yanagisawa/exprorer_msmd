@@ -11,8 +11,10 @@ import collections
 import gzip
 import os
 from typing import Any, Callable, Optional, Union
+import warnings
 import numpy as np
 from Bio import PDB
+from Bio.PDB import PDBExceptions
 from collections.abc import Iterable
 import tempfile
 import io
@@ -183,7 +185,9 @@ def get_structure(filepath: str, structname="") -> Structure:
     else:
         fileobj = open(filepath)
 
-    return PDB.PDBParser(QUIET=True).get_structure(structname, fileobj)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", PDBExceptions.PDBConstructionWarning)
+        return PDB.PDBParser(QUIET=True).get_structure(structname, fileobj)
 
 
 def get_atom_attr(atom: Atom,

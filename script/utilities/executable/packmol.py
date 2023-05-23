@@ -172,7 +172,3 @@ class Packmol(object):
             warnings.warn("There is only a protein molecule.", RuntimeWarning)
         logger.info(stdout_str)
         return self
-
-    def __del__(self):
-        if not self.debug and self.box_pdb is not None:
-            os.remove(self.box_pdb)
