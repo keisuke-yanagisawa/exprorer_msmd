@@ -10,6 +10,7 @@ from ..logger import logger
 from ..Bio.PDB import get_structure
 from ..scipy.spatial import estimate_volume
 import numpy as np
+import warnings
 
 # obtained from biopython/Bio/PDB/SASA.py
 _ATOMIC_RADII = collections.defaultdict(lambda: 2.0)
@@ -44,12 +45,54 @@ class Packmol(object):
     def __init__(self, exe="packmol", debug=False):
         self.exe = os.getenv("PACKMOL", "packmol")
         self.debug = debug
+        self.box_pdb = None
 
-    def set(self, protein_pdb: str, cosolv_pdb: str, box_size, molar: float):
+    def __is_cosolvent_pdb(self, pdb: str) -> bool:
+        """
+        check if pdb is cosolvent pdb
+        Assumption: cosolvent pdb has only one residue
+        """
+        struct = get_structure(pdb)
+        residues = [residue for residue in struct.get_residues()]
+        return len(residues) == 1
+
+    def __is_protein_pdb(self, pdb: str) -> bool:
+        """
+        check if pdb is protein pdb
+        Assumption: protein has more than one residue
+        """
+        struct = get_structure(pdb)
+        residues = [residue for residue in struct.get_residues()]
+        return len(residues) > 1
+
+    def set(self, protein_pdb: str, cosolv_pdb: str, box_size: float, molar: float):
         """
         protein_pdb: protein pdb file
         cosolv_pdb: cosolv pdb file
         """
+        if molar < 0:
+            raise ValueError("molar must be zero or positive value")
+        elif molar == 0:
+            warnings.warn("molar is 0.0. No cosolvent will be added.", RuntimeWarning)
+        elif molar > 55:
+            warnings.warn(
+                "given molar is greater than 55.0 M but truncated to 55.0 M. The concentration is extremely higher than the usual setting in MSMD simulation.",
+                RuntimeWarning,
+            )
+            molar = 55.0
+        elif molar > 1.0:
+            warnings.warn(
+                "molar is greater than 1.0 M. The concentration is higher than the usual setting in MSMD simulation.",
+                RuntimeWarning,
+            )
+        if os.path.splitext(protein_pdb)[1] != ".pdb":
+            raise ValueError(f"protein_pdb {protein_pdb} must be pdb file")
+        if os.path.splitext(cosolv_pdb)[1] != ".pdb":
+            raise ValueError(f"cosolv_pdb {cosolv_pdb} must be pdb file")
+        if not self.__is_cosolvent_pdb(cosolv_pdb):
+            raise RuntimeError(f"cosolv_pdb {cosolv_pdb} must have only one residue")
+        if not self.__is_protein_pdb(protein_pdb):
+            raise RuntimeError(f"protein_pdb {protein_pdb} must have more than one residue")
         self.protein_pdb = protein_pdb
         self.cosolv_pdb = cosolv_pdb
         self.box_size = box_size
@@ -76,7 +119,6 @@ class Packmol(object):
     def run(self, box_pdb=None, seed=-1):
         self.box_pdb = box_pdb if box_pdb is not None \
             else tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)[1]
-        self.box_pdb_user_define = box_pdb is not None
         self.seed = seed
 
         # shorten path length to pdb file
@@ -98,25 +140,39 @@ class Packmol(object):
         _, inputfile = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_INP)
 
         _, inp = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_INP)
+        probes = [{
+            "pdb": tmp_pdb,
+            "num": num,
+            "size": self.box_size / 2
+        }]
+
         data = {
             "output": self.box_pdb,
             "prot": tmp_prot_pdb,
             "seed": self.seed,
-            "probe": tmp_pdb,
-            "num": num,
-            "size": self.box_size / 2
+            "probes": [probe for probe in probes if probe["num"] > 0],
         }
 
         env = jinja2.Environment(loader=jinja2.FileSystemLoader(f"{os.path.dirname(__file__)}/template"))
         template = env.get_template("packmol.in")
         with open(inp, "w") as fout:
             fout.write(template.render(data))
-        command = Command(f"{self.exe} < {inp} > result.log")
+        if self.debug:
+            logfile = "packmol.log"
+        else:
+            _, logfile = tempfile.mkstemp(suffix=".log")
+        command = Command(f"{self.exe} < {inp} > {logfile}")
         logger.debug(command)
-        logger.info(command.run())
+        command.run()
+
+        stdout_str = open(logfile).read()
+        if stdout_str.find("ENDED WITHOUT PERFECT PACKING") != -1:
+            raise RuntimeError(f"packmol failed: \n{stdout_str}")
+        elif stdout_str.find("There are only fixed molecules") != -1:
+            warnings.warn("There is only a protein molecule.", RuntimeWarning)
+        logger.info(stdout_str)
         return self
 
     def __del__(self):
-        if not self.debug:
-            if not self.box_pdb_user_define:
-                os.remove(self.box_pdb)
+        if not self.debug and self.box_pdb is not None:
+            os.remove(self.box_pdb)

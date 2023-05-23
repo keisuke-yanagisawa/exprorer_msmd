@@ -9,6 +9,7 @@ Authors: Keisuke Yanagisawa
 """
 import collections
 import gzip
+import os
 from typing import Any, Callable, Optional, Union
 import numpy as np
 from Bio import PDB
@@ -43,7 +44,10 @@ class MultiModelPDBReader(object):
                 break
 
     def __init__(self, file: str, header: str = "MODEL"):
-        self.file = open(file)
+        if os.path.splitext(file)[1] == ".gz":
+            self.file = gzip.open(file, "rt")
+        else:
+            self.file = open(file)
         self.model_positions = []
         self.fileend = False
         self.header = header
