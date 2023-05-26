@@ -1,0 +1,10 @@
+MODEL        1                                                                  
+ATOM      1  N   PRO A   1       4.524   9.887  -0.667  1.00  0.00           N  
+ATOM      2  CA  PRO A   1       5.918  10.123  -0.175  1.00  0.00           C  
+TER       3      PRO A   1                                                      
+ENDMDL                                                                          
+MODEL        2                                                                  
+ATOM      1  N   PRO A   1       8.041  10.551  -0.115  1.00  0.00           N  
+ATOM      2  CA  PRO A   1       8.700   9.672   0.903  1.00  0.00           C  
+TER       3      PRO A   1                                                      
+ENDMDL         
