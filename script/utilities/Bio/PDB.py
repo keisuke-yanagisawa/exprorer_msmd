@@ -10,7 +10,7 @@ Authors: Keisuke Yanagisawa
 import collections
 import gzip
 import os
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Literal, Optional, Union
 import warnings
 import numpy as np
 from Bio import PDB
@@ -129,6 +129,9 @@ class PDBIOhelper():
     def __enter__(self):
         return self
 
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
     def open(self):
         self.fo = open(self.path, "w")
         self.n_models = 0
@@ -230,8 +233,9 @@ def get_atom_attr(atom: Atom,
         raise NotImplementedError(f"Attribute {attr} is not supported yet.")
 
 
-def get_attr(model: Model,
-             attr: str,
+def get_attr(model: Union[Structure, Model],
+             attr: Literal["resid", "resname", "coord", "element",
+                           "fullname"],
              sele: Optional[Callable[[Atom], bool]] = None) -> npt.NDArray[Any]:
     """
     Get attribute from Bio.PDB.Model object.

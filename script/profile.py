@@ -27,7 +27,22 @@ residue_type_dict = {
 
 
 def __atomtype_select(struct: Structure,
-                      atoms: List[str]) -> Structure:
+                      atom_names: List[str]) -> Structure:
+    """
+    select atoms from a structure based on atom names
+
+    Parameters
+    ----------
+    struct : Structure
+        structure to be processed
+    atom_names : List[str]
+        List of atom names
+
+    Returns
+    -------
+    Structure
+        processed structure containing only atoms specified in atom_names
+    """
     class AtomTypeSelect(PDB.Select):
         def __init__(self, atoms):
             self.atomtypes = atoms
@@ -38,38 +53,22 @@ def __atomtype_select(struct: Structure,
     _, tmp = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)
     io = PDB.PDBIO()
     io.set_structure(struct)
-    io.save(tmp, AtomTypeSelect(atoms))
+    io.save(tmp, AtomTypeSelect(atom_names))
     struct = uPDB.get_structure(tmp)
     os.remove(tmp)
 
     return struct
 
 
-def get_all_atom_coordinates(struct: Structure) -> npt.NDArray[np.float64]:
-    coords = []
-    for m in struct:
-        for a in m.get_atoms():
-            coords.append(a.coord)
-    return np.array(coords)
-
-
-def get_all_atom_names(struct: Structure) -> npt.NDArray[np.str_]:
-    names = []
-    for m in struct:
-        for a in m.get_atoms():
-            names.append(uPDB.get_resname(a))
-    return np.array(names)
-
-
 def create_residue_interaction_profile(ipdb: str,
-                                       atoms: List[str],
+                                       atom_names: List[str],
                                        residue_lst: List[str]) -> gridData.Grid:
 
     struct = uPDB.get_structure(ipdb)
-    struct = __atomtype_select(struct, atoms)
+    struct = __atomtype_select(struct, atom_names)
 
-    coords = get_all_atom_coordinates(struct)
-    names = get_all_atom_names(struct)
+    coords = uPDB.get_attr(struct, "coord")
+    names = uPDB.get_attr(struct, "resname")
     min_xyz = np.min(coords, axis=0)
     max_xyz = np.max(coords, axis=0)
 
