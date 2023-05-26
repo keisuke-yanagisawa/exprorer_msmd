@@ -70,8 +70,8 @@ def gen_residue_interaction_profile(setting):
     JOB_NAME = setting["general"]["name"]
 
     for residue_type, residue_names in residue_type_dict.items():
-        g = create_residue_interaction_profile(f"{basedirpath}/alignedresenv_{JOB_NAME}.pdb",
-                                               [" CB "], residue_names)
+        struct = uPDB.get_structure(f"{basedirpath}/alignedresenv_{JOB_NAME}.pdb")
+        g = create_residue_interaction_profile(struct, [" CB "], residue_names)
         g.export(f"{basedirpath}/{JOB_NAME}_{PROBE_ID}_mesh_{residue_type}.dx", type="short")
 
 

@@ -60,12 +60,13 @@ def __atomtype_select(struct: Structure,
     return struct
 
 
-def create_residue_interaction_profile(ipdb: str,
+def create_residue_interaction_profile(struct: Structure,
                                        atom_names: List[str],
                                        residue_lst: List[str]) -> gridData.Grid:
 
-    struct = uPDB.get_structure(ipdb)
     struct = __atomtype_select(struct, atom_names)
+    if len(struct) == 0:
+        raise ValueError("No atom found in the structure under the specified atom names")
 
     coords = uPDB.get_attr(struct, "coord")
     names = uPDB.get_attr(struct, "resname")
@@ -74,6 +75,8 @@ def create_residue_interaction_profile(ipdb: str,
 
     applicables = [s in residue_lst for s in names]
     target_coords = coords[np.where(applicables)]
+    if len(target_coords) == 0:
+        raise ValueError("No applicable residue found in the structure")
 
     x_range = np.arange(np.floor(min_xyz[0]), np.ceil(max_xyz[0]) + 1, 1)
     y_range = np.arange(np.floor(min_xyz[1]), np.ceil(max_xyz[1]) + 1, 1)
