@@ -1,6 +1,7 @@
 from unittest import TestCase
 from script import alignresenv
 from script.utilities.Bio import PDB as uPDB
+import numpy as np
 
 
 class TestAlignResEnv(TestCase):
@@ -91,3 +92,16 @@ class TestAlignResEnv(TestCase):
                 "UNK",
                 focused=[" CA "]
             )
+
+    def test_aligned_coords(self):
+        struct = alignresenv.align_res_env(
+            [self.two_atoms_struct],
+            self.single_atom_struct[0],
+            "VAL",
+            focused=[" CA "]
+        )
+        # TODO: placement of two_atoms_struct is the same from input to output
+        #       because the position of CA atom is the same in both structures
+        expected_coord = [[-0.603, 65.642, 77.183], [-0.883, 67.005, 76.630]]
+        aligned_coord = [a.get_coord() for a in struct.get_atoms()]
+        np.testing.assert_array_almost_equal(expected_coord, aligned_coord, decimal=3)
