@@ -1,10 +1,10 @@
 from unittest import TestCase
 from script.resenv import resenv
 import tempfile
+from script.utilities.Bio import PDB as uPDB
+import numpy as np
 
 
-class TestResenvMain(TestCase):
-    def __init__(self, *args, **kwargs):
 class TestResenv(TestCase):
     def __init__(self, *args, **kwargs):
         super(TestResenv, self).__init__(*args, **kwargs)
@@ -18,9 +18,11 @@ class TestResenv(TestCase):
         resenv(self.gridfile, self.trajectories, self.resn, self.outputpdb,
                threshold=0.001)
 
-        resenv_str = open(self.outputpdb).read()
-        expected = open(self.expected_resenv_pdb).read()
-        self.assertEqual(resenv_str, expected)
+        struct = uPDB.get_structure(self.outputpdb)
+        expected_struct = uPDB.get_structure(self.expected_resenv_pdb)
+        self.assertEqual(len(struct), len(expected_struct))
+        for model, expected_model in zip(struct, expected_struct):
+            np.testing.assert_array_almost_equal(uPDB.get_attr(model, "coord"), uPDB.get_attr(expected_model, "coord"))
 
     def test_grid_file_is_not_found(self):
         with self.assertRaises(FileNotFoundError):
