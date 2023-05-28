@@ -56,7 +56,8 @@ class MultiModelPDBReader(object):
         self._init_fileobj()
 
     def __del__(self):
-        self.file.close()
+        if hasattr(self, "file"):
+            self.file.close()
 
     def get_model(self, idx: int):
         """

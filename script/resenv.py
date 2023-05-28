@@ -126,3 +126,8 @@ def resenv(grid: str, ipdb: List[str], resn: str, opdb: str,
         for lst in lst_of_lst:
             for struct in lst:
                 out_helper.save(struct)
+
+    structs = uPDB.get_structure(opdb)
+    if (len(structs) == 0):
+        raise ValueError("No structures were extracted.")
+    return structs
