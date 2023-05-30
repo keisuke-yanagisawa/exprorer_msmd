@@ -21,7 +21,7 @@ class TestResenv(TestCase):
         struct = uPDB.get_structure(self.outputpdb)
         expected_struct = uPDB.get_structure(self.expected_resenv_pdb)
         self.assertEqual(len(struct), len(expected_struct))
-        for model, expected_model in zip(struct, expected_struct):
+        for model, expected_model in zip(struct, expected_struct):  # type: ignore
             np.testing.assert_array_almost_equal(uPDB.get_attr(model, "coord"), uPDB.get_attr(expected_model, "coord"))
 
     def test_grid_file_is_not_found(self):

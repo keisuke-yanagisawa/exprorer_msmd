@@ -467,3 +467,12 @@ def estimate_exclute_volume(prot: Union[Structure, Model]) -> float:
     radii = np.array(radii)
     radii += _ATOMIC_RADII["C"]  # solvents' VdW radius: estimated by carbon radius.
     return estimate_volume(coords, radii)
+
+
+def extract_substructure(struct: Union[Structure, Model], sele) -> Structure:
+    pdbio = PDB.PDBIO()
+    pdbio.set_structure(struct)
+    with tempfile.NamedTemporaryFile(suffix=".pdb") as fp:
+        pdbio.save(fp.name, select=sele)
+        substruct = get_structure(fp.name)[0]
+    return substruct
