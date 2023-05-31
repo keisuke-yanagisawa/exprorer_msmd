@@ -17,6 +17,33 @@ def align_res_env(structs: List[Structure],
                   resn: str,
                   focused: List[str] = [],
                   verbose: bool = False) -> Structure:
+    """
+    Align the residues of a list of structures to a reference model
+
+    Parameters
+    ----------
+    structs : List[Structure]
+        the list of structures to be aligned
+        It is acceptable that the structures contain different number of models
+    reference : Model
+        the reference model to be aligned to
+    resn : str
+        the residue name of the residues to be aligned
+    focused : List[str], optional
+        the list of atom names to be aligned, by default []
+        example: [" CB ", " CA ", " N  ", " C  "]
+    verbose : bool, optional
+        If True, display progress information, by default False
+
+    Returns
+    -------
+    Structure
+        the aligned structure contains the same number of models as the input
+    """
+
+    structs = [struct for struct in structs if len([a for a in struct.get_atoms()]) > 0]  # remove empty structures
+    if len(structs) == 0:
+        raise ValueError("No structure to align")
 
     def selector(a: Atom):
         cond1 = uPDB.get_atom_attr(a, "resname") == resn
@@ -24,6 +51,8 @@ def align_res_env(structs: List[Structure],
         return cond1 and cond2
 
     ref_probe_c_coords = uPDB.get_attr(reference, "coord", sele=selector)
+    if len(ref_probe_c_coords) == 0:
+        raise ValueError("No reference atom to align")
     # print(ref_probe_c_coords)
 
     sup = SuperImposer()

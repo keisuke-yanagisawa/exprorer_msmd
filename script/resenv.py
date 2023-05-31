@@ -1,11 +1,10 @@
-from typing import List
+from typing import List, Set
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 import gridData
 from scipy .spatial import distance
 from tqdm import tqdm
 from joblib import Parallel, delayed
-import tempfile
 from Bio import PDB
 from Bio.PDB.Model import Model
 from script.utilities.Bio import PDB as uPDB
@@ -24,7 +23,7 @@ def compute_SR_probe_resis(model: Model,
                            threshold: float,
                            lt: bool = False):
     """
-    This function enumerates the residue numbers `resis` of probe molecules 
+    This function enumerates the residue numbers `resis` of probe molecules
     located in regions that exceed the `threshold` value.
     ------
     input:
@@ -71,38 +70,47 @@ class Selector(PDB.Select):
         return self.sele(atom)
 
 
-def wrapper(model: Model,
-            dx: gridData.Grid,
-            resn: str,
-            threshold: float,
-            lt: bool,
-            env_distance: float):
+def __get_surrounded_resis_around_a_residue(model: Model,
+                                            resi: int,
+                                            env_distance: float
+                                            ) -> Set[int]:
+    residue_coords = uPDB.get_attr(model, "coord",
+                                   sele=lambda a: uPDB.get_resi(a) == resi)
+    environment_resis = set(
+        uPDB.get_attr(model, "resid",
+                      sele=lambda a: np.min(distance.cdist([a.get_coord()], residue_coords)) < env_distance)
+    )
+    return set(environment_resis)
+
+
+def __wrapper(model: Model,
+              dx: gridData.Grid,
+              focused_resname: str,
+              threshold: float,
+              lt: bool,
+              env_distance: float):
+
     water_resis = set(
         uPDB.get_attr(model, "resid", sele=uPDB.is_water)
     )
+    focused_residue_resis = set(
+        uPDB.get_attr(model, "resid", sele=lambda a: uPDB.get_resname(a) == focused_resname)
+    )
 
-    resi_set = compute_SR_probe_resis(model, dx, resn, threshold, lt)
+    resi_set = compute_SR_probe_resis(model, dx, focused_resname, threshold, lt)
 
     ret_env_structs = []
     for resi in resi_set:
-        probe_coords = uPDB.get_attr(model, "coord",
-                                     sele=lambda a: uPDB.get_resi(a) == resi)
-        environment_resis = set(
-            uPDB.get_attr(model, "resid",
-                          sele=lambda a: np.min(distance.cdist([a.get_coord()], probe_coords)) < env_distance and uPDB.get_resname(a) != resn)
-        )
+        exclude_resis = focused_residue_resis | water_resis
+        environment_resis = __get_surrounded_resis_around_a_residue(model, resi, env_distance)
+        environment_resis -= exclude_resis
 
-        if len(environment_resis - water_resis) == 0:
+        if len(environment_resis) == 0:
             continue
 
-        pdbio = PDB.PDBIO()
-        pdbio.set_structure(model)
         sele = Selector(lambda a: uPDB.get_resi(a) in (environment_resis | set([resi])))
-
-        with tempfile.NamedTemporaryFile(suffix=".pdb") as fp:
-            pdbio.save(fp.name, select=sele)
-            tmp = uPDB.get_structure(fp.name)[0]
-            ret_env_structs.append(tmp)
+        env_struct = uPDB.extract_substructure(model, sele)
+        ret_env_structs.append(env_struct)
     return ret_env_structs
 
 
@@ -116,7 +124,7 @@ def resenv(grid: str, ipdb: List[str], resn: str, opdb: str,
         reader = uPDB.MultiModelPDBReader(path)
 
         lst_of_lst = Parallel(n_jobs=n_jobs)(
-            delayed(wrapper)(model, dx, resn, threshold, lt, env_distance)
+            delayed(__wrapper)(model, dx, resn, threshold, lt, env_distance)
             for model in tqdm(reader, desc="[extract res. env.]", disable=not verbose)
         )
 
@@ -126,3 +134,8 @@ def resenv(grid: str, ipdb: List[str], resn: str, opdb: str,
         for lst in lst_of_lst:
             for struct in lst:
                 out_helper.save(struct)
+
+    structs = uPDB.get_structure(opdb)
+    if (len(structs) == 0):
+        raise ValueError("No structures were extracted.")
+    return structs

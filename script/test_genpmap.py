@@ -35,3 +35,33 @@ class TestMaskGenerator(TestCase):
         self.assertFalse(mask.grid[1, 0, 1])
         self.assertFalse(mask.grid[1, 1, 0])
         self.assertFalse(mask.grid[1, 1, 1])
+
+    def test_convert_to_proba_snapshot_normalization(self):
+        pass
+
+    def test_convert_to_proba_GFE_normalization(self):
+        pass
+
+    def test_convert_to_proba_others_normalization(self):
+        pass
+
+    def test_convert_to_gfe(self):
+        pass
+
+    def test_convert_to_pmap_snapshot_normalization(self):
+        pass
+
+    def test_convert_to_pmap_others_normalization(self):
+        pass
+
+    def test_parse_snapshot_setting(self):
+        pass
+
+    def test_gen_pmap_snapshot_normalization(self):
+        pass
+
+    def test_gen_pmap_gfe_normalization(self):
+        pass
+
+    def test_gen_pmap_others_normalization(self):
+        pass

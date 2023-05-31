@@ -9,9 +9,12 @@ Authors: Keisuke Yanagisawa
 """
 import collections
 import gzip
-from typing import Any, Callable, Optional, Union
+import os
+from typing import Any, Callable, Literal, Optional, Union
+import warnings
 import numpy as np
 from Bio import PDB
+from Bio.PDB import PDBExceptions
 from collections.abc import Iterable
 import tempfile
 import io
@@ -43,14 +46,18 @@ class MultiModelPDBReader(object):
                 break
 
     def __init__(self, file: str, header: str = "MODEL"):
-        self.file = open(file)
+        if os.path.splitext(file)[1] == ".gz":
+            self.file = gzip.open(file, "rt")
+        else:
+            self.file = open(file)
         self.model_positions = []
         self.fileend = False
         self.header = header
         self._init_fileobj()
 
     def __del__(self):
-        self.file.close()
+        if hasattr(self, "file"):
+            self.file.close()
 
     def get_model(self, idx: int):
         """
@@ -182,7 +189,9 @@ def get_structure(filepath: str, structname="") -> Structure:
     else:
         fileobj = open(filepath)
 
-    return PDB.PDBParser(QUIET=True).get_structure(structname, fileobj)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", PDBExceptions.PDBConstructionWarning)
+        return PDB.PDBParser(QUIET=True).get_structure(structname, fileobj)
 
 
 def get_atom_attr(atom: Atom,
@@ -225,8 +234,9 @@ def get_atom_attr(atom: Atom,
         raise NotImplementedError(f"Attribute {attr} is not supported yet.")
 
 
-def get_attr(model: Model,
-             attr: str,
+def get_attr(model: Union[Structure, Model],
+             attr: Literal["resid", "resname", "coord", "element",
+                           "fullname"],
              sele: Optional[Callable[[Atom], bool]] = None) -> npt.NDArray[Any]:
     """
     Get attribute from Bio.PDB.Model object.
@@ -457,3 +467,12 @@ def estimate_exclute_volume(prot: Union[Structure, Model]) -> float:
     radii = np.array(radii)
     radii += _ATOMIC_RADII["C"]  # solvents' VdW radius: estimated by carbon radius.
     return estimate_volume(coords, radii)
+
+
+def extract_substructure(struct: Union[Structure, Model], sele) -> Structure:
+    pdbio = PDB.PDBIO()
+    pdbio.set_structure(struct)
+    with tempfile.NamedTemporaryFile(suffix=".pdb") as fp:
+        pdbio.save(fp.name, select=sele)
+        substruct = get_structure(fp.name)[0]
+    return substruct
