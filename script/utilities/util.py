@@ -110,6 +110,12 @@ def ensure_compatibility_v1_1(setting: dict):
 def parse_yaml(yamlpath: str) -> dict:
     YAML_PATH = getabsolutepath(yamlpath)
     YAML_DIR_PATH = os.path.dirname(YAML_PATH)
+    if not os.path.exists(YAML_PATH):
+        raise FileNotFoundError("YAML file not found: %s" % YAML_PATH)
+    if os.path.isdir(YAML_PATH):
+        raise IsADirectoryError("Given YAML file path %s is a directory" % YAML_PATH)
+    if not os.path.splitext(YAML_PATH)[1][1:] == "yaml":
+        raise ValueError("YAML file must have .yaml extension: %s" % YAML_PATH)
     with open(YAML_PATH) as fin:
         setting: dict = yaml.safe_load(fin)  # type: ignore
 
