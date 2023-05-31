@@ -1,0 +1,25 @@
+name: unittest
+
+on: [push]
+
+jobs:
+  buildx:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build
+        uses: docker/build-push-action@master
+        with:
+          context: .devcontainer
+          tags: exprorer_msmd
+          push: false
+      
+      - name: Unittest
+        uses: addnab/docker-run-action@v3
+        with:
+          image: exprorer_msmd
+          options: -v ${{ github.workspace }}:/work
+          run: |
+            cd /work
+            python -m pytest .

@@ -1,6 +1,5 @@
 import tempfile
 import os
-from subprocess import getoutput as gop
 import jinja2
 from .. import const
 from .execute import Command

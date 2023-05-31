@@ -39,7 +39,7 @@ def __get_a_li_vector(coords, ref, eps=1e-5, priority=None):
 
     for idx in priority:
         coord = coords[idx]
-        if np.abs( np.abs(coord.dot(ref)) - norm(coord)*norm(ref) ) > eps:
+        if np.abs(np.abs(coord.dot(ref)) - norm(coord) * norm(ref)) > eps:
             return idx
     return None
 
@@ -65,11 +65,11 @@ def __standardize_direction(coords, eps=1e-5, priority=None):
     second = __get_a_li_vector(coords, src[0], eps, priority=priority)
     if second is not None:
         cos_theta = coords[first].dot(coords[second]) \
-                    / norm(coords[first]) \
-                    / norm(coords[second])
+            / norm(coords[first]) \
+            / norm(coords[second])
         sin_theta = np.sqrt(1 - cos_theta**2)
-        dst[1] = [norm(coords[second])*cos_theta,
-                  norm(coords[second])*sin_theta,
+        dst[1] = [norm(coords[second]) * cos_theta,
+                  norm(coords[second]) * sin_theta,
                   0]
         src[1] = coords[second]
 
@@ -93,16 +93,15 @@ def _standardize_coords(coords, priority=None, origin=None):
     if priority is None:
         priority = list(range(len(coords)))
 
-    tmp = coords - coords[priority[0]] # put `priority[0]` to origin point temporaly
+    tmp = coords - coords[priority[0]]  # put `priority[0]` to origin point temporaly
     tmp = __standardize_direction(tmp, priority=priority)
 
     if origin is None:
         origin_coord = tmp.mean(axis=0)
     else:
         origin_coord = tmp[origin]
-    tmp = tmp - origin_coord # re-put `origin_coord` to origin point 
+    tmp = tmp - origin_coord  # re-put `origin_coord` to origin point
 
-    d = tmp.mean(axis=0) - coords.mean(axis=0)
     rot, rmsd = R.align_vectors(tmp + origin_coord, coords - coords[priority[0]])
     if rmsd > 1e-2:
         warnings.warn(f"rmsd = {rmsd:.5f}")
@@ -115,6 +114,7 @@ class CoordinateStandardizer:
     sklearn風のAPIを備えた点群座標変換クラス。
     fitで点群変換を決定し、transformで点群を別の座標軸に置き換える。
     """
+
     def __init__(self):
         self.is_fitted = False
         self.d1 = None

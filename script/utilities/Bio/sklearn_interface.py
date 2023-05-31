@@ -2,6 +2,7 @@ import numpy as np
 from Bio.SVDSuperimposer import SVDSuperimposer
 from sklearn.utils.validation import check_is_fitted
 from sklearn.base import TransformerMixin, BaseEstimator
+import numpy.typing as npt
 
 """
 BioPythonの関数をsklearnのモデルのように利用する関数/クラス群。
@@ -21,6 +22,9 @@ class SuperImposer(TransformerMixin, BaseEstimator):
     scikit-learnのインターフェースでwrapしたクラス。
     """
 
+    rot_: npt.NDArray[np.float_]
+    tran_: npt.NDArray[np.float_]
+
     def __init__(self):
         pass
 
@@ -29,13 +33,13 @@ class SuperImposer(TransformerMixin, BaseEstimator):
             del self.rot_
             del self.tran_
 
-    def _superimpose(self, coords, reference_coords):
+    def _superimpose(self, coords: npt.ArrayLike, reference_coords: npt.ArrayLike) -> None:
         sup = SVDSuperimposer()
         sup.set(reference_coords, coords)
         sup.run()
-        self.rot_, self.tran_ = sup.get_rotran()
+        self.rot_, self.tran_ = sup.get_rotran()  # type: ignore
 
-    def fit(self, coords, reference_coords):
+    def fit(self, coords: npt.ArrayLike, reference_coords: npt.ArrayLike) -> "SuperImposer":
         """
         与えられた2つの点群をなるべく重ねるような並行・回転移動を算出します。
 
@@ -59,7 +63,7 @@ class SuperImposer(TransformerMixin, BaseEstimator):
         self._superimpose(coords, reference_coords)
         return self
 
-    def transform(self, coords):
+    def transform(self, coords: npt.NDArray[np.float_]) -> npt.NDArray[np.float_]:
         """
         fit()で計算された並進・回転に基づいて
         与えられた点群を移動させます。
@@ -73,7 +77,7 @@ class SuperImposer(TransformerMixin, BaseEstimator):
         coords = np.array(coords)
         return np.dot(coords, self.rot_) + self.tran_
 
-    def inverse_transform(self, coords):
+    def inverse_transform(self, coords: npt.NDArray[np.float_]) -> npt.NDArray[np.float_]:
         """
         逆方向の移動を行います。
 

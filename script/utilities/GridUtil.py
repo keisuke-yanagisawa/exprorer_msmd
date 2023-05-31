@@ -2,11 +2,12 @@ import numpy as np
 import copy
 from Bio import PDB
 from tqdm import tqdm
+from script.utilities.Bio import PDB as uPDB
 
 
 def gen_distance_grid(g_ref, pdbpath, verbose=True):
     grid_points = np.array([p for p in g_ref.centers()], dtype="int8")
-    pdb = PDB.PDBParser().get_structure(pdbpath, pdbpath)
+    pdb = uPDB.get_structure(pdbpath)
     coords = []
     for atom in pdb.get_atoms():
         if (atom.full_id[3][0].strip() != ""):

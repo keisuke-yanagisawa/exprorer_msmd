@@ -11,7 +11,8 @@ class Command(object):
 
     def run(self):
         try:
-            res = subprocess.run(self.comm, shell=True, stdout=subprocess.PIPE)
+            res = subprocess.run(self.comm, shell=True, stdout=subprocess.PIPE, check=True)
         except Exception as e:
             logger.error(e)
+            raise e
         return res.stdout.decode("utf-8")
