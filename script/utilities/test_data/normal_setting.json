@@ -1,0 +1,303 @@
+{
+    "general": {
+        "iter_index": 0,
+        "workdir": "/workspaces/exprorer_msmd/script/utilities/test_data/./workdir",
+        "name": "normal_protocol",
+        "executables": {
+            "python": "python",
+            "gromacs": "gmx",
+            "packmol": "packmol",
+            "tleap": "tleap",
+            "cpptraj": "cpptraj"
+        },
+        "multiprocessing": true,
+        "yaml": "/workspaces/exprorer_msmd/script/utilities/test_data/normal_setting.yaml"
+    },
+    "input": {
+        "protein": {
+            "pdb": "/workspaces/exprorer_msmd/script/utilities/test_data/1F47B.pdb",
+            "ssbond": []
+        },
+        "probe": {
+            "cid": "A11",
+            "atomtype": "gaff2",
+            "molar": 0.25,
+            "mol2": "/workspaces/exprorer_msmd/script/utilities/test_data/A11.mol2",
+            "pdb": "/workspaces/exprorer_msmd/script/utilities/test_data/A11.pdb"
+        }
+    },
+    "exprorer_msmd": {
+        "title": "EXPRORER protocol",
+        "general": {
+            "seed": 42,
+            "pbc": "xyz",
+            "dt": 0.002,
+            "temperature": 300,
+            "pressure": 1.0
+        },
+        "sequence": [
+            {
+                "name": "min1",
+                "title": "Energy minimization with position restraints",
+                "type": "minimization",
+                "define": "-DPOSRES1000",
+                "nsteps": 200,
+                "nstlog": 1
+            },
+            {
+                "name": "min2",
+                "title": "Energy minimization without position restraints",
+                "type": "minimization",
+                "define": "",
+                "nsteps": 200,
+                "nstlog": 1
+            },
+            {
+                "name": "heat",
+                "title": "Heating system from 0 K to 300 K",
+                "type": "heating",
+                "define": "-DPOSRES1000",
+                "nsteps": 10000,
+                "nstxtcout": 500,
+                "nstlog": 500,
+                "nstenergy": 500,
+                "pcoupl": "no"
+            },
+            {
+                "name": "equil1",
+                "title": "Equilibration stage 1 - 10 kcal/mol/A^2 constraints",
+                "type": "equilibration",
+                "define": "-DPOSRES1000",
+                "nsteps": 5000,
+                "nstxtcout": 500,
+                "nstlog": 500,
+                "nstenergy": 500,
+                "pcoupl": "berendsen"
+            },
+            {
+                "name": "equil2",
+                "title": "Equilibration stage 2 - 5.0 kcal/mol/A^2 constraints",
+                "type": "equilibration",
+                "define": "-DPOSRES500",
+                "nsteps": 5000,
+                "nstxtcout": 500,
+                "nstlog": 500,
+                "nstenergy": 500,
+                "pcoupl": "berendsen"
+            },
+            {
+                "name": "equil3",
+                "title": "Equilibration stage 3 - 2.0 kcal/mol/A^2 constraints",
+                "type": "equilibration",
+                "define": "-DPOSRES200",
+                "nsteps": 5000,
+                "nstxtcout": 500,
+                "nstlog": 500,
+                "nstenergy": 500,
+                "pcoupl": "berendsen"
+            },
+            {
+                "name": "equil4",
+                "title": "Equilibration stage 4 - 1.0 kcal/mol/A^2 constraints",
+                "type": "equilibration",
+                "define": "-DPOSRES100",
+                "nsteps": 5000,
+                "nstxtcout": 500,
+                "nstlog": 500,
+                "nstenergy": 500,
+                "pcoupl": "berendsen"
+            },
+            {
+                "name": "equil5",
+                "title": "Equilibration stage 5 - 0.5 kcal/mol/A^2 constraints",
+                "type": "equilibration",
+                "define": "-DPOSRES50",
+                "nsteps": 5000,
+                "nstxtcout": 500,
+                "nstlog": 500,
+                "nstenergy": 500,
+                "pcoupl": "berendsen"
+            },
+            {
+                "name": "equil6",
+                "title": "Equilibration stage 6 - 0.2 kcal/mol/A^2 constraints",
+                "type": "equilibration",
+                "define": "-DPOSRES20",
+                "nsteps": 5000,
+                "nstxtcout": 500,
+                "nstlog": 500,
+                "nstenergy": 500,
+                "pcoupl": "berendsen"
+            },
+            {
+                "name": "equil7",
+                "title": "Equilibration stage 7 - 0.1 kcal/mol/A^2 constraints",
+                "type": "equilibration",
+                "define": "-DPOSRES10",
+                "nsteps": 5000,
+                "nstxtcout": 500,
+                "nstlog": 500,
+                "nstenergy": 500,
+                "pcoupl": "berendsen"
+            },
+            {
+                "name": "equil8",
+                "title": "Equilibration stage 8 - no constraints",
+                "type": "equilibration",
+                "define": "",
+                "nsteps": 5000,
+                "nstxtcout": 500,
+                "nstlog": 500,
+                "nstenergy": 500,
+                "pcoupl": "berendsen"
+            },
+            {
+                "name": "pr",
+                "title": "Production Run",
+                "type": "production",
+                "define": "",
+                "nsteps": 20000,
+                "nstxtcout": 5,
+                "nstenergy": 2,
+                "nstlog": 5,
+                "pcoupl": "Parrinello-Rahman"
+            }
+        ]
+    },
+    "map": {
+        "type": "pmap",
+        "snapshot": "2001-4001:1",
+        "maps": [
+            {
+                "suffix": "nVH",
+                "selector": "(!@VIS)&(!@H*)"
+            },
+            {
+                "suffix": "nV",
+                "selector": "(!@VIS)"
+            }
+        ],
+        "map_size": 80,
+        "aggregation": "max",
+        "normalization": "total",
+        "valid_dist": 5
+    },
+    "probe_profile": {
+        "resenv": {
+            "threshold": 0.2,
+            "snapshots": "2001-4001:50",
+            "align": [
+                " C1 ",
+                " C2 ",
+                " C3 ",
+                " O1 "
+            ]
+        },
+        "profile": {
+            "types": [
+                {
+                    "name": "anionic_cb",
+                    "atoms": [
+                        [
+                            "ASP",
+                            " CB "
+                        ],
+                        [
+                            "GLU",
+                            " CB "
+                        ]
+                    ]
+                },
+                {
+                    "name": "cationic_cb",
+                    "atoms": [
+                        [
+                            "LYS",
+                            " CB "
+                        ],
+                        [
+                            "HIE",
+                            " CB "
+                        ],
+                        [
+                            "ARG",
+                            " CB "
+                        ]
+                    ]
+                },
+                {
+                    "name": "aromatic_cb",
+                    "atoms": [
+                        [
+                            "TYR",
+                            " CB "
+                        ],
+                        [
+                            "TRP",
+                            " CB "
+                        ],
+                        [
+                            "PHE",
+                            " CB "
+                        ]
+                    ]
+                },
+                {
+                    "name": "hydrophilic_cb",
+                    "atoms": [
+                        [
+                            "ASN",
+                            " CB "
+                        ],
+                        [
+                            "GLN",
+                            " CB "
+                        ],
+                        [
+                            "SER",
+                            " CB "
+                        ],
+                        [
+                            "THR",
+                            " CB "
+                        ],
+                        [
+                            "CYS",
+                            " CB "
+                        ]
+                    ]
+                },
+                {
+                    "name": "hydrophobic_cb",
+                    "atoms": [
+                        [
+                            "ILE",
+                            " CB "
+                        ],
+                        [
+                            "LEU",
+                            " CB "
+                        ],
+                        [
+                            "VAL",
+                            " CB "
+                        ],
+                        [
+                            "ALA",
+                            " CB "
+                        ],
+                        [
+                            "PRO",
+                            " CB "
+                        ],
+                        [
+                            "MET",
+                            " CB "
+                        ]
+                    ]
+                }
+            ]
+        },
+        "env_dist": 4
+    }
+}

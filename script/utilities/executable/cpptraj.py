@@ -1,6 +1,7 @@
 import copy
 import tempfile
 import os
+from typing import Union
 from .. import const
 from .execute import Command
 import jinja2
@@ -26,8 +27,10 @@ class Cpptraj(object):
         return self
 
     def run(self, basedir, prefix, box_center=[0., 0., 0.], box_size=80, interval=1,
-            traj_start=1, traj_stop="last", traj_offset=1,
-            maps=[{"suffix": "nVH", "selector": "(!@VIS)&(!@H*)"}]):
+            traj_start: Union[str, int] = 1,
+            traj_stop: Union[str, int] = "last",
+            traj_offset: Union[str, int] = 1,
+            maps: list = [{"suffix": "nVH", "selector": "(!@VIS)&(!@H*)"}]):
         # TODO: input "maps" variable should be a read-only list (shared between threads)
         maps = copy.deepcopy(maps)
         self.basedir = basedir
@@ -85,11 +88,12 @@ class Cpptraj(object):
         return self
 
     def __del__(self):
-        logger.debug(f"Cpptraj.inp: {self.inp}")
-        logger.debug(f"Cpptraj.parm7: {self.parm7}")
+
         if hasattr(self, "inp"):
+            logger.debug(f"Cpptraj.inp: {self.inp}")
             if not self.debug:
                 os.remove(self.inp)
         if hasattr(self, "parm7"):
+            logger.debug(f"Cpptraj.parm7: {self.parm7}")
             if not self.debug:
                 os.remove(self.parm7)

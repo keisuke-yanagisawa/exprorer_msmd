@@ -9,12 +9,19 @@ Authors: Keisuke Yanagisawa
 """
 import collections
 import gzip
+import os
+from typing import Any, Callable, Literal, Optional, Union
+import warnings
 import numpy as np
 from Bio import PDB
+from Bio.PDB import PDBExceptions
 from collections.abc import Iterable
 import tempfile
 import io
-
+from Bio.PDB.Atom import Atom
+from Bio.PDB.Model import Model
+from Bio.PDB.Structure import Structure
+import numpy.typing as npt
 from ..scipy.spatial_func import estimate_volume
 
 
@@ -31,24 +38,28 @@ class MultiModelPDBReader(object):
         self.fileend = False
         self.file.seek(0)
         while True:
-            l = self.file.readline()
-            if l.startswith(self.header):
+            line = self.file.readline()
+            if line.startswith(self.header):
                 self.model_positions.append(
-                    self.file.tell() - len(l.encode())
+                    self.file.tell() - len(line.encode())
                 )
                 break
 
-    def __init__(self, file, header="MODEL"):
-        self.file = open(file)
+    def __init__(self, file: str, header: str = "MODEL"):
+        if os.path.splitext(file)[1] == ".gz":
+            self.file = gzip.open(file, "rt")
+        else:
+            self.file = open(file)
         self.model_positions = []
         self.fileend = False
         self.header = header
         self._init_fileobj()
 
     def __del__(self):
-        self.file.close()
+        if hasattr(self, "file"):
+            self.file.close()
 
-    def get_model(self, idx):
+    def get_model(self, idx: int):
         """
         get a model with 0-origin
         Note that it uses idx, not MODEL ID.
@@ -71,7 +82,7 @@ class MultiModelPDBReader(object):
             f.flush()
             return get_structure(f.name)
 
-    def _next(self) -> int:
+    def _next(self) -> Union[int, None]:
         """
         get next STARTING point
         """
@@ -82,12 +93,12 @@ class MultiModelPDBReader(object):
         self.file.seek(self.model_positions[-1])
 
         while True:
-            l = self.file.readline()
-            if l == "":
+            line = self.file.readline()
+            if line == "":
                 self.fileend = True
                 break
-            elif l.startswith(self.header):
-                cur = self.file.tell() - len(l.encode())
+            elif line.startswith(self.header):
+                cur = self.file.tell() - len(line.encode())
                 if cur == self.model_positions[-1]:
                     continue
                 self.file.seek(cur)
@@ -112,7 +123,7 @@ class PDBIOhelper():
     これは1つずつモデルを保存していきます。
     """
 
-    def __init__(self, path):
+    def __init__(self, path: str):
         self.path = path
         self.open()
 
@@ -132,8 +143,7 @@ class PDBIOhelper():
 
     def save(self, pdb_object):
         if "fo" not in dir(self):
-            exit(1)
-            # TODO raise error
+            raise ValueError("File is not opened. Please call open() first.")
 
         model_lst = []
         if pdb_object.level == "S":
@@ -145,7 +155,7 @@ class PDBIOhelper():
             exit(1)
             # TODO raise error
 
-        out_structure = PDB.Structure.Structure("")
+        out_structure = Structure("")
         for model in model_lst:
             self.n_models += 1
             model.serial_num = self.n_models
@@ -160,7 +170,7 @@ class PDBIOhelper():
             self.fo.write(f.read())
 
 
-def get_structure(filepath: str, structname="") -> PDB.Structure:
+def get_structure(filepath: str, structname="") -> Structure:
     """
     Read PDB file.
 
@@ -179,10 +189,55 @@ def get_structure(filepath: str, structname="") -> PDB.Structure:
     else:
         fileobj = open(filepath)
 
-    return PDB.PDBParser(QUIET=True).get_structure(structname, fileobj)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", PDBExceptions.PDBConstructionWarning)
+        return PDB.PDBParser(QUIET=True).get_structure(structname, fileobj)
 
 
-def get_attr(model, attr, sele=None):
+def get_atom_attr(atom: Atom,
+                  attr: str) -> Union[int, str, npt.NDArray[np.float_], tuple]:
+    """
+    Get attribute from Bio.PDB.Atom object.
+    {"resid", "resname", "coord", "element", "fullname"}
+    are only acceptable as ``attr`` so far.
+    Other attributes raises NotImplementedError.
+
+    Parameters
+    ----------
+    atom : Atom
+        An atom object.
+    attr : str
+        An attribute name which will be obtained.
+
+    Returns
+    -------
+    int or str or np.array or tuple
+        An attribute of the atom.
+
+    Raises
+    ------
+    NotImplementedError
+        If the ``attr`` is not "resid", "resname", coord", "element", nor "fullname".
+    """
+
+    if attr == "resid":
+        return get_resi(atom)
+    elif attr == "resname":
+        return get_resname(atom)
+    elif attr == "coord":
+        return atom.get_coord()
+    elif attr == "element":
+        return atom.element
+    elif attr == "fullname":
+        return atom.fullname
+    else:
+        raise NotImplementedError(f"Attribute {attr} is not supported yet.")
+
+
+def get_attr(model: Union[Structure, Model],
+             attr: Literal["resid", "resname", "coord", "element",
+                           "fullname"],
+             sele: Optional[Callable[[Atom], bool]] = None) -> npt.NDArray[Any]:
     """
     Get attribute from Bio.PDB.Model object.
     {"resid", "resname", "coord", "element", "fullname"} 
@@ -191,7 +246,7 @@ def get_attr(model, attr, sele=None):
 
     Parameters
     ----------
-    model : Bio.PDB.Model
+    model : Model
         A model object.
     attr : str
         An attribute name which will be obtained.
@@ -209,31 +264,15 @@ def get_attr(model, attr, sele=None):
     NotImplementedError
         If the ``attr`` is not "resid", "resname", coord", "element", nor "fullname".
     """
-    method = None
-    if attr == "resid":
-        def method(a): return get_resi(a)
-    elif attr == "resname":
-        def method(a): return get_resname(a)
-    elif attr == "coord":
-        def method(a): return a.get_coord()
-    elif attr == "element":
-        def method(a): return a.element
-    elif attr == "fullname":
-        def method(a): return a.fullname
-    else:
-        raise NotImplementedError(f"attr {attr} is not implemented")
 
-    if isinstance(model, PDB.Atom.Atom):
-        return method(model)
-    else:
-        data = []
-        for atom in model.get_atoms():
-            if sele is None or sele(atom):
-                data.append(method(atom))
-        return np.array(data)
+    data = []
+    for atom in model.get_atoms():
+        if sele is None or sele(atom):
+            data.append(get_atom_attr(atom, attr))
+    return np.array(data)
 
 
-def get_resname(atom: PDB.Atom) -> str:
+def get_resname(atom: Atom) -> str:
     """
     Get residue name from Bio.PDB.Atom.
 
@@ -247,10 +286,10 @@ def get_resname(atom: PDB.Atom) -> str:
     str
         A residue name of the atom of interest.
     """
-    return atom.get_parent().get_resname()
+    return atom.get_parent().get_resname()  # type: ignore
 
 
-def is_water(atom: PDB.Atom) -> bool:
+def is_water(atom: Atom) -> bool:
     """
     Check whether the provided Bio.PDB.Atom instance is the one of water atoms.
 
@@ -267,7 +306,7 @@ def is_water(atom: PDB.Atom) -> bool:
     return get_resname(atom) == "WAT" or get_resname(atom) == "HOH"
 
 
-def get_resi(atom: PDB.Atom) -> int:
+def get_resi(atom: Atom) -> int:
     """
     Get residue sequence number (residue ID) from Bio.PDB.Atom.
 
@@ -281,10 +320,10 @@ def get_resi(atom: PDB.Atom) -> int:
     int
         A residue ID of the atom of interest.
     """
-    return atom.get_full_id()[3][1]
+    return atom.get_full_id()[3][1]  # type: ignore
 
 
-def is_hetero(atom: PDB.Atom) -> bool:
+def is_hetero(atom: Atom) -> bool:
     """
     Check whether the provided Bio.PDB.Atom instance is a hetero atom.
 
@@ -298,10 +337,10 @@ def is_hetero(atom: PDB.Atom) -> bool:
     bool
         Whether the atom of interest is a hetero atom.
     """
-    return atom.get_full_id()[3][0] != " "
+    return atom.get_full_id()[3][0] != " "  # type: ignore
 
 
-def is_hydrogen(atom: PDB.Atom) -> bool:
+def is_hydrogen(atom: Atom) -> bool:
     """
     Check whether the provided Bio.PDB.Atom instance is hydrogen.
 
@@ -318,7 +357,7 @@ def is_hydrogen(atom: PDB.Atom) -> bool:
     return atom.get_fullname()[1] == "H"
 
 
-def set_attr(model: PDB.Model, attr: str, lst, sele=None):
+def set_attr(model: Model, attr: str, lst: npt.NDArray, sele=None) -> None:
     """
     Set attribute to Bio.PDB.Model object.
     attr == "coord" is only acceptable so far.
@@ -373,7 +412,7 @@ def save(structs, path) -> None:
             io.save(fp.name)
             mod_structs.append(get_structure(fp.name)[0])
 
-    out_structure = PDB.Structure.Structure("")
+    out_structure = Structure("")
     for struct in mod_structs:
         struct.id = len(out_structure)
         struct.serial_num = struct.id + 1
@@ -412,7 +451,7 @@ _ATOMIC_RADII.update(
 )
 
 
-def estimate_exclute_volume(prot: PDB.Model) -> float:
+def estimate_exclute_volume(prot: Union[Structure, Model]) -> float:
     """
     VdW半径に基づいてタンパク質の排除体積を計算
     タンパク質は原子種類に応じて処理し、
@@ -428,3 +467,12 @@ def estimate_exclute_volume(prot: PDB.Model) -> float:
     radii = np.array(radii)
     radii += _ATOMIC_RADII["C"]  # solvents' VdW radius: estimated by carbon radius.
     return estimate_volume(coords, radii)
+
+
+def extract_substructure(struct: Union[Structure, Model], sele) -> Structure:
+    pdbio = PDB.PDBIO()
+    pdbio.set_structure(struct)
+    with tempfile.NamedTemporaryFile(suffix=".pdb") as fp:
+        pdbio.save(fp.name, select=sele)
+        substruct = get_structure(fp.name)[0]
+    return substruct

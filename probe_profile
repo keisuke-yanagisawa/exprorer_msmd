@@ -1,13 +1,17 @@
 #!/usr/bin/env python
 
 from script.utilities.logger import logger
+from script.profile import residue_type_dict, create_residue_interaction_profile
 import argparse
-import os
 
 from joblib import Parallel, delayed
-from subprocess import getoutput as gop
+from script.utilities.Bio import PDB as uPDB
+from script.alignresenv import align_res_env
+from script.resenv import resenv
+from script import maxpmap
 
 from script.utilities import util
+import glob
 VERSION = "0.1.0"
 
 
@@ -17,70 +21,58 @@ VERSION = "0.1.0"
 def gen_maxpmap(setting):
     basedirpath = setting["general"]["workdir"]
     JOB_NAME = setting["general"]["name"]
-    WORK_DIR = os.path.dirname(util.getabsolutepath(__file__))
-    exe_python = setting["general"]["executables"]["python"]
 
     logger.info("PMAP aggregation: mapPMAP")
-    os.system(f"""
-    {exe_python} {WORK_DIR}/script/maxpmap_main.py \
-    {basedirpath}/system*/PMAP_{JOB_NAME}_nVH.dx \
-    {basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx
-    """)
+    maxpmap.gen_max_pmap(
+        glob.glob(f"{basedirpath}/system*/PMAP_{JOB_NAME}_nVH.dx"),
+        f"{basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx"
+    )
     logger.info(f"Output file: {basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx")
 
 
 def extract_residue_environment(index, setting):
-    exe_python = setting["general"]["executables"]["python"]
     basedirpath = setting["general"]["workdir"]
     sysdirpath = f'{basedirpath}/system{index}'
     PROBE_ID = setting["input"]["probe"]["cid"]
     JOB_NAME = setting["general"]["name"]
-    WORK_DIR = os.path.dirname(util.getabsolutepath(__file__))
 
     # TODO: threshold should be configured
-    os.system(f"""
-    {exe_python} {WORK_DIR}/script/resenv_main.py \
-    -grid {basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx \
-    -ipdb {sysdirpath}/{JOB_NAME}_woWAT_10ps.pdb \
-    -resn {PROBE_ID} \
-    --threshold 0.001 \
-    -opdb {sysdirpath}/resenv_{JOB_NAME}.pdb \
-    -v
-    """)
+    resenv(grid=f"{basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx",
+           ipdb=[f"{sysdirpath}/{JOB_NAME}_woWAT_10ps.pdb"],
+           resn=PROBE_ID,
+           opdb=f"{sysdirpath}/resenv_{JOB_NAME}.pdb",
+           threshold=0.001,
+           )
 
 
 def align_residue_environment(setting):
-    exe_python = setting["general"]["executables"]["python"]
     basedirpath = setting["general"]["workdir"]
     PROBE_ID = setting["input"]["probe"]["cid"]
-    WORK_DIR = os.path.dirname(util.getabsolutepath(__file__))
     JOB_NAME = setting["general"]["name"]
 
-    logger.debug("alignresenv_main start")
-    ret = gop(f"""
-    {exe_python} {WORK_DIR}/script/alignresenv_main.py \
-    -ipdb {basedirpath}/system*/resenv_{JOB_NAME}.pdb \
-    -resn {PROBE_ID} \
-    -opdb {basedirpath}/alignedresenv_{JOB_NAME}.pdb \
-    -v
-    """)
-    logger.debug(ret)
-    logger.debug("alignresenv_main end")
+    # logger.debug("alignresenv start")
+
+    pdbfiles = glob.glob(f"{basedirpath}/system*/resenv_{JOB_NAME}.pdb")
+    ref_struct = uPDB.get_structure(pdbfiles[0])[0].copy()  # all structures are superimposed to this
+    structures = [uPDB.get_structure(src) for src in pdbfiles]
+
+    aligned = align_res_env(structures, ref_struct, PROBE_ID)
+    with uPDB.PDBIOhelper(f"{basedirpath}/alignedresenv_{JOB_NAME}.pdb") as pdbio:
+        for model in aligned:
+            pdbio.save(model)
+
+    logger.debug("alignresenv end")
 
 
 def gen_residue_interaction_profile(setting):
-    exe_python = setting["general"]["executables"]["python"]
     basedirpath = setting["general"]["workdir"]
     PROBE_ID = setting["input"]["probe"]["cid"]
-    WORK_DIR = os.path.dirname(util.getabsolutepath(__file__))
     JOB_NAME = setting["general"]["name"]
 
-    os.system(f"""
-    {exe_python} {WORK_DIR}/script/profile_main.py \
-    -ipdb {basedirpath}/alignedresenv_{JOB_NAME}.pdb \
-    -oprefix {basedirpath}/{JOB_NAME}_{PROBE_ID}_mesh \
-    -v
-    """)
+    for residue_type, residue_names in residue_type_dict.items():
+        struct = uPDB.get_structure(f"{basedirpath}/alignedresenv_{JOB_NAME}.pdb")
+        g = create_residue_interaction_profile(struct, [" CB "], residue_names)
+        g.export(f"{basedirpath}/{JOB_NAME}_{PROBE_ID}_mesh_{residue_type}.dx", type="short")
 
 
 def probe_profile(setting):

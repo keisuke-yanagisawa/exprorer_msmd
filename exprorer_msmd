@@ -10,7 +10,7 @@ from joblib import Parallel, delayed
 
 from script.utilities import util
 from script.utilities.GPUtil import get_gpuids
-from script.genpmap_main import gen_pmap
+from script.genpmap import gen_pmap
 from script.utilities.pmd import convert as pmd_convert
 from script.generate_msmd_system import generate_msmd_system
 from script.addvirtatom2top import addvirtatom2top
@@ -41,7 +41,7 @@ def preprocess(index, setting, debug=False):
     # create a protein-water-probe system
     _, tmptop = tempfile.mkstemp(suffix=".top")
     _, tmpgro = tempfile.mkstemp(suffix=".gro")
-    parm7, rst7 = generate_msmd_system(setting, debug=debug)
+    parm7, rst7 = generate_msmd_system(setting, debug=debug, seed=index)
     pmd_convert(parm7, tmptop, inxyz=rst7, outxyz=tmpgro)
 
     # add virtual atoms for pseudo repulsion between probes
