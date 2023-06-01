@@ -164,10 +164,10 @@ exprorer_msmd:
       title     : Production Run
       type      : production
       define    : ""
-      nsteps    : 100000
-      nstxtcout : 100 # steps
-      nstenergy : 40 # steps
-      nstlog    : 100 # steps
+      nsteps    : 200000
+      nstxtcout : 50 # steps
+      nstenergy : 20 # steps
+      nstlog    : 50 # steps
       # ref_t     : 300
       pcoupl    : Parrinello-Rahman
       # ref_p     : 1.0
@@ -175,7 +175,7 @@ exprorer_msmd:
 map: # MAP generation
   type: pmap
   # valid_dist: 5            # PMAP valid distance from protein atoms
-  snapshot: 1-101:1 # steps / "NAME" trajectory will be used with "NAME|" 
+  snapshot: 3801-4001:1 # steps / "NAME" trajectory will be used with "NAME|" 
   maps:
     - suffix: nVH
       selector: (!@VIS)&(!@H*)
