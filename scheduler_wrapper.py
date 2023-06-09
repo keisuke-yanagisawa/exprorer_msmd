@@ -39,7 +39,7 @@ if __name__ == "__main__":
     GROUP = ""
     QTYPE = ""
     MAXTIME = ""
-    if environment["use_scheduler"] == "True":
+    if environment["use_scheduler"] == True:
         GROUP = environment["scheduler"]["group"]
         QTYPE = environment["scheduler"]["qtype"]
         MAXTIME = environment["scheduler"]["maxtime"]
