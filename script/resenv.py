@@ -5,8 +5,8 @@ import gridData
 from scipy .spatial import distance
 from tqdm import tqdm
 from joblib import Parallel, delayed
-from Bio import PDB
 from Bio.PDB.Model import Model
+from Bio.PDB.Atom import Atom
 from script.utilities.Bio import PDB as uPDB
 
 VERSION = "0.3.0"
@@ -62,14 +62,6 @@ def compute_SR_probe_resis(model: Model,
     return set(resis)
 
 
-class Selector(PDB.Select):
-    def __init__(self, sele):
-        self.sele = sele
-
-    def accept_atom(self, atom):
-        return self.sele(atom)
-
-
 def __get_surrounded_resis_around_a_residue(model: Model,
                                             resi: int,
                                             env_distance: float
@@ -86,13 +78,14 @@ def __get_surrounded_resis_around_a_residue(model: Model,
 def __wrapper(model: Model,
               dx: gridData.Grid,
               focused_resname: str,
+              protein_residue_atomnames: List[str],
               threshold: float,
               lt: bool,
               env_distance: float):
 
-    water_resis = set(
-        uPDB.get_attr(model, "resid", sele=uPDB.is_water)
-    )
+    # water_resis = set(
+    #     uPDB.get_attr(model, "resid", sele=uPDB.is_water)
+    # )
     focused_residue_resis = set(
         uPDB.get_attr(model, "resid", sele=lambda a: uPDB.get_resname(a) == focused_resname)
     )
@@ -101,20 +94,25 @@ def __wrapper(model: Model,
 
     ret_env_structs = []
     for resi in resi_set:
-        exclude_resis = focused_residue_resis | water_resis
+        exclude_resis = focused_residue_resis
         environment_resis = __get_surrounded_resis_around_a_residue(model, resi, env_distance)
         environment_resis -= exclude_resis
 
         if len(environment_resis) == 0:
             continue
 
-        sele = Selector(lambda a: uPDB.get_resi(a) in (environment_resis | set([resi])))
-        env_struct = uPDB.extract_substructure(model, sele)
+        def __sele(a: Atom) -> bool:
+            if uPDB.get_resi(a) not in (environment_resis | set([resi])):
+                return False
+            return True
+
+        env_struct = uPDB.extract_substructure(model, uPDB.AtomSelector(__sele))
+        # print(len([a for a in env_struct.get_atoms()]))
         ret_env_structs.append(env_struct)
     return ret_env_structs
 
 
-def resenv(grid: str, ipdb: List[str], resn: str, opdb: str,
+def resenv(grid: str, ipdb: List[str], resn: str, res_atomnames: List[str], opdb: str,
            threshold: float = 0.2, lt: bool = False,
            env_distance: float = 4, n_jobs: int = 1, verbose=False):
     dx = gridData.Grid(grid)
@@ -123,8 +121,8 @@ def resenv(grid: str, ipdb: List[str], resn: str, opdb: str,
     for path in ipdb:
         reader = uPDB.MultiModelPDBReader(path)
 
-        lst_of_lst = Parallel(n_jobs=n_jobs)(
-            delayed(__wrapper)(model, dx, resn, threshold, lt, env_distance)
+        lst_of_lst = Parallel(n_jobs=1)(
+            delayed(__wrapper)(model, dx, resn, res_atomnames, threshold, lt, env_distance)
             for model in tqdm(reader, desc="[extract res. env.]", disable=not verbose)
         )
 

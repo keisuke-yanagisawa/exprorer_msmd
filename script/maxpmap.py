@@ -14,9 +14,9 @@ def check(gs: List[Grid]):
 
 
 def grid_max(gs: List[Grid]):
-    # TODO: check all grids have the same voxel fields
+    # TODO: check all grids have the same voxel grid sizes and positions
     if not check(gs):
-        logger.error("ERROR: Grid(s) have different voxel fields")
+        logger.error("ERROR: Grid(s) have different voxel sizes or/and positions")
         exit(1)
 
     ret = gs[0]

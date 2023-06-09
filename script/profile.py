@@ -2,7 +2,6 @@ import tempfile
 import os
 from typing import List
 import numpy as np
-import numpy.typing as npt
 import gridData
 
 from script.utilities.Bio import PDB as uPDB

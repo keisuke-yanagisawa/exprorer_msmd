@@ -25,6 +25,19 @@ import numpy.typing as npt
 from ..scipy.spatial_func import estimate_volume
 
 
+class AtomSelector(PDB.Select):
+    """
+    構造から、原子を抜き出すためのクラス。
+    毎回classを作るのが面倒なので、別途用意した。
+    """
+
+    def __init__(self, sele):
+        self.sele = sele
+
+    def accept_atom(self, atom):
+        return self.sele(atom)
+
+
 class MultiModelPDBReader(object):
     """
     多数のモデルが含まれるPDBファイルを
