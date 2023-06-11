@@ -114,7 +114,7 @@ def __wrapper(model: Model,
     return ret_env_structs
 
 
-def resenv(grid: str, ipdb: List[str], resn: str, opdb: str,
+def resenv(grid: str, ipdb: List[str], resn: str, res_atomnames: List[str], opdb: str,
            threshold: float = 0.2, lt: bool = False,
            env_distance: float = 4, n_jobs: int = 1, verbose=False):
     dx = gridData.Grid(grid)
