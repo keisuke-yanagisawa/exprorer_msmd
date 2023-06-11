@@ -15,7 +15,7 @@ class TestResenv(TestCase):
         _, self.outputpdb = tempfile.mkstemp(suffix=".pdb")
 
     def test_normal_case(self):
-        resenv(self.gridfile, self.trajectories, self.resn, self.outputpdb,
+        resenv(self.gridfile, self.trajectories, self.resn, [" CB "], self.outputpdb,
                threshold=0.001)
 
         struct = uPDB.get_structure(self.outputpdb)
@@ -26,23 +26,23 @@ class TestResenv(TestCase):
 
     def test_grid_file_is_not_found(self):
         with self.assertRaises(FileNotFoundError):
-            resenv("NOTHING", self.trajectories, self.resn, self.outputpdb)
+            resenv("NOTHING", self.trajectories, self.resn, [" CB "], self.outputpdb)
 
     def test_ipdb_file_is_not_found(self):
         with self.assertRaises(FileNotFoundError):
-            resenv(self.gridfile, ["NOTHING"], self.resn, self.outputpdb)
+            resenv(self.gridfile, ["NOTHING"], self.resn, [" CB "], self.outputpdb)
 
     def test_one_of_ipdb_file_is_not_found(self):
         with self.assertRaises(FileNotFoundError):
-            resenv(self.gridfile, [self.trajectories[0], "NOTHING"], self.resn, self.outputpdb)
+            resenv(self.gridfile, [self.trajectories[0], "NOTHING"], self.resn, [" CB "], self.outputpdb)
 
     def test_invalid_resn(self):
         with self.assertRaises(ValueError):
-            resenv(self.gridfile, self.trajectories, "INVALID_RESN", self.outputpdb)
+            resenv(self.gridfile, self.trajectories, "INVALID_RESN", [" CB "], self.outputpdb)
 
     def test_output_file_cannot_be_created(self):
         with self.assertRaises(FileNotFoundError):
-            resenv(self.gridfile, self.trajectories, self.resn, "/INVALID/PATH/TO/OUTPUT")
+            resenv(self.gridfile, self.trajectories, self.resn, [" CB "], "/INVALID/PATH/TO/OUTPUT")
 
     def test_no_output_structure(self):
         pass
