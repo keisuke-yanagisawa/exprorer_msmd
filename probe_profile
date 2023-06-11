@@ -30,7 +30,7 @@ def gen_maxpmap(setting):
     logger.info(f"Output file: {basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx")
 
 
-def extract_residue_environment(index, setting):
+def extract_residue_environment(index, setting, verbose=False):
     basedirpath = setting["general"]["workdir"]
     sysdirpath = f'{basedirpath}/system{index}'
     PROBE_ID = setting["input"]["probe"]["cid"]
@@ -40,8 +40,10 @@ def extract_residue_environment(index, setting):
     resenv(grid=f"{basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx",
            ipdb=[f"{sysdirpath}/{JOB_NAME}_woWAT_10ps.pdb"],
            resn=PROBE_ID,
+           res_atomnames=[" CB "],
            opdb=f"{sysdirpath}/resenv_{JOB_NAME}.pdb",
            threshold=0.001,
+           verbose=verbose
            )
 
 
@@ -68,14 +70,22 @@ def gen_residue_interaction_profile(setting):
     basedirpath = setting["general"]["workdir"]
     PROBE_ID = setting["input"]["probe"]["cid"]
     JOB_NAME = setting["general"]["name"]
+    atom_names = [" CB "]
 
     for residue_type, residue_names in residue_type_dict.items():
-        struct = uPDB.get_structure(f"{basedirpath}/alignedresenv_{JOB_NAME}.pdb")
-        g = create_residue_interaction_profile(struct, [" CB "], residue_names)
-        g.export(f"{basedirpath}/{JOB_NAME}_{PROBE_ID}_mesh_{residue_type}.dx", type="short")
+        try:
+            struct = uPDB.get_structure(f"{basedirpath}/alignedresenv_{JOB_NAME}.pdb")
+            g = create_residue_interaction_profile(struct, atom_names, residue_names)
+            g.export(f"{basedirpath}/{JOB_NAME}_{PROBE_ID}_mesh_{residue_type}.dx", type="short")
+        except Exception as e:
+            # glysine must be in here because it does not have CB atom
+            logger.error(f"Error: {e} - skip this residue_type / residue_names pair")
+            logger.error(f"residue_type: {residue_type}")
+            logger.error(f"residue_names: {residue_names}")
+            logger.error(f"atom_names: {atom_names}")
 
 
-def probe_profile(setting):
+def probe_profile(setting, verbose=False):
     indices = util.expand_index(setting["general"]["iter_index"])
 
     gen_maxpmap(setting)
@@ -84,7 +94,7 @@ def probe_profile(setting):
     if not setting["general"]["multiprocessing"]:
         n_jobs = 1
     Parallel(n_jobs=n_jobs)(
-        delayed(extract_residue_environment)(idx, setting)
+        delayed(extract_residue_environment)(idx, setting, verbose)
         for idx in indices
     )
     align_residue_environment(setting)
@@ -109,4 +119,4 @@ if __name__ == "__main__":
     logger.info(f"read yaml: {args.setting_yaml}")
     setting = util.parse_yaml(args.setting_yaml)
 
-    probe_profile(setting)
+    probe_profile(setting, args.verbose)
