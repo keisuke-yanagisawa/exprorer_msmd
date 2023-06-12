@@ -42,7 +42,7 @@ def extract_residue_environment(index, setting, verbose=False):
            resn=PROBE_ID,
            res_atomnames=[" CB "],
            opdb=f"{sysdirpath}/resenv_{JOB_NAME}.pdb",
-           threshold=0.001,
+           threshold=setting["probe_profile"]["threshold"],
            verbose=verbose
            )
 
