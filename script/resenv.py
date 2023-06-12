@@ -134,6 +134,7 @@ def resenv(grid: str, ipdb: List[str], resn: str, res_atomnames: List[str], opdb
         for lst in lst_of_lst:
             for struct in lst:
                 out_helper.save(struct)
+    out_helper.close()
 
     structs = uPDB.get_structure(opdb)
     if (len(structs) == 0):
