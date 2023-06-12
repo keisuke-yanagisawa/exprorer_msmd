@@ -187,7 +187,7 @@ map: # MAP generation
 
 probe_profile:
   resenv: # Extract residue environments around probe molecules
-    threshold: 0.2 # probability threshold of "preferred" residue environment
+    threshold: 0.001 # probability threshold of "preferred" residue environment
     # env_dist: 4    # residue environment distance from a probe molecule
     # align: [" C1 ", " C2 ", " C3 ", " O1 "] # all heavy atoms are used if "align" is not defined
 
