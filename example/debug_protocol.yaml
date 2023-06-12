@@ -164,7 +164,7 @@ exprorer_msmd:
       title     : Production Run
       type      : production
       define    : ""
-      nsteps    : 100000
+      nsteps    : 10000
       nstxtcout : 100 # steps
       nstenergy : 40 # steps
       nstlog    : 100 # steps
