@@ -193,28 +193,28 @@ probe_profile:
 
   profile:
     types:
-      - name: anionic_cb
+      - name: anion
         atoms:
           - ["ASP", " CB "]
           - ["GLU", " CB "]
-      - name: cationic_cb
+      - name: cation
         atoms:
           - ["LYS", " CB "]
           - ["HIE", " CB "]
           - ["ARG", " CB "]
-      - name: aromatic_cb
+      - name: aromatic
         atoms:
           - ["TYR", " CB "]
           - ["TRP", " CB "]
           - ["PHE", " CB "]
-      - name: hydrophilic_cb
+      - name: hydrophilic
         atoms:
           - ["ASN", " CB "]
           - ["GLN", " CB "]
           - ["SER", " CB "]
           - ["THR", " CB "]
           - ["CYS", " CB "]
-      - name: hydrophobic_cb
+      - name: hydrophobic
         atoms:
           - ["ILE", " CB "]
           - ["LEU", " CB "]
@@ -222,3 +222,14 @@ probe_profile:
           - ["ALA", " CB "]
           - ["PRO", " CB "]
           - ["MET", " CB "]
+      - name: neutral
+        atoms:
+          - ["GLY", " CB "]
+      - name: gly
+        atoms:
+          - ["GLY", " CB "]
+      - name: met
+        atoms:
+          - ["MET", " CB "]
+
+  

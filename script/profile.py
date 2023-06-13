@@ -1,4 +1,3 @@
-import itertools
 from typing import List, Tuple
 import numpy as np
 import gridData
@@ -9,17 +8,6 @@ from Bio.PDB.Structure import Structure
 DESCRIPTION = """
 generate residue interaction profile of a probe of interest
 """
-
-residue_type_dict = {
-    "anion": ["ASP", "GLU"],
-    "cation": ["LYS", "HIE", "ARG"],
-    "aromatic": ["TYR", "TRP", "PHE"],
-    "hydrophilic": ["ASN", "GLN", "SER", "THR", "CYS"],
-    "hydrophobic": ["ILE", "LEU", "VAL", "ALA", "PRO", "MET"],
-    "neutral": ["GLY"],
-    "gly": ["GLY"],
-    "met": ["MET"]
-}
 
 
 def create_residue_interaction_profile(struct: Structure,
