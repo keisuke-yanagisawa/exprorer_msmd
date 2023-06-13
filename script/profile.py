@@ -26,8 +26,8 @@ def create_residue_interaction_profile(struct: Structure,
                                        target_residue_atoms: List[Tuple[str, str]]
                                        ) -> gridData.Grid:
 
-    sele = uPDB.Selector(lambda a: (uPDB.get_atom_attr(a, "fullname"),
-                                    uPDB.get_atom_attr(a, "resname")) in target_residue_atoms)
+    sele = uPDB.Selector(lambda a: (uPDB.get_atom_attr(a, "resname"),
+                                    uPDB.get_atom_attr(a, "fullname")) in target_residue_atoms)
     struct = uPDB.extract_substructure(struct, sele)
     if len(struct) == 0:
         raise ValueError("No atom found in the structure under the specified atom names")
