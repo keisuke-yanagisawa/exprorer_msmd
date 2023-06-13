@@ -32,23 +32,18 @@ def create_residue_interaction_profile(struct: Structure,
 
     sele = uPDB.Selector(lambda a: uPDB.get_atom_attr(a, "fullname") in atom_names)
     struct = uPDB.extract_substructure(struct, sele)
+    sele = uPDB.Selector(lambda a: uPDB.get_atom_attr(a, "resname") in residue_lst)
+    struct = uPDB.extract_substructure(struct, sele)
     if len(struct) == 0:
         raise ValueError("No atom found in the structure under the specified atom names")
 
     coords = uPDB.get_attr(struct, "coord")
-    names = uPDB.get_attr(struct, "resname")
     min_xyz = np.min(coords, axis=0)
     max_xyz = np.max(coords, axis=0)
-
-    applicables = [s in residue_lst for s in names]
-    target_coords = coords[np.where(applicables)]
-    if len(target_coords) == 0:
-        raise ValueError("No applicable residue found in the structure")
-
     x_range = np.arange(np.floor(min_xyz[0]), np.ceil(max_xyz[0]) + 1, 1)
     y_range = np.arange(np.floor(min_xyz[1]), np.ceil(max_xyz[1]) + 1, 1)
     z_range = np.arange(np.floor(min_xyz[2]), np.ceil(max_xyz[2]) + 1, 1)
 
-    hist, bins = np.histogramdd(target_coords, [x_range, y_range, z_range])
+    hist, bins = np.histogramdd(coords, [x_range, y_range, z_range])
 
     return gridData.Grid(hist, edges=bins)
