@@ -13,17 +13,19 @@ class TestCreateResidueInteractionProfile(TestCase):
         self.no_atom_struct = uPDB.get_structure("script/test_data/noatom.pdb")
 
     def test_normal_case(self):
-        grid = profile.create_residue_interaction_profile(self.two_atoms_struct, [" CA ", " N  "], ["VAL"])
+        target_residue_atoms = [("VAL", " CA "), ("VAL", " N  ")]
+        grid = profile.create_residue_interaction_profile(self.two_atoms_struct, target_residue_atoms)
         np.testing.assert_array_equal(grid.grid, [[[0, 1], [0, 0], [1, 0]]])
         np.testing.assert_array_almost_equal(grid.origin, [-0.5, 65.5, 76.5])
 
     def test_one_atom(self):
-        grid = profile.create_residue_interaction_profile(self.two_atoms_struct, [" CA "], ["VAL"])
+
+        grid = profile.create_residue_interaction_profile(self.two_atoms_struct, [("VAL", " CA ")])
         np.testing.assert_array_equal(grid.grid, [[[1]]])
         np.testing.assert_array_almost_equal(grid.origin, [-0.5, 67.5, 76.5])
 
     def test_multi_models(self):
-        grid = profile.create_residue_interaction_profile(self.two_models_struct, [" N  "], ["PRO"])
+        grid = profile.create_residue_interaction_profile(self.two_models_struct, [("PRO", " N  ")])
         np.testing.assert_array_equal(grid.grid, [[[1], [0]], [[0], [0]], [[0], [0]], [[0], [0]], [[0], [1]]])
         np.testing.assert_array_almost_equal(grid.origin, [4.5, 9.5, -0.5])
 
@@ -31,12 +33,12 @@ class TestCreateResidueInteractionProfile(TestCase):
         self.assertEqual(len([m for m in self.no_atom_struct.get_models()]), 1)
         self.assertEqual(len([a for a in self.no_atom_struct.get_atoms()]), 0)
         with self.assertRaises(ValueError):
-            profile.create_residue_interaction_profile(self.no_atom_struct, [" CA "], ["VAL"])
+            profile.create_residue_interaction_profile(self.no_atom_struct, [("VAL", " CA ")])
 
     def test_no_residue(self):
         with self.assertRaises(ValueError):
-            profile.create_residue_interaction_profile(self.two_atoms_struct, [" CA "], ["ALA"])
+            profile.create_residue_interaction_profile(self.two_atoms_struct, [("ALA", " CA ")])
 
     def test_no_atomname(self):
         with self.assertRaises(ValueError):
-            profile.create_residue_interaction_profile(self.two_atoms_struct, [" CB "], ["VAL"])
+            profile.create_residue_interaction_profile(self.two_atoms_struct, [("VAL", " CB ")])

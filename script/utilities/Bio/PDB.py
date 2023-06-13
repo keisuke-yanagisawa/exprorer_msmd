@@ -195,7 +195,8 @@ def get_structure(filepath: str, structname="") -> Structure:
 
 
 def get_atom_attr(atom: Atom,
-                  attr: str) -> Union[int, str, npt.NDArray[np.float_], tuple]:
+                  attr: Literal["resid", "resname", "coord", "element", "fullname"]
+                  ) -> Union[int, str, npt.NDArray[np.float_], tuple]:
     """
     Get attribute from Bio.PDB.Atom object.
     {"resid", "resname", "coord", "element", "fullname"}
@@ -235,9 +236,9 @@ def get_atom_attr(atom: Atom,
 
 
 def get_attr(model: Union[Structure, Model],
-             attr: Literal["resid", "resname", "coord", "element",
-                           "fullname"],
-             sele: Optional[Callable[[Atom], bool]] = None) -> npt.NDArray[Any]:
+             attr: Literal["resid", "resname", "coord", "element", "fullname"],
+             sele: Optional[Callable[[Atom], bool]] = None
+             ) -> npt.NDArray[Any]:
     """
     Get attribute from Bio.PDB.Model object.
     {"resid", "resname", "coord", "element", "fullname"} 
