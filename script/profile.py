@@ -1,13 +1,9 @@
-import tempfile
-import os
-from typing import List
+import itertools
+from typing import List, Tuple
 import numpy as np
-import numpy.typing as npt
 import gridData
 
 from script.utilities.Bio import PDB as uPDB
-from script.utilities import const
-from Bio import PDB
 from Bio.PDB.Structure import Structure
 
 DESCRIPTION = """
@@ -27,12 +23,11 @@ residue_type_dict = {
 
 
 def create_residue_interaction_profile(struct: Structure,
-                                       atom_names: List[str],
-                                       residue_lst: List[str]) -> gridData.Grid:
+                                       target_residue_atoms: List[Tuple[str, str]]
+                                       ) -> gridData.Grid:
 
-    sele = uPDB.Selector(lambda a: uPDB.get_atom_attr(a, "fullname") in atom_names)
-    struct = uPDB.extract_substructure(struct, sele)
-    sele = uPDB.Selector(lambda a: uPDB.get_atom_attr(a, "resname") in residue_lst)
+    sele = uPDB.Selector(lambda a: (uPDB.get_atom_attr(a, "fullname"),
+                                    uPDB.get_atom_attr(a, "resname")) in target_residue_atoms)
     struct = uPDB.extract_substructure(struct, sele)
     if len(struct) == 0:
         raise ValueError("No atom found in the structure under the specified atom names")
