@@ -62,13 +62,15 @@ def prepare_sequence(sequence, general):
     return ret
 
 
-def prepare_md_files(sequence: List[dict],
+def prepare_md_files(index: int,
+                     sequence: List[dict],
                      targetdir: str,
                      jobname: str,
                      top: str,
                      gro: str,
                      out_traj: str):
     for step in sequence:
+        step["seed"] = index
         gen_mdp(step, targetdir)
     gen_mdrun_job([d["name"] for d in sequence],
                   jobname, f"{targetdir}/mdrun.sh", top, gro, out_traj)

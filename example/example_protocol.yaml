@@ -32,7 +32,6 @@ exprorer_msmd:
     # dt          : 0.002
     # temperature : 300
     # pressure    : 1.0
-    seed        : 42
     pbc         : xyz
 
   sequence :
