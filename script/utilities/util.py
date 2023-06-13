@@ -84,8 +84,6 @@ def set_default(setting: dict) -> None:
         setting["exprorer_msmd"]["general"]["temperature"] = 300
     if "pressure" not in setting["exprorer_msmd"]["general"]:
         setting["exprorer_msmd"]["general"]["pressure"] = 1.0
-    if "seed" not in setting["exprorer_msmd"]["general"]:
-        setting["exprorer_msmd"]["general"]["seed"] = -1
 
 
 def ensure_compatibility_v1_1(setting: dict):

@@ -106,6 +106,7 @@ def execute_single_simulation(index, setting, gpuid, ncpus, top, gro, pdb, debug
 
     # generate mdp files and a shell script to run each simulation sequentially
     prepare_md_files(
+        index,
         setting["exprorer_msmd"]["sequence"],
         simdirpath,
         JOB_NAME,
