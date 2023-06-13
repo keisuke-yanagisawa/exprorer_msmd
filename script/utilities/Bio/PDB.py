@@ -469,10 +469,18 @@ def estimate_exclute_volume(prot: Union[Structure, Model]) -> float:
     return estimate_volume(coords, radii)
 
 
+class Selector(PDB.Select):
+    def __init__(self, sele):
+        self.sele = sele
+
+    def accept_atom(self, atom):
+        return self.sele(atom)
+
+
 def extract_substructure(struct: Union[Structure, Model], sele) -> Structure:
     pdbio = PDB.PDBIO()
     pdbio.set_structure(struct)
     with tempfile.NamedTemporaryFile(suffix=".pdb") as fp:
         pdbio.save(fp.name, select=sele)
-        substruct = get_structure(fp.name)[0]
+        substruct = get_structure(fp.name)
     return substruct

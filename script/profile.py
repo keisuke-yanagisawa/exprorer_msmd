@@ -26,45 +26,12 @@ residue_type_dict = {
 }
 
 
-def __atomtype_select(struct: Structure,
-                      atom_names: List[str]) -> Structure:
-    """
-    select atoms from a structure based on atom names
-
-    Parameters
-    ----------
-    struct : Structure
-        structure to be processed
-    atom_names : List[str]
-        List of atom names
-
-    Returns
-    -------
-    Structure
-        processed structure containing only atoms specified in atom_names
-    """
-    class AtomTypeSelect(PDB.Select):
-        def __init__(self, atoms):
-            self.atomtypes = atoms
-
-        def accept_atom(self, atom):
-            return uPDB.get_atom_attr(atom, "fullname") in self.atomtypes
-
-    _, tmp = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)
-    io = PDB.PDBIO()
-    io.set_structure(struct)
-    io.save(tmp, AtomTypeSelect(atom_names))
-    struct = uPDB.get_structure(tmp)
-    os.remove(tmp)
-
-    return struct
-
-
 def create_residue_interaction_profile(struct: Structure,
                                        atom_names: List[str],
                                        residue_lst: List[str]) -> gridData.Grid:
 
-    struct = __atomtype_select(struct, atom_names)
+    sele = uPDB.Selector(lambda a: uPDB.get_atom_attr(a, "fullname") in atom_names)
+    struct = uPDB.extract_substructure(struct, sele)
     if len(struct) == 0:
         raise ValueError("No atom found in the structure under the specified atom names")
 
