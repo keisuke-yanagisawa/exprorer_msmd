@@ -74,7 +74,7 @@ def gen_residue_interaction_profile(setting):
     atom_names = [" CB "]
 
     for residue_type, residue_names in residue_type_dict.items():
-        target_residue_atoms = [(res, atom) for res, atom in itertools.product(atom_names, residue_names)]
+        target_residue_atoms = [(res, atom) for res, atom in itertools.product(residue_names, atom_names)]
         try:
             struct = uPDB.get_structure(f"{basedirpath}/alignedresenv_{JOB_NAME}.pdb")
             g = create_residue_interaction_profile(struct, target_residue_atoms)
