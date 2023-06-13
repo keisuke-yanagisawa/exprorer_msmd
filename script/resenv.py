@@ -62,14 +62,6 @@ def compute_SR_probe_resis(model: Model,
     return set(resis)
 
 
-class Selector(PDB.Select):
-    def __init__(self, sele):
-        self.sele = sele
-
-    def accept_atom(self, atom):
-        return self.sele(atom)
-
-
 def __get_surrounded_resis_around_a_residue(model: Model,
                                             resi: int,
                                             env_distance: float
@@ -108,7 +100,7 @@ def __wrapper(model: Model,
         if len(environment_resis) == 0:
             continue
 
-        sele = Selector(lambda a: uPDB.get_resi(a) in (environment_resis | set([resi])))
+        sele = uPDB.Selector(lambda a: uPDB.get_resi(a) in (environment_resis | set([resi])))
         env_struct = uPDB.extract_substructure(model, sele)
         ret_env_structs.append(env_struct)
     return ret_env_structs
