@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -J JOB{runID}_{JOB_NAME}
-# SBATCH -p {QTYPE}
-# SBATCH -N 1
+#SBATCH -p {QTYPE}
+#SBATCH -N 1
 #SBATCH --gres=gpu:{NGPUS}
 #SBATCH --get-user-env
 #SBATCH -o JOB{runID}_{JOB_NAME}.out
