@@ -57,6 +57,7 @@ def __calculate_boxsize(pdbfile: str) -> float:
         logger.error(gop(f"cat {tmp_prefix}.in"))
         logger.error("====tleap output====")
         logger.error(gop(f"cat {tmp_prefix}.in.result"))
+        logger.error("failed to calculate box size: tleap error")
         raise e
     return size
 
