@@ -49,7 +49,17 @@ def __calculate_boxsize(pdbfile: str) -> float:
     with open(f"{tmp_prefix}.in", "w") as fout:
         fout.write(tmp_leap.format(pdbfile=pdbfile, tmp_prefix=tmp_prefix))
     logger.info(gop(f"tleap -f {tmp_prefix}.in | tee {tmp_prefix}.in.result"))
-    return calculate_boxsize(f"{tmp_prefix}.rst7")
+
+    try:
+        size = calculate_boxsize(f"{tmp_prefix}.rst7")
+    except ValueError as e:
+        logger.error("====tleap input commands====")
+        logger.error(gop(f"cat {tmp_prefix}.in"))
+        logger.error("====tleap output====")
+        logger.error(gop(f"cat {tmp_prefix}.in.result"))
+        logger.error("failed to calculate box size: tleap error")
+        raise e
+    return size
 
 
 def calculate_boxsize(rst7: str) -> float:
