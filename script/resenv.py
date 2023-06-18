@@ -101,13 +101,8 @@ def __wrapper(model: Model,
         if len(environment_resis) == 0:
             continue
 
-        def __sele(a: Atom) -> bool:
-            if uPDB.get_resi(a) not in (environment_resis | set([resi])):
-                return False
-            return True
-
-        env_struct = uPDB.extract_substructure(model, uPDB.AtomSelector(__sele))
-        # print(len([a for a in env_struct.get_atoms()]))
+        sele = uPDB.Selector(lambda a: uPDB.get_resi(a) in (environment_resis | set([resi])))
+        env_struct = uPDB.extract_substructure(model, sele)
         ret_env_structs.append(env_struct)
     return ret_env_structs
 
@@ -132,6 +127,7 @@ def resenv(grid: str, ipdb: List[str], resn: str, res_atomnames: List[str], opdb
         for lst in lst_of_lst:
             for struct in lst:
                 out_helper.save(struct)
+    out_helper.close()
 
     structs = uPDB.get_structure(opdb)
     if (len(structs) == 0):

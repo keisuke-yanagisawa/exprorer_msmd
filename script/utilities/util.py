@@ -74,6 +74,8 @@ def set_default(setting: dict) -> None:
         setting["general"]["multiprocessing"] = True
     if "valid_dist" not in setting["map"]:
         setting["map"]["valid_dist"] = 5
+    if "threshold" not in setting["probe_profile"]:
+        setting["probe_profile"]["threshold"] = 0.001
     if "env_dist" not in setting["probe_profile"]:
         setting["probe_profile"]["env_dist"] = 4
     if "dt" not in setting["exprorer_msmd"]["general"]:
@@ -82,8 +84,6 @@ def set_default(setting: dict) -> None:
         setting["exprorer_msmd"]["general"]["temperature"] = 300
     if "pressure" not in setting["exprorer_msmd"]["general"]:
         setting["exprorer_msmd"]["general"]["pressure"] = 1.0
-    if "seed" not in setting["exprorer_msmd"]["general"]:
-        setting["exprorer_msmd"]["general"]["seed"] = -1
 
 
 def ensure_compatibility_v1_1(setting: dict):
