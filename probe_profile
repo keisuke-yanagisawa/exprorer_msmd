@@ -15,19 +15,17 @@ import glob
 VERSION = "0.1.0"
 
 
-# TODO: which map should be used? nVH? others?
-
-
 def gen_maxpmap(setting):
     basedirpath = setting["general"]["workdir"]
     JOB_NAME = setting["general"]["name"]
+    map = setting["probe_profile"]["resenv"]["map"]
 
     logger.info("PMAP aggregation: mapPMAP")
     maxpmap.gen_max_pmap(
-        glob.glob(f"{basedirpath}/system*/PMAP_{JOB_NAME}_nVH.dx"),
-        f"{basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx"
+        glob.glob(f"{basedirpath}/system*/PMAP_{JOB_NAME}_{map}.dx"),
+        f"{basedirpath}/maxPMAP_{JOB_NAME}_{map}.dx"
     )
-    logger.info(f"Output file: {basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx")
+    logger.info(f"Output file: {basedirpath}/maxPMAP_{JOB_NAME}_{map}.dx")
 
 
 def extract_residue_environment(index, setting, verbose=False):
@@ -35,9 +33,10 @@ def extract_residue_environment(index, setting, verbose=False):
     sysdirpath = f'{basedirpath}/system{index}'
     PROBE_ID = setting["input"]["probe"]["cid"]
     JOB_NAME = setting["general"]["name"]
+    map = setting["probe_profile"]["resenv"]["map"]
 
     # TODO: threshold should be configured
-    resenv(grid=f"{basedirpath}/maxPMAP_{JOB_NAME}_nVH.dx",
+    resenv(grid=f"{basedirpath}/maxPMAP_{JOB_NAME}_{map}.dx",
            ipdb=[f"{sysdirpath}/{JOB_NAME}_woWAT_10ps.pdb"],
            resn=PROBE_ID,
            res_atomnames=[" CB "],
