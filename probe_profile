@@ -12,6 +12,7 @@ from script import maxpmap
 
 from script.utilities import util
 import glob
+import gridData
 VERSION = "0.1.0"
 
 
@@ -36,7 +37,8 @@ def extract_residue_environment(index, setting, verbose=False):
     map = setting["probe_profile"]["resenv"]["map"]
 
     # TODO: threshold should be configured
-    resenv(grid=f"{basedirpath}/maxPMAP_{JOB_NAME}_{map}.dx",
+    grid = gridData.Grid(f"{basedirpath}/maxPMAP_{JOB_NAME}_{map}.dx")
+    resenv(grid=grid,
            ipdb=[f"{sysdirpath}/{JOB_NAME}_woWAT_10ps.pdb"],
            resn=PROBE_ID,
            res_atomnames=[" CB "],
