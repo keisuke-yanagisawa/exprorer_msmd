@@ -98,17 +98,22 @@ def __wrapper(model_wo_water: Model,
     return ret_env_structs
 
 
-def resenv(grid: gridData.Grid, ipdb: List[str], resn: str, res_atomnames: List[str], opdb: str,
-           threshold: float = 0.2, lt: bool = False,
-           env_distance: float = 4, verbose=False) -> Structure:
+def resenv(grid: gridData.Grid,
+           trajectory_readers: List[uPDB.MultiModelPDBReader],
+           resn: str,
+           res_atomnames: List[str],
+           opdb: str,
+           threshold: float = 0.2,
+           lt: bool = False,
+           env_distance: float = 4,
+           verbose: bool = False) -> Structure:
     """
     Extract probe which is on high-probability region with its environment (protein residues)
     """
     dx = grid
 
     out_helper = uPDB.PDBIOhelper(opdb)
-    for path in ipdb:
-        reader = uPDB.MultiModelPDBReader(path)
+    for reader in trajectory_readers:
 
         # lst_of_lst = [__wrapper(model, dx, resn, res_atomnames, threshold, lt, env_distance)
         #               for model in tqdm(reader, desc="[extract res. env.]", disable=not verbose)]
