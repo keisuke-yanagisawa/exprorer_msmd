@@ -1,10 +1,10 @@
-from typing import List, Set
+import tempfile
+from typing import List, Set, Union
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 import gridData
-from scipy .spatial import distance
+from scipy.spatial import distance
 from tqdm import tqdm
-from joblib import Parallel, delayed
 from Bio.PDB.Model import Model
 from Bio.PDB.Structure import Structure
 from script.utilities.Bio import PDB as uPDB
@@ -17,7 +17,7 @@ Output: residue environments
 """
 
 
-def compute_SR_probe_resis(model: Model,
+def compute_SR_probe_resis(model: Union[Structure, Model],
                            dx: gridData.Grid,
                            resn: str,
                            threshold: float,
@@ -27,7 +27,7 @@ def compute_SR_probe_resis(model: Model,
     located in regions that exceed the `threshold` value.
     ------
     input:
-        model: Model
+        model: Union[Structure, Model]
             A snapshot of a molecular dynamics simulation
             containing probe molecules
         dx: gridData.Grid,
@@ -57,7 +57,7 @@ def compute_SR_probe_resis(model: Model,
     return set(resis)
 
 
-def __get_surrounded_resis_around_a_residue(model: Model,
+def __get_surrounded_resis_around_a_residue(model: Union[Structure, Model],
                                             resi: int,
                                             env_distance: float
                                             ) -> Set[int]:
@@ -70,13 +70,13 @@ def __get_surrounded_resis_around_a_residue(model: Model,
     return set(environment_resis)
 
 
-def __wrapper(model_wo_water: Model,
+def __wrapper(model_wo_water: Union[Structure, Model],
               dx: gridData.Grid,
               focused_resname: str,
-              res_atomnames: List[str],
-              threshold: float,
-              lt: bool,
-              env_distance: float):
+              res_atomnames: List[str] = [" CB "],
+              threshold: float = 0.2,
+              lt: bool = False,
+              env_distance: float = 4.0):
     focused_residue_resis = set(
         uPDB.get_attr(model_wo_water, "resid", sele=lambda a: uPDB.get_resname(a) == focused_resname)
     )
@@ -102,7 +102,6 @@ def resenv(grid: gridData.Grid,
            trajectory_readers: List[uPDB.MultiModelPDBReader],
            resn: str,
            res_atomnames: List[str],
-           opdb: str,
            threshold: float = 0.2,
            lt: bool = False,
            env_distance: float = 4,
@@ -112,25 +111,20 @@ def resenv(grid: gridData.Grid,
     """
     dx = grid
 
-    out_helper = uPDB.PDBIOhelper(opdb)
-    for reader in trajectory_readers:
+    with tempfile.NamedTemporaryFile("w") as f:
 
-        # lst_of_lst = [__wrapper(model, dx, resn, res_atomnames, threshold, lt, env_distance)
-        #               for model in tqdm(reader, desc="[extract res. env.]", disable=not verbose)]
-        lst_of_lst = Parallel(n_jobs=1)(
-            delayed(__wrapper)(model, dx, resn, res_atomnames, threshold, lt, env_distance)
-            for model in tqdm(reader, desc="[extract res. env.]", disable=not verbose)
-        )  # now parallel processing is disabled
+        out_helper = uPDB.PDBIOhelper(f.name)
+        for reader in trajectory_readers:
 
-        if lst_of_lst is None:
-            continue
+            lst_of_lst = [__wrapper(model, dx, resn, res_atomnames, threshold, lt, env_distance)
+                          for model in tqdm(reader, desc="[extract res. env.]", disable=not verbose)]
 
-        for lst in lst_of_lst:
-            for struct in lst:
-                out_helper.save(struct)
-    out_helper.close()  # it is necessary to read the output file below
+            for lst in lst_of_lst:
+                for struct in lst:
+                    out_helper.save(struct)
+        out_helper.close()  # it is necessary to read the output file below
 
-    structs = uPDB.get_structure(opdb)
-    if (len(structs) == 0):
-        raise ValueError("No structures were extracted.")
+        structs = uPDB.get_structure(f.name)
+        if (len(structs) == 0):
+            raise ValueError("No structures were extracted.")
     return structs
