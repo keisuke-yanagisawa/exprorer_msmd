@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import tempfile
-from typing import List, Optional
+from typing import List
 from script.utilities.logger import logger
 from script.profile import create_residue_interaction_profile
 import argparse
@@ -14,19 +14,8 @@ from script import maxpmap
 from Bio.PDB.Structure import Structure
 
 from script.utilities import util
-import glob
 import gridData
 VERSION = "0.1.0"
-
-
-def gen_maxpmap(setting) -> gridData.Grid:
-    basedirpath = setting["general"]["workdir"]
-    JOB_NAME = setting["general"]["name"]
-    map = setting["probe_profile"]["resenv"]["map"]
-
-    logger.info("PMAP aggregation: mapPMAP")
-    grids = [gridData.Grid(path) for path in glob.glob(f"{basedirpath}/system*/PMAP_{JOB_NAME}_{map}.dx")]
-    return maxpmap.grid_max(grids)
 
 
 def extract_residue_environment(index, setting, grid: gridData.Grid, verbose=False) -> Structure:
@@ -45,13 +34,16 @@ def extract_residue_environment(index, setting, grid: gridData.Grid, verbose=Fal
     return structure
 
 
-def align_residue_environment(setting, structures: List[Structure]) -> Structure:
-    logger.debug("alignresenv start")
-    PROBE_ID = setting["input"]["probe"]["cid"]
+def align_structures(structures: List[Structure], probe_resname) -> Structure:
+    """
+    Align structures to the first structure in the list
+    This function assumes each structure has only one probe {probe_resname}
+    """
+    logger.debug("align_structures start")
 
     ref_struct = structures[0][0].copy()  # all structures are superimposed to this
 
-    aligned = align_res_env(structures, ref_struct, PROBE_ID)
+    aligned = align_res_env(structures, ref_struct, probe_resname)
     with tempfile.NamedTemporaryFile(mode="w", suffix=".pdb", delete=False) as f:
         with uPDB.PDBIOhelper(f.name) as pdbio:
             for model in aligned:
@@ -59,34 +51,8 @@ def align_residue_environment(setting, structures: List[Structure]) -> Structure
 
         struct = uPDB.get_structure(f.name)
 
-    logger.debug("alignresenv end")
+    logger.debug("align_structures end")
     return struct
-
-
-def probe_profile(setting, n_jobs: int = 1, verbose=False):
-    indices = util.expand_index(setting["general"]["iter_index"])
-    basedirpath = setting["general"]["workdir"]
-    PROBE_ID = setting["input"]["probe"]["cid"]
-    JOB_NAME = setting["general"]["name"]
-
-    max_grid = gen_maxpmap(setting)
-    structures: List[Structure] = Parallel(n_jobs=n_jobs)(  # type: ignore
-        delayed(extract_residue_environment)(idx, setting, max_grid, verbose)
-        for idx in indices
-    )
-    structure = align_residue_environment(setting, structures)
-    for profile_type in setting["probe_profile"]["profile"]["types"]:
-        residue_type = profile_type["name"]
-        target_residue_atoms = [(*lst,) for lst in profile_type["atoms"]]  # convert from list to tuple
-
-        try:
-            g = create_residue_interaction_profile(structure, target_residue_atoms)
-            g.export(f"{basedirpath}/{JOB_NAME}_{PROBE_ID}_mesh_{residue_type}.dx", type="short")
-        except Exception as e:
-            # glysine must be in here because it does not have CB atom
-            logger.error(f"Error: {e} - skip this residue_type / target_residue_atoms pair")
-            logger.error(f"residue_type: {residue_type}")
-            logger.error(f"target_residue_atoms: {target_residue_atoms}")
 
 
 if __name__ == "__main__":
@@ -107,6 +73,33 @@ if __name__ == "__main__":
     logger.info(f"read yaml: {args.setting_yaml}")
     setting = util.parse_yaml(args.setting_yaml)
 
-    probe_profile(setting,
-                  n_jobs=setting["general"]["multiprocessing"],
-                  verbose=args.verbose)
+    indices = util.expand_index(setting["general"]["iter_index"])
+    WORKING_DIR = setting["general"]["workdir"]
+    probe_resn = setting["input"]["probe"]["cid"]
+    JOB_NAME = setting["general"]["name"]
+    n_jobs = setting["general"]["multiprocessing"]
+    mapname = setting["probe_profile"]["resenv"]["map"]
+
+    # generate max_pmap
+    pmap_pathes = [f"{WORKING_DIR}/system{idx}/PMAP_{JOB_NAME}_{mapname}.dx" for idx in indices]
+    pmaps = [gridData.Grid(path) for path in pmap_pathes]
+    max_pmap = maxpmap.grid_max(pmaps)
+
+    trajectory_files = [f"{WORKING_DIR}/system{idx}/{JOB_NAME}_woWAT_10ps.pdb" for idx in indices]
+    probe_environment_structs: List[Structure] = Parallel(n_jobs=n_jobs)(  # type: ignore
+        delayed(extract_residue_environment)(idx, setting, max_pmap, args.verbose)
+        for idx in indices
+    )
+    structure = align_structures(probe_environment_structs, probe_resn)
+    for profile_type in setting["probe_profile"]["profile"]["types"]:
+        residue_type = profile_type["name"]
+        target_residue_atoms = [(*lst,) for lst in profile_type["atoms"]]  # convert from list to tuple
+
+        try:
+            g = create_residue_interaction_profile(structure, target_residue_atoms)
+            g.export(f"{WORKING_DIR}/{JOB_NAME}_{probe_resn}_mesh_{residue_type}.dx", type="short")
+        except Exception as e:
+            # glysine must be in here because it does not have CB atom
+            logger.error(f"Error: {e} - skip this residue_type / target_residue_atoms pair")
+            logger.error(f"residue_type: {residue_type}")
+            logger.error(f"target_residue_atoms: {target_residue_atoms}")
