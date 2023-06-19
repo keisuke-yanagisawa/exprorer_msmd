@@ -19,6 +19,11 @@ class TestPDB(TestCase):
         with self.assertRaises(IndexError):
             reader.get_model(10)
 
+    def test_multi_model_pdb_reader_not_file_found(self):
+        with self.assertRaises(FileNotFoundError):
+            PDB.MultiModelPDBReader("INVALID_PATH")
+        pass
+
     def test_pdb_io_helper(self):
         reader = PDB.MultiModelPDBReader(self.pdbfile)
         models = [model for model in reader]

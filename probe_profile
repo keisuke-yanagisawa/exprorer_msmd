@@ -39,7 +39,7 @@ def extract_residue_environment(index, setting, verbose=False):
     # TODO: threshold should be configured
     grid = gridData.Grid(f"{basedirpath}/maxPMAP_{JOB_NAME}_{map}.dx")
     resenv(grid=grid,
-           ipdb=[f"{sysdirpath}/{JOB_NAME}_woWAT_10ps.pdb"],
+           trajectory_readers=[uPDB.MultiModelPDBReader(f) for f in [f"{sysdirpath}/{JOB_NAME}_woWAT_10ps.pdb"]],
            resn=PROBE_ID,
            res_atomnames=[" CB "],
            opdb=f"{sysdirpath}/resenv_{JOB_NAME}.pdb",
