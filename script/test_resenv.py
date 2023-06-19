@@ -1,6 +1,5 @@
 from unittest import TestCase
 from script.resenv import resenv
-import tempfile
 from script.utilities.Bio import PDB as uPDB
 import numpy as np
 import gridData
@@ -15,13 +14,9 @@ class TestResenv(TestCase):
         self.trajectories = [uPDB.MultiModelPDBReader(f) for f in self.trajectory_files]
         self.expected_resenv_pdb = "script/test_data/resenv_expected.pdb"
         self.resn = "A11"
-        _, self.outputpdb = tempfile.mkstemp(suffix=".pdb")
 
     def test_normal_case(self):
-        resenv(self.grid, self.trajectories, self.resn, [" CB "], self.outputpdb,
-               threshold=0.001)
-
-        struct = uPDB.get_structure(self.outputpdb)
+        struct = resenv(self.grid, self.trajectories, self.resn, [" CB "], threshold=0.001)
         expected_struct = uPDB.get_structure(self.expected_resenv_pdb)
         self.assertEqual(len(struct), len(expected_struct))
         for model, expected_model in zip(struct, expected_struct):  # type: ignore
@@ -29,11 +24,7 @@ class TestResenv(TestCase):
 
     def test_invalid_resn(self):
         with self.assertRaises(ValueError):
-            resenv(self.grid, self.trajectories, "INVALID_RESN", [" CB "], self.outputpdb)
-
-    def test_output_file_cannot_be_created(self):
-        with self.assertRaises(FileNotFoundError):
-            resenv(self.grid, self.trajectories, self.resn, [" CB "], "/INVALID/PATH/TO/OUTPUT")
+            resenv(self.grid, self.trajectories, "INVALID_RESN", [" CB "])
 
     def test_no_output_structure(self):
         pass
