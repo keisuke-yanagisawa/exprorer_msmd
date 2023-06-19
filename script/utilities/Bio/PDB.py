@@ -10,7 +10,7 @@ Authors: Keisuke Yanagisawa
 import collections
 import gzip
 import os
-from typing import Any, Callable, Literal, Optional, Union
+from typing import Any, Callable, List, Literal, Optional, Union
 import warnings
 import numpy as np
 from Bio import PDB
@@ -435,6 +435,22 @@ def save(structs, path) -> None:
     io = PDB.PDBIO()
     io.set_structure(out_structure)
     io.save(path)
+
+
+def concatenate_structures(structs: List[Structure]) -> Structure:
+    """
+    Concatenate structures.
+    All structures are saved to a single structure with multiple models.
+    """
+
+    with tempfile.NamedTemporaryFile("w") as f:
+
+        out_helper = PDBIOhelper(f.name)
+        for struct in structs:
+            out_helper.save(struct)
+        out_helper.close()
+        ret_structure = get_structure(f.name)
+    return ret_structure
 
 
 _ATOMIC_RADII = collections.defaultdict(lambda: 2.0)
