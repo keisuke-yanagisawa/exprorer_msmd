@@ -71,7 +71,7 @@ def set_default(setting: dict) -> None:
     Set default values (in place) for some fields in setting
     """
     if "multiprocessing" not in setting["general"]:
-        setting["general"]["multiprocessing"] = True
+        setting["general"]["multiprocessing"] = -1
     if "valid_dist" not in setting["map"]:
         setting["map"]["valid_dist"] = 5
     if "threshold" not in setting["probe_profile"]:
