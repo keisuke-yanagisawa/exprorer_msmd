@@ -5,14 +5,28 @@ import gridData
 from script.utilities.Bio import PDB as uPDB
 from Bio.PDB.Structure import Structure
 
-DESCRIPTION = """
-generate residue interaction profile of a probe of interest
-"""
+
+def __calc_minimum_bounding_box(coords) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Calculate the minimum bounding box of a set of coordinates (3D)
+    :param coords: 3D coordinates
+    :return: min and max coordinates of the bounding box
+    """
+    min_xyz = np.min(coords, axis=0)
+    max_xyz = np.max(coords, axis=0)
+    return min_xyz, max_xyz
 
 
 def create_residue_interaction_profile(struct: Structure,
                                        target_residue_atoms: List[Tuple[str, str]]
                                        ) -> gridData.Grid:
+    """
+    struct: Bio.PDB.Structure
+        A structure containing multiple models of aligned environments
+    target_residue_atoms: List[Tuple[str, str]]
+        A list of residue-atom pairs which are to be included in the profile
+        ex: [("ALA", " CA "), ("ALA", " CB "), ("ARG", " CB ")]
+    """
 
     sele = uPDB.Selector(lambda a: (uPDB.get_atom_attr(a, "resname"),
                                     uPDB.get_atom_attr(a, "fullname")) in target_residue_atoms)
@@ -21,8 +35,7 @@ def create_residue_interaction_profile(struct: Structure,
         raise ValueError("No atom found in the structure under the specified atom names")
 
     coords = uPDB.get_attr(struct, "coord")
-    min_xyz = np.min(coords, axis=0)
-    max_xyz = np.max(coords, axis=0)
+    min_xyz, max_xyz = __calc_minimum_bounding_box(coords)
     x_range = np.arange(np.floor(min_xyz[0]), np.ceil(max_xyz[0]) + 1, 1)
     y_range = np.arange(np.floor(min_xyz[1]), np.ceil(max_xyz[1]) + 1, 1)
     z_range = np.arange(np.floor(min_xyz[2]), np.ceil(max_xyz[2]) + 1, 1)
