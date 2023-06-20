@@ -18,43 +18,6 @@ import gridData
 VERSION = "0.1.0"
 
 
-def extract_residue_environment(index, setting, grid: gridData.Grid, verbose=False) -> Structure:
-    basedirpath = setting["general"]["workdir"]
-    sysdirpath = f'{basedirpath}/system{index}'
-    PROBE_ID = setting["input"]["probe"]["cid"]
-    JOB_NAME = setting["general"]["name"]
-
-    structure = resenv(grid=grid,
-                       trajectory_readers=[uPDB.MultiModelPDBReader(f) for f in [f"{sysdirpath}/{JOB_NAME}_woWAT_10ps.pdb"]],
-                       resn=PROBE_ID,
-                       res_atomnames=[" CB "],
-                       threshold=setting["probe_profile"]["threshold"],
-                       verbose=verbose
-                       )
-    return structure
-
-
-def align_structure(structure: Structure, probe_resname) -> Structure:
-    """
-    Align structures to the first structure in the list
-    This function assumes each structure has only one probe {probe_resname}
-    """
-    logger.debug("align_structures start")
-
-    ref_struct = structure[0].copy()  # all structures are superimposed to this
-
-    aligned = align_res_env(structure, ref_struct, probe_resname)
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".pdb", delete=False) as f:
-        with uPDB.PDBIOhelper(f.name) as pdbio:
-            for model in aligned:
-                pdbio.save(model)
-
-        struct = uPDB.get_structure(f.name)
-
-    logger.debug("align_structures end")
-    return struct
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Calculate residue interaction profile around probe")
@@ -85,13 +48,25 @@ if __name__ == "__main__":
     pmaps = [gridData.Grid(path) for path in pmap_pathes]
     max_pmap = maxpmap.grid_max(pmaps)
 
+    # extract environments around probes
     trajectory_files = [f"{WORKING_DIR}/system{idx}/{JOB_NAME}_woWAT_10ps.pdb" for idx in indices]
     probe_environment_structs: List[Structure] = Parallel(n_jobs=n_jobs)(  # type: ignore
-        delayed(extract_residue_environment)(idx, setting, max_pmap, args.verbose)
+        delayed(resenv)(grid=max_pmap,
+                        trajectory_readers=[uPDB.MultiModelPDBReader(f) for f in [f"{WORKING_DIR}/system{idx}/{JOB_NAME}_woWAT_10ps.pdb"]],
+                        resn=probe_resn,
+                        res_atomnames=[" CB "],
+                        threshold=setting["probe_profile"]["threshold"],
+                        verbose=args.verbose
+                        )
         for idx in indices
     )
     probe_environment_struct = uPDB.concatenate_structures(probe_environment_structs)
-    aligned_environment = align_structure(probe_environment_struct, probe_resn)
+
+    # align structures in accordance with the probe structures
+    ref_struct = probe_environment_struct[0].copy()  # all structures are superimposed to this
+    aligned_environment = align_res_env(probe_environment_struct, ref_struct, probe_resn)
+
+    # create residue interaction profile for each residue type
     for profile_type in setting["probe_profile"]["profile"]["types"]:
         residue_type = profile_type["name"]
         target_residue_atoms = [(*lst,) for lst in profile_type["atoms"]]  # convert from list to tuple
