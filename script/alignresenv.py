@@ -12,19 +12,18 @@ superimpose structures in accordance with specific atoms
 """
 
 
-def align_res_env(structs: List[Structure],
+def align_res_env(struct: Structure,
                   reference: Model,
                   resn: str,
                   focused: List[str] = [],
                   verbose: bool = False) -> Structure:
     """
-    Align the residues of a list of structures to a reference model
+    Align the residues of models contained in a structure to a reference model
 
     Parameters
     ----------
-    structs : List[Structure]
-        the list of structures to be aligned
-        It is acceptable that the structures contain different number of models
+    struct :Structure
+        the structure to be aligned
     reference : Model
         the reference model to be aligned to
     resn : str
@@ -41,8 +40,7 @@ def align_res_env(structs: List[Structure],
         the aligned structure contains the same number of models as the input
     """
 
-    structs = [struct for struct in structs if len([a for a in struct.get_atoms()]) > 0]  # remove empty structures
-    if len(structs) == 0:
+    if len([a for a in struct.get_atoms()]) == 0:
         raise ValueError("No structure to align")
 
     def selector(a: Atom):
@@ -58,16 +56,15 @@ def align_res_env(structs: List[Structure],
     sup = SuperImposer()
     _, tmppdb = tempfile.mkstemp(suffix=".pdb")
     with uPDB.PDBIOhelper(tmppdb) as pdbio:
-        for struct in structs:
-            for model in tqdm(struct, desc="[align res. env.]", disable=not verbose):
+        for model in tqdm(struct, desc="[align res. env.]", disable=not verbose):
 
-                # print(struct, i)
-                probe_coords = uPDB.get_attr(model, "coord", sele=selector)
-                sup.fit(probe_coords, ref_probe_c_coords)
-                all_coords = uPDB.get_attr(model, "coord")
-                uPDB.set_attr(model, "coord", sup.transform(all_coords))
+            # print(struct, i)
+            probe_coords = uPDB.get_attr(model, "coord", sele=selector)
+            sup.fit(probe_coords, ref_probe_c_coords)
+            all_coords = uPDB.get_attr(model, "coord")
+            uPDB.set_attr(model, "coord", sup.transform(all_coords))
 
-                pdbio.save(model)
-                # print(len(pdbio))
+            pdbio.save(model)
+            # print(len(pdbio))
 
     return uPDB.get_structure(tmppdb)
