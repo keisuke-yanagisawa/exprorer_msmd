@@ -91,13 +91,13 @@ if __name__ == "__main__":
         for idx in indices
     )
     probe_environment_struct = uPDB.concatenate_structures(probe_environment_structs)
-    structure = align_structure(probe_environment_struct, probe_resn)
+    aligned_environment = align_structure(probe_environment_struct, probe_resn)
     for profile_type in setting["probe_profile"]["profile"]["types"]:
         residue_type = profile_type["name"]
         target_residue_atoms = [(*lst,) for lst in profile_type["atoms"]]  # convert from list to tuple
 
         try:
-            g = create_residue_interaction_profile(structure, target_residue_atoms)
+            g = create_residue_interaction_profile(aligned_environment, target_residue_atoms)
             g.export(f"{WORKING_DIR}/{JOB_NAME}_{probe_resn}_mesh_{residue_type}.dx", type="short")
         except Exception as e:
             # glysine must be in here because it does not have CB atom
