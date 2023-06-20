@@ -10,13 +10,13 @@ class TestResenv(TestCase):
         super(TestResenv, self).__init__(*args, **kwargs)
         self.gridfile = "script/test_data/maxpmap_for_resenv.dx"
         self.grid = gridData.Grid(self.gridfile)
-        self.trajectory_files = ["script/test_data/trajectory_for_resenv.pdb"]
-        self.trajectories = [uPDB.MultiModelPDBReader(f) for f in self.trajectory_files]
+        self.trajectory_file = "script/test_data/trajectory_for_resenv.pdb"
+        self.trajectory = uPDB.MultiModelPDBReader(self.trajectory_file)
         self.expected_resenv_pdb = "script/test_data/resenv_expected.pdb"
         self.resn = "A11"
 
     def test_normal_case(self):
-        struct = resenv(self.grid, self.trajectories, self.resn, [" CB "], threshold=0.001)
+        struct = resenv(self.grid, self.trajectory, self.resn, [" CB "], threshold=0.001)
         expected_struct = uPDB.get_structure(self.expected_resenv_pdb)
         self.assertEqual(len(struct), len(expected_struct))
         for model, expected_model in zip(struct, expected_struct):  # type: ignore
@@ -24,7 +24,7 @@ class TestResenv(TestCase):
 
     def test_invalid_resn(self):
         with self.assertRaises(ValueError):
-            resenv(self.grid, self.trajectories, "INVALID_RESN", [" CB "])
+            resenv(self.grid, self.trajectory, "INVALID_RESN", [" CB "])
 
     def test_no_output_structure(self):
         pass
