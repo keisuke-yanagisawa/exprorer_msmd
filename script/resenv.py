@@ -114,10 +114,9 @@ def resenv(grid: gridData.Grid,
     """
     Extract probe which is on high-probability region with its environment (protein residues)
     """
-    dx = grid
 
     ret = []
-    environments = [__wrapper(model, dx, resn, res_atomnames, threshold, lt, env_distance)
+    environments = [__wrapper(model, grid, resn, res_atomnames, threshold, lt, env_distance)
                     for model in tqdm(trajectory, desc="[extract res. env.]", disable=not verbose)]
     environments = [e for e in environments if e is not None]
     ret.extend(environments)
