@@ -1,4 +1,3 @@
-import tempfile
 from typing import List, Optional, Set, Union
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
@@ -87,23 +86,21 @@ def __wrapper(model_wo_water: Union[Structure, Model],
 
     ret_env_structs = []
     for resi in resi_set:
-        exclude_resis = focused_residue_resis
         environment_resis = __get_surrounded_resis_around_a_residue(model_wo_water, resi, env_distance)
-        environment_resis -= exclude_resis
+        environment_resis -= focused_residue_resis
 
         if len(environment_resis) == 0:
+            # there is no protein residue around the probe molecule
             continue
 
         sele = uPDB.Selector(lambda a: uPDB.get_resi(a) in (environment_resis | set([resi])))
         env_struct = uPDB.extract_substructure(model_wo_water, sele)
-        if len([a for a in env_struct.get_atoms()]) == 0:
-            continue
         ret_env_structs.append(env_struct)
 
-    if len(ret_env_structs) == 0:
-        return None
-    else:
-        return uPDB.concatenate_structures(ret_env_structs)
+    ret = None
+    if len(ret_env_structs) != 0:
+        ret = uPDB.concatenate_structures(ret_env_structs)
+    return ret
 
 
 def resenv(grid: gridData.Grid,
