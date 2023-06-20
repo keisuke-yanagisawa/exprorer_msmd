@@ -58,15 +58,16 @@ def compute_SR_probe_resis(model: Union[Structure, Model],
 
 
 def __get_surrounded_resis_around_a_residue(model: Union[Structure, Model],
-                                            resi: int,
+                                            focused_resi: int,
                                             env_distance: float
                                             ) -> Set[int]:
-    residue_coords = uPDB.get_attr(model, "coord",
-                                   sele=lambda a: uPDB.get_resi(a) == resi)
-    environment_resis = set(
-        uPDB.get_attr(model, "resid",
-                      sele=lambda a: np.min(distance.cdist([a.get_coord()], residue_coords)) < env_distance)
-    )
+    focused_residue_coords = uPDB.get_attr(model, "coord",
+                                           sele=lambda a: uPDB.get_resi(a) == focused_resi)
+
+    all_resis = uPDB.get_attr(model, "resid")
+    all_coords = uPDB.get_attr(model, "coord")
+    is_near_atom = np.min(distance.cdist(focused_residue_coords, all_coords), axis=0) < env_distance
+    environment_resis = set(all_resis[is_near_atom])
     return set(environment_resis)
 
 
