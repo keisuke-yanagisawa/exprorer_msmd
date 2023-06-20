@@ -43,6 +43,7 @@ if __name__ == "__main__":
     n_jobs = setting["general"]["multiprocessing"]
     mapname = setting["probe_profile"]["resenv"]["map"]
     threshold = setting["probe_profile"]["threshold"]
+    env_distance = setting["probe_profile"]["resenv"]["env_dist"]
     profile_types = setting["probe_profile"]["profile"]["types"]
 
     # generate max_pmap
@@ -58,6 +59,7 @@ if __name__ == "__main__":
                         resn=probe_resn,
                         res_atomnames=[" CB "],
                         threshold=threshold,
+                        env_distance=env_distance,
                         verbose=args.verbose
                         )
         for idx in indices

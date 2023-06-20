@@ -507,7 +507,7 @@ class Selector(PDB.Select):
         return self.sele(atom)
 
 
-def extract_substructure(struct: Union[Structure, Model], sele) -> Structure:
+def extract_substructure(struct: Union[Structure, Model], sele: PDB.Select) -> Structure:
     pdbio = PDB.PDBIO()
     pdbio.set_structure(struct)
     with tempfile.NamedTemporaryFile(suffix=".pdb") as fp:
