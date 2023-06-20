@@ -66,6 +66,14 @@ if __name__ == "__main__":
     )
     probe_environment_struct = uPDB.concatenate_structures(probe_environment_structs)
 
+    # remove unnecessary atoms
+    target_residue_atoms = set()  # convert from list to tuple
+    for profile_type in profile_types:
+        target_residue_atoms.update([(*lst,) for lst in profile_type["atoms"]])
+    sele = uPDB.Selector(lambda a: (uPDB.get_atom_attr(a, "resname"), uPDB.get_atom_attr(a, "fullname")) in target_residue_atoms
+                         or uPDB.get_atom_attr(a, "resname") == probe_resn)
+    probe_environment_struct = uPDB.extract_substructure(probe_environment_struct, sele)
+
     # align structures in accordance with the probe structures
     ref_struct = probe_environment_struct[0].copy()  # all structures are superimposed to this
     aligned_environment = align_res_env(probe_environment_struct, ref_struct, probe_resn)
