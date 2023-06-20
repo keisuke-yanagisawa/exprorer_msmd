@@ -34,16 +34,16 @@ def extract_residue_environment(index, setting, grid: gridData.Grid, verbose=Fal
     return structure
 
 
-def align_structures(structures: List[Structure], probe_resname) -> Structure:
+def align_structure(structure: Structure, probe_resname) -> Structure:
     """
     Align structures to the first structure in the list
     This function assumes each structure has only one probe {probe_resname}
     """
     logger.debug("align_structures start")
 
-    ref_struct = structures[0][0].copy()  # all structures are superimposed to this
+    ref_struct = structure[0].copy()  # all structures are superimposed to this
 
-    aligned = align_res_env(structures, ref_struct, probe_resname)
+    aligned = align_res_env(structure, ref_struct, probe_resname)
     with tempfile.NamedTemporaryFile(mode="w", suffix=".pdb", delete=False) as f:
         with uPDB.PDBIOhelper(f.name) as pdbio:
             for model in aligned:
@@ -90,7 +90,8 @@ if __name__ == "__main__":
         delayed(extract_residue_environment)(idx, setting, max_pmap, args.verbose)
         for idx in indices
     )
-    structure = align_structures(probe_environment_structs, probe_resn)
+    probe_environment_struct = uPDB.concatenate_structures(probe_environment_structs)
+    structure = align_structure(probe_environment_struct, probe_resn)
     for profile_type in setting["probe_profile"]["profile"]["types"]:
         residue_type = profile_type["name"]
         target_residue_atoms = [(*lst,) for lst in profile_type["atoms"]]  # convert from list to tuple
