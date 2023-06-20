@@ -53,16 +53,17 @@ if __name__ == "__main__":
 
     # extract environments around probes
     trajectory_files = [f"{WORKING_DIR}/system{idx}/{JOB_NAME}_woWAT_10ps.pdb" for idx in indices]
+    trajectories = [uPDB.MultiModelPDBReader(path) for path in trajectory_files]
     probe_environment_structs: List[Structure] = Parallel(n_jobs=n_jobs)(  # type: ignore
         delayed(resenv)(grid=max_pmap,
-                        trajectory_readers=[uPDB.MultiModelPDBReader(f) for f in [f"{WORKING_DIR}/system{idx}/{JOB_NAME}_woWAT_10ps.pdb"]],
+                        trajectory=trajectory,
                         resn=probe_resn,
                         res_atomnames=[" CB "],
                         threshold=threshold,
                         env_distance=env_distance,
                         verbose=args.verbose
                         )
-        for idx in indices
+        for trajectory in trajectories
     )
     probe_environment_struct = uPDB.concatenate_structures(probe_environment_structs)
 

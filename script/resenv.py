@@ -104,7 +104,7 @@ def __wrapper(model_wo_water: Union[Structure, Model],
 
 
 def resenv(grid: gridData.Grid,
-           trajectory_readers: List[uPDB.MultiModelPDBReader],
+           trajectory: uPDB.MultiModelPDBReader,
            resn: str,
            res_atomnames: List[str],
            threshold: float = 0.2,
@@ -117,11 +117,10 @@ def resenv(grid: gridData.Grid,
     dx = grid
 
     ret = []
-    for reader in trajectory_readers:
-        environments = [__wrapper(model, dx, resn, res_atomnames, threshold, lt, env_distance)
-                        for model in tqdm(reader, desc="[extract res. env.]", disable=not verbose)]
-        environments = [e for e in environments if e is not None]
-        ret.extend(environments)
+    environments = [__wrapper(model, dx, resn, res_atomnames, threshold, lt, env_distance)
+                    for model in tqdm(trajectory, desc="[extract res. env.]", disable=not verbose)]
+    environments = [e for e in environments if e is not None]
+    ret.extend(environments)
 
     if (len(ret) == 0):
         raise ValueError("No structures were extracted.")
