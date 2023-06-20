@@ -20,7 +20,7 @@ class TestParseNormalSettingYaml(TestCase):
 
     def test_default_values(self):
         setting = parse_yaml(self.yaml_path)
-        self.assertEqual(setting["general"]["multiprocessing"], True)
+        self.assertEqual(setting["general"]["multiprocessing"], -1)
 
 
 class TestParseSettingYamlErrorCases(TestCase):
