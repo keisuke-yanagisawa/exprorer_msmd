@@ -77,7 +77,8 @@ def set_default(setting: dict) -> None:
     if "threshold" not in setting["probe_profile"]:
         setting["probe_profile"]["threshold"] = 0.001
     if "env_dist" not in setting["probe_profile"]:
-        setting["probe_profile"]["env_dist"] = 4
+        setting["probe_profile"]["resenv"]["env_dist"] = 4
+
     if "dt" not in setting["exprorer_msmd"]["general"]:
         setting["exprorer_msmd"]["general"]["dt"] = 0.002
     if "temperature" not in setting["exprorer_msmd"]["general"]:
