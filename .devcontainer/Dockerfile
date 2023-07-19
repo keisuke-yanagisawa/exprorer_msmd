@@ -8,8 +8,6 @@ ARG PATH="/miniconda3/bin:${PATH}"
 RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
 RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
 RUN apt-get update
-RUN apt-get install -y cmake
-# RUN apt-get upgrade
 
 RUN apt-get install -y wget && rm -rf /var/lib/apt/lists/*
 
@@ -21,13 +19,15 @@ RUN wget \
 RUN conda --version
 
 # install packages
+# libarchive is required for mamba
+RUN conda install -y -c conda-forge libarchive
 RUN conda install -y -c conda-forge mamba
 RUN mamba update conda
 RUN mamba install -y -c conda-forge \
-    ambertools=20.15 numpy=1.22.3 biopython=1.79 \
-    jinja2=3.0.3 griddataformats=0.7.0 \
-    parmed=3.4.3 git=2.35.1 pyyaml=6.0 \
-    tqdm=4.62.3 scikit-learn=1.0.2 gputil=1.4.0 joblib=1.1.0 
+    ambertools numpy biopython \
+    jinja2 griddataformats \
+    parmed git pyyaml \
+    tqdm scikit-learn gputil joblib
 RUN pip install coverage pytest
 
 RUN mamba install -y -c conda-forge flake8 autopep8
