@@ -19,18 +19,19 @@ RUN wget \
 RUN conda --version
 
 # install packages
+
 # libarchive is required for mamba
 RUN conda install -y -c conda-forge libarchive
 RUN conda install -y -c conda-forge mamba
 RUN mamba update conda
+
 RUN mamba install -y -c conda-forge \
     ambertools numpy biopython \
     jinja2 griddataformats \
     parmed git pyyaml \
-    tqdm scikit-learn gputil joblib
-RUN pip install coverage pytest
+    tqdm scikit-learn gputil joblib \
+    flake8 autopep8 pytest-cov
 
-RUN mamba install -y -c conda-forge flake8 autopep8
 
 # ====== settings for git / ssh =======
 RUN echo "mkdir -p /root/.ssh" >> /etc/bash.bashrc
