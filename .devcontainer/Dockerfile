@@ -28,7 +28,7 @@ RUN mamba update conda
 RUN mamba install -y -c conda-forge \
     ambertools numpy biopython \
     jinja2 griddataformats \
-    parmed git pyyaml \
+    parmed==3.4.3 git pyyaml \
     tqdm scikit-learn gputil joblib \
     flake8 autopep8 pytest-cov
 
