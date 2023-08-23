@@ -17,9 +17,8 @@ def _convert_all(intop, outtop, inxyz, outxyz):
         # for dealing with multimer system
         # posre generator does not support multimer system
         # and thus we need to merge multimer into a record
-        # Assumption: There is single molecule -> proteins
-        #             There are multiple the same molecule -> probes and waters
-        protein_indices = [[list(t[1])[0] for t in system.split() if len(t[1]) == 1]]
+        # Assumption: There is single molecule consisted with multiple residues -> proteins
+        protein_indices = [[list(indices)[0] for parm, indices in system.split() if (len(indices) == 1 and len(parm.residues) > 1)]]
         system.save(outtop, overwrite=True, combine=protein_indices)
         system.save(outxyz, overwrite=True, combine=protein_indices)
     else:
