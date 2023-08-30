@@ -1,3 +1,5 @@
+last modified: 19-May-2023
+
 # EXPRORER_MSMD
 
 Repository that combines the Mixed-Solvent Molecular Dynamics (MSMD) simulation engine and analysis tools.

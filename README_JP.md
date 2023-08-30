@@ -1,3 +1,5 @@
+last modified: 30-Aug-2023
+
 # EXPRORER_MSMD
 
 共溶媒分子動力学 (mixed-solvent molecular dynamics; MSMD) シミュレーションエンジンと、解析ツールをまとめたリポジトリ
@@ -78,5 +80,19 @@ EXPRORER[^1] はこの結果を用いて、ボクセル間の類似度を計算�
 
 ## yamlファイルの書き換え
 
-すべての設定は yaml ファイルに記述されている。
-（工事中）
+すべての設定は yaml ファイルに記述されている。詳細は `README_SETTING_YAML_JP.md` を参照のこと。
+
+## 開発者向け情報
+
+### ユニットテスト
+
+以下のコマンドを実行することでユニットテストと、そのカバレッジ分析を行うことができる。
+
+```sh
+python -m pytest . --cov=. --cov-report=html
+```
+
+また、以下のようにするとカバレッジ分析結果をWebブラウザ上で見れる（`htmlcov` ディレクトリが自動生成される）。より詳細な結果を確認したい際にはこちらを利用すると良い。
+```sh
+python -m pytest . --cov=. --cov-report=html
+```
