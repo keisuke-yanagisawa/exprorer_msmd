@@ -16,9 +16,9 @@ class TestConversion(TestCase):
         _, out_gro = tempfile.mkstemp(suffix=".gro")
         pmd.convert(self.topfile, out_top, self.xyzfile, out_gro)
 
-        # Ignore the first 6 lines including the timestamp
-        self.assertEqual(open(out_top).readlines()[6:],
-                         open(self.expected_topfile).readlines()[6:])
+        # Ignore the first 15 lines including the timestamp and command to run test
+        self.assertEqual(open(out_top).readlines()[15:],
+                         open(self.expected_topfile).readlines()[15:])
         self.assertEqual(open(out_gro).read(),
                          open(self.expected_grofile).read())
 
@@ -26,9 +26,9 @@ class TestConversion(TestCase):
         _, out_top = tempfile.mkstemp(suffix=".top")
         pmd.convert(self.topfile, out_top)
 
-        # Ignore the first 6 lines including the timestamp
-        self.assertEqual(open(out_top).readlines()[6:],
-                         open(self.expected_topfile).readlines()[6:])
+        # Ignore the first 15 lines including the timestamp and command to run test
+        self.assertEqual(open(out_top).readlines()[15:],
+                         open(self.expected_topfile).readlines()[15:])
 
     def __del__(self):
         pass
