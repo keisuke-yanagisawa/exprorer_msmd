@@ -21,7 +21,7 @@ def get_gpuids(ignore_cuda_visible_devices=False):
         logger.warn("No GPU is allowed/existed to use")
         logger.warn("Switch to CPU-only mode, it greatly decreases the simulation speed")
     else:
-        logger.info("GPU IDs of {gpuids} will be used")
+        logger.info(f"GPU IDs of {gpuids} will be used")
 
     ngpus = len(gpuids)
     if ngpus == 0:  # there is only CPU
