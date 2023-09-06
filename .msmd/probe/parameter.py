@@ -34,17 +34,3 @@ class AtomType(VariableInterface):
 
     def get(self) -> str:
         return self.__atomtype
-
-
-class Molar(VariableInterface):
-    @staticmethod
-    def _validation(molar: float) -> None:
-        if molar < 0:
-            raise ValueError(f"The molar: {molar} is negative")
-
-    def __init__(self, molar: float = 0.25):
-        self.__molar: Final[float] = molar
-        self._validation(self.__molar)
-
-    def get(self) -> float:
-        return self.__molar

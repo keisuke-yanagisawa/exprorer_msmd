@@ -17,22 +17,6 @@ class CpptrajSelector(VariableInterface):
         return self.__selector
 
 
-class PMAPSize(VariableInterface):
-    @staticmethod
-    def _validation(size: int) -> None:
-        if size <= 0:
-            raise ValueError(f"The size: {size} is not positive")
-        if isinstance(size, int) is False:
-            raise ValueError(f"The size: {size} is not integer")
-
-    def __init__(self, size: int = 80):
-        self.__size: Final[int] = size
-        self._validation(self.__size)
-
-    def get(self) -> int:
-        return self.__size
-
-
 class PMAPNormalization(VariableInterface):
     @staticmethod
     def _validation(normalization: Literal["total", "snapshot", "gfe"]) -> None:
