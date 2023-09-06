@@ -1,6 +1,5 @@
 from typing import Final, Literal, Optional
-from ..variable import VariableInterface
-from ..parameter import Path
+from ..variable import VariableInterface, Path
 
 
 class Probe:
