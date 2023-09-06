@@ -1,3 +1,4 @@
+from typing import Final
 from ..variable import VariableInterface
 
 
@@ -8,7 +9,7 @@ class Temperature(VariableInterface):
             raise ValueError(f"The temperature: {temperature} is negative")
 
     def __init__(self, temperature: int = 300):
-        self.__temperature: int = temperature
+        self.__temperature: Final[int] = temperature
         self._validation(self.__temperature)
 
     def get(self) -> int:
@@ -22,7 +23,7 @@ class StepSize(VariableInterface):
             raise ValueError(f"The stepsize: {stepsize} is not positive")
 
     def __init__(self, stepsize: float = 0.002):
-        self.__stepsize: float = stepsize
+        self.__stepsize: Final[float] = stepsize
         self._validation(self.__stepsize)
 
     def get(self) -> float:
@@ -38,7 +39,7 @@ class Steps(VariableInterface):
             raise ValueError(f"The steps: {steps} is not integer")
 
     def __init__(self, steps: int = 1000000):
-        self.__steps: int = steps
+        self.__steps: Final[int] = steps
         self._validation(self.__steps)
 
     def get(self) -> int:

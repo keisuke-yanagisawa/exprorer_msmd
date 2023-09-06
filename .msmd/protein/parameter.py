@@ -1,5 +1,5 @@
 from ..variable import VariableInterface
-from typing import List, Tuple
+from typing import Final, List, Tuple
 from ..biopython.Bio.PDB import get_structure
 from Bio.PDB.Structure import Structure
 import itertools
@@ -13,7 +13,7 @@ class ResidueID(VariableInterface):
             raise ValueError(f"The residue id: {resid} is not positive")
 
     def __init__(self, resid: int = 1):
-        self.__resid: int = resid
+        self.__resid: Final[int] = resid
         self._validation(self.__resid)
 
     def get(self) -> int:
@@ -44,8 +44,8 @@ class Protein:
         return ssbonds
 
     def __init__(self, pdb: str, ssbonds: List[Tuple[int, int]] = []):
-        self.__struct: Structure = get_structure(pdb)
-        self.__ssbonds: List[Tuple[ResidueID, ResidueID]] = self.__parse_ssbonds(ssbonds)
+        self.__struct: Final[Structure] = get_structure(pdb)
+        self.__ssbonds: Final[List[Tuple[ResidueID, ResidueID]]] = self.__parse_ssbonds(ssbonds)
         self._validation_struct(self.__struct)
         self._validation_ssbonds(self.__struct, self.__ssbonds)
 

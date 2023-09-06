@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Final, Literal
 from ..variable import VariableInterface
 
 
@@ -10,7 +10,7 @@ class CpptrajSelector(VariableInterface):
         pass
 
     def __init__(self, selector: str):
-        self.__selector: str = selector
+        self.__selector: Final[str] = selector
         self._validation(self.__selector)
 
     def get(self) -> str:
@@ -26,7 +26,7 @@ class PMAPSize(VariableInterface):
             raise ValueError(f"The size: {size} is not integer")
 
     def __init__(self, size: int = 80):
-        self.__size: int = size
+        self.__size: Final[int] = size
         self._validation(self.__size)
 
     def get(self) -> int:
@@ -40,7 +40,7 @@ class PMAPNormalization(VariableInterface):
             raise ValueError(f"The normalization: {normalization} is not supported")
 
     def __init__(self, normalization: Literal["total", "snapshot", "gfe"]):
-        self.__normalization: Literal["total", "snapshot", "gfe"] = normalization
+        self.__normalization: Final[Literal["total", "snapshot", "gfe"]] = normalization
         self._validation(self.__normalization)
 
     def get(self) -> Literal["total", "snapshot", "gfe"]:

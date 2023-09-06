@@ -1,4 +1,4 @@
-from typing import List
+from typing import Final, Tuple
 from .variable import VariableInterface
 
 
@@ -8,7 +8,7 @@ class IterIndices(VariableInterface):
     """
 
     @staticmethod
-    def _validation(indice_list: List[int]) -> None:
+    def _validation(indice_list: Tuple[int]) -> None:
         """iterationのindexの妥当性をチェックする"""
         if indice_list == []:
             raise ValueError("Empty index list")
@@ -19,21 +19,21 @@ class IterIndices(VariableInterface):
             raise NotImplementedError()
 
     @staticmethod
-    def __parse(index_str: str) -> List[int]:
+    def __parse(index_str: str) -> Tuple[int]:
         """
         エラーチェックをわすれないようにする
         「intしか存在しない」「負の数値が存在しない」「1つ以上の要素が存在する」
         """
 
-        indice_list: List[int] = []
+        indice_tuple: Tuple[int] = tuple()
         raise NotImplementedError()
-        return indice_list
+        return indice_tuple
 
     def __init__(self, index_str: str = "0"):
-        self.__indices: List[int] = self.__parse(index_str)
+        self.__indices: Final[Tuple[int]] = self.__parse(index_str)
         self._validation(self.__indices)
 
-    def get(self) -> List[int]:
+    def get(self) -> Tuple[int]:
         return self.__indices
 
 
@@ -46,7 +46,7 @@ class Path(VariableInterface):
             raise ValueError(f"The path: {path} cannot be used as path")
 
     def __init__(self, path: str = "."):
-        self.__path: str = path
+        self.__path: Final[str] = path
         self._validation(self.__path)
 
     def get(self) -> str:
@@ -62,7 +62,7 @@ class ProjectName(VariableInterface):
             raise ValueError(f"The project name: {name} cannot be used as path")
 
     def __init__(self, name: str = "TEST_PROJECT"):
-        self.__name: str = name
+        self.__name: Final[str] = name
         self._validation(self.__name)
 
     def get(self) -> str:
@@ -78,7 +78,7 @@ class Command(VariableInterface):
             raise ValueError(f"The command: {command} cannot be executed")
 
     def __init__(self, command: str = "python"):
-        self.__command: str = command
+        self.__command: Final[str] = command
         self._validation(self.__command)
 
     def get(self) -> str:

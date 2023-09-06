@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Final, Literal, Optional
 from ..variable import VariableInterface
 from ..parameter import Path
 
@@ -17,9 +17,9 @@ class Probe:
         return pdb_path
 
     def __init__(self, cid: str = "A11", mol2_path: Optional[str] = None, pdb_path: Optional[str] = None):
-        self.__cid: str = cid
-        self.__mol2_path: Path = Path(self.__generate_mol2_path(cid, mol2_path))
-        self.__pdb_path: Path = Path(self.__generate_pdb_path(cid, pdb_path))
+        self.__cid: Final[str] = cid
+        self.__mol2_path: Final[Path] = Path(self.__generate_mol2_path(cid, mol2_path))
+        self.__pdb_path: Final[Path] = Path(self.__generate_pdb_path(cid, pdb_path))
 
 
 class AtomType(VariableInterface):
@@ -29,7 +29,7 @@ class AtomType(VariableInterface):
             raise ValueError(f"The atomtype: {atomtype} is not supported")
 
     def __init__(self, atomtype: Literal["gaff", "gaff2"] = "gaff2"):
-        self.__atomtype: str = atomtype
+        self.__atomtype: Final[str] = atomtype
         self._validation(self.__atomtype)
 
     def get(self) -> str:
@@ -43,7 +43,7 @@ class Molar(VariableInterface):
             raise ValueError(f"The molar: {molar} is negative")
 
     def __init__(self, molar: float = 0.25):
-        self.__molar: float = molar
+        self.__molar: Final[float] = molar
         self._validation(self.__molar)
 
     def get(self) -> float:
