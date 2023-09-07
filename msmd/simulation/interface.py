@@ -1,6 +1,6 @@
 import abc
-from variable import Path
-from system import SystemInterface, Trajectory
+from ..variable import Path
+from ..system import SystemInterface, Trajectory
 
 
 class SimulationInterface(abc.ABC):

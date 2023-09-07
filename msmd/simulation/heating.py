@@ -1,9 +1,9 @@
-import interface
+from . import interface
 from ..system import SystemInterface, Trajectory
 from ..variable import Path, Name
 from ..unit import Kelvin, Bar
 from .simulation_parameter import NumStep, PressureCoupling
-from typing import Final, Dict, Any, Literal
+from typing import Final, Dict, Any
 
 
 class HeatingStep(interface.SimulationInterface):

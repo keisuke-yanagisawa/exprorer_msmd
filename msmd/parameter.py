@@ -1,5 +1,5 @@
 from typing import Final, Tuple
-from variable import VariableInterface
+from .variable import VariableInterface
 
 
 class IterIndices(VariableInterface):

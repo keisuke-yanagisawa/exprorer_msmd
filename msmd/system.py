@@ -1,6 +1,6 @@
 import abc
 from typing import Optional
-from variable import Path
+from .variable import Path
 
 
 class SystemInterface(abc.ABC):

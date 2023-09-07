@@ -1,4 +1,4 @@
-from variable import VariableInterface
+from .variable import VariableInterface
 from typing import Final
 
 

@@ -1,4 +1,4 @@
-import interface
+from . import interface
 from ..system import SystemInterface, Trajectory
 from ..variable import Path, Name
 from ..unit import Kelvin, Bar

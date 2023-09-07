@@ -1,20 +1,20 @@
 import os
 import yaml
 from typing import Final, Dict, Any, List, Tuple
-from variable import Command, Path, Name
-from parameter import IterIndices
-from protein.parameter import Protein
-from probe.parameter import Probe
-from simulation.interface import SimulationInterface
-from simulation.minimization import MinimizationStep
-from simulation.heating import HeatingStep
-from simulation.equilibration import EquilibrationStep
-from simulation.production import ProductionStep
-from analysis.analysis_parameter import CpptrajSelector, PMAPNormalization
-from unit import Angstrom
+from .variable import Command, Path, Name
+from .parameter import IterIndices
+from .protein.parameter import Protein
+from .probe.parameter import Probe
+from .simulation.interface import SimulationInterface
+from .simulation.minimization import MinimizationStep
+from .simulation.heating import HeatingStep
+from .simulation.equilibration import EquilibrationStep
+from .simulation.production import ProductionStep
+from .analysis.analysis_parameter import CpptrajSelector, PMAPNormalization
+from .unit import Angstrom
 
 
-class __ExecutableConfig:
+class _ExecutableConfig:
     def __init__(self, executable_map: Dict[str, str]):
         self.PYTHON: Final[Command] = Command(executable_map["python"])
         self.GROMACS: Final[Command] = Command(executable_map["gromacs"])
@@ -23,15 +23,15 @@ class __ExecutableConfig:
         self.CPPTRAJ: Final[Command] = Command(executable_map["cpptraj"])
 
 
-class __GeneralConfig:
+class _GeneralConfig:
     def __init__(self, general_map: Dict[str, Any]):
         self.ITER_INDICES: Final[IterIndices] = IterIndices(general_map["iter_index"])
         self.WORKING_DIRECTORY: Final[Path] = Path(general_map["workdir"])
         self.PROJECT_NAME: Final[Name] = Name(general_map["name"])
-        self.EXECUTABLE: Final[__ExecutableConfig] = __ExecutableConfig(general_map["executable"])
+        self.EXECUTABLE: Final[_ExecutableConfig] = _ExecutableConfig(general_map["executable"])
 
 
-class __InputConfig:
+class _InputConfig:
 
     @staticmethod
     def __fill_default(input_map: Dict[str, Any]) -> Dict[str, Any]:
@@ -60,7 +60,7 @@ class __InputConfig:
         self.PROBE: Final[Probe] = self.__parse_probe(tmp_map["probe"])
 
 
-class __SimulationStepFactory:
+class _SimulationStepFactory:
     @staticmethod
     def __merge_config(step_config: Dict[str, Any], default_parameters: Dict[str, Any]) -> Dict[str, Any]:
         default_dt = default_parameters.get("dt", 0.002)
@@ -91,10 +91,10 @@ class __SimulationStepFactory:
         raise ValueError(f"The step_type: {config['type']} is not supported")
 
 
-class __SimulationConfig:
+class _SimulationConfig:
     @staticmethod
     def __parse_sequence(sequence_map: List[Dict[str, Any]], default_parameters: Dict[str, Any]) -> List[SimulationInterface]:
-        factory = __SimulationStepFactory(default_parameters)
+        factory = _SimulationStepFactory(default_parameters)
         simulation_seq: List[SimulationInterface] = []
         for step_config in sequence_map:
             simulation_seq.append(factory.create(step_config))
@@ -105,53 +105,53 @@ class __SimulationConfig:
         self.SEQUENCE: Final[List[SimulationInterface]] = self.__parse_sequence(simulation_map["sequence"], simulation_map["default"])
 
 
-class __PMAPTypeConfig:
+class _PMAPTypeConfig:
     def __init__(self, pmap_type_map: Dict[str, Any]):
         self.SUFFIX: Final[Name] = Name(pmap_type_map["suffix"])
         self.SELECTOR: Final[CpptrajSelector] = CpptrajSelector(pmap_type_map["selector"])
 
 
-class __PMAPConfig:
+class _PMAPConfig:
     @staticmethod
-    def __parse_pmap_types(pmap_type_list: List[Dict[str, Any]]) -> List[__PMAPTypeConfig]:
-        ret_list: List[__PMAPTypeConfig] = []
+    def __parse_pmap_types(pmap_type_list: List[Dict[str, Any]]) -> List[_PMAPTypeConfig]:
+        ret_list: List[_PMAPTypeConfig] = []
         for pmap_type in pmap_type_list:
-            ret_list.append(__PMAPTypeConfig(pmap_type))
+            ret_list.append(_PMAPTypeConfig(pmap_type))
         return ret_list
 
     def __init__(self, pmap_map: Dict[str, Any]):
         self.TYPE: Final[str] = pmap_map["type"]
         # self.SNAPSHOT: Final[Frame] = Frame(pmap_map["snapshot"]) # TODO: フォーマットがどうなっているか確認
-        self.MAPS: Final[List[__PMAPTypeConfig]] = self.__parse_pmap_types(pmap_map["maps"])
+        self.MAPS: Final[List[_PMAPTypeConfig]] = self.__parse_pmap_types(pmap_map["maps"])
         self.MAPSIZE: Final[Angstrom] = Angstrom(pmap_map["map_size"])  # TODO: map_sizeは本来PMAPTypeConfigに含まれるべき。
         self.NORMALIZATION: Final[PMAPNormalization] = PMAPNormalization(pmap_map["normalization"])  # TODO: normalizationは本来PMAPTypeConfigに含まれるべき。
 
 
-class __InverseMSMDTypeConfig:
+class _InverseMSMDTypeConfig:
     def __init__(self, type_map: Dict[str, Any]):
         self.NAME: Final[Name] = Name(type_map["name"])
         self.ATOMS: Final[List[Tuple[str, str]]] = type_map["atoms"]
 
 
-class __InverseMSMDConfig:
+class _InverseMSMDConfig:
     @staticmethod
-    def __parse_types(type_list: List[Dict[str, Any]]) -> List[__InverseMSMDTypeConfig]:
-        ret_list: List[__InverseMSMDTypeConfig] = []
+    def __parse_types(type_list: List[Dict[str, Any]]) -> List[_InverseMSMDTypeConfig]:
+        ret_list: List[_InverseMSMDTypeConfig] = []
         for type_map in type_list:
-            ret_list.append(__InverseMSMDTypeConfig(type_map))
+            ret_list.append(_InverseMSMDTypeConfig(type_map))
         return ret_list
 
     def __init__(self, profile_map: Dict[str, Any]):
-        self.TYPES: Final[List[__InverseMSMDTypeConfig]] = self.__parse_types(profile_map["types"])
+        self.TYPES: Final[List[_InverseMSMDTypeConfig]] = self.__parse_types(profile_map["types"])
 
 
 class __Config:
     def __init__(self, config_map: Dict[str, Any]):
-        self.GENERAL: Final[__GeneralConfig] = __GeneralConfig(config_map["general"])
-        self.INPUT: Final[__InputConfig] = __InputConfig(config_map["input"])
-        self.SIMULATION: Final[__SimulationConfig] = __SimulationConfig(config_map["simulation"])
-        self.PMAP: Final[__PMAPConfig] = __PMAPConfig(config_map["pmap"])
-        self.INVERSE_MSMD: Final[__InverseMSMDConfig] = __InverseMSMDConfig(config_map["inverse_msmd"])
+        self.GENERAL: Final[_GeneralConfig] = _GeneralConfig(config_map["general"])
+        self.INPUT: Final[_InputConfig] = _InputConfig(config_map["input"])
+        self.SIMULATION: Final[_SimulationConfig] = _SimulationConfig(config_map["simulation"])
+        self.PMAP: Final[_PMAPConfig] = _PMAPConfig(config_map["pmap"])
+        self.INVERSE_MSMD: Final[_InverseMSMDConfig] = _InverseMSMDConfig(config_map["inverse_msmd"])
 
 
 def __load_yaml(path: str) -> dict:
