@@ -56,3 +56,17 @@ class Angstrom(VariableInterface):
 
     def get(self) -> float:
         return self.__distance
+
+
+class Bar(VariableInterface):
+    @staticmethod
+    def _validation(pressure: float) -> None:
+        if pressure <= 0:
+            raise ValueError(f"The pressure: {pressure} bar is not positive")
+
+    def __init__(self, pressure: float = 1.0):
+        self.__pressure: Final[float] = pressure
+        self._validation(self.__pressure)
+
+    def get(self) -> float:
+        return self.__pressure

@@ -1,5 +1,6 @@
 import abc
 from typing import Final
+import subprocess
 
 
 class VariableInterface(abc.ABC):
@@ -21,8 +22,14 @@ class Path(VariableInterface):
         if True:
             raise ValueError(f"The path: {path} cannot be used as path")
 
+    @staticmethod
+    def __parse(path: str) -> str:
+        # TODO: パスの解析. 例えば、`~` をホームディレクトリに置き換えるなど
+        raise NotImplementedError()
+        return path
+
     def __init__(self, path: str = "."):
-        self.__path: Final[str] = path
+        self.__path: Final[str] = self.__parse(path)
         self._validation(self.__path)
 
     def get(self) -> str:
@@ -48,9 +55,8 @@ class Name(VariableInterface):
 class Command(VariableInterface):
     @staticmethod
     def _validation(command: str) -> None:
-        """`which` コマンドで実行可能かどうかをチェック"""
-        raise NotImplementedError()
-        if True:
+        which_returncode = subprocess.run(["which", command], capture_output=True).returncode
+        if which_returncode != 0:
             raise ValueError(f"The command: {command} cannot be executed")
 
     def __init__(self, command: str = "python"):

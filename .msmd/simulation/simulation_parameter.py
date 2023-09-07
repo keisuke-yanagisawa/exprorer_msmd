@@ -2,7 +2,21 @@ from typing import Final
 from ..variable import VariableInterface
 
 
-class Steps(VariableInterface):
+class PressureCoupling(VariableInterface):
+    @staticmethod
+    def _validation(pcoupl: str) -> None:
+        if pcoupl not in ["no", "berendsen", "parrinello-rahman"]:
+            raise ValueError(f"The pcoupl: {pcoupl} is not supported")
+
+    def __init__(self, pcoupl: str):
+        self.__pcoupl: Final[str] = pcoupl.lower()
+        self._validation(self.__pcoupl)
+
+    def get(self) -> str:
+        return self.__pcoupl
+
+
+class NumStep(VariableInterface):
     @staticmethod
     def _validation(steps: int) -> None:
         if steps <= 0:
