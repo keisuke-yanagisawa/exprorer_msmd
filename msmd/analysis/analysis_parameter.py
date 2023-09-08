@@ -30,6 +30,7 @@ class PMAPNormalization(VariableInterface):
     def get(self) -> Literal["total", "snapshot", "gfe"]:
         return self.__normalization
 
+
 # map: # settings to create a spatial probability distribution map (PMAP)
 #   type: pmap
 #   # valid_dist: 5            # PMAP valid distance from protein atoms

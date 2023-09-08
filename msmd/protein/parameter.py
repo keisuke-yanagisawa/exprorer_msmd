@@ -1,8 +1,5 @@
-from ..variable import VariableInterface
+from ..variable import VariableInterface, Path
 from typing import Final, List, Tuple
-from ..biopython.Bio.PDB import get_structure
-from Bio.PDB.Structure import Structure
-import itertools
 
 
 class ResidueID(VariableInterface):
@@ -22,20 +19,21 @@ class ResidueID(VariableInterface):
 
 class Protein:
     @staticmethod
-    def _validation_struct(struct: Structure) -> None:
-        if True:
-            """alternative locationが存在してはいけない"""
-            raise NotImplementedError()
-            raise ValueError("The protein structure has alternative location")
+    def _validation_struct(pdbpath: Path) -> None:
+        """
+        チェックすべき項目
+        ・複数残基から構成されている
+        ・alternative locationが存在してはいけない
+        """
+        raise NotImplementedError()
 
     @staticmethod
-    def _validation_ssbonds(struct: Structure, ssbonds: List[Tuple[ResidueID, ResidueID]]) -> None:
-        if True:
-            """ssbondsのresidueが存在しているかどうかのチェック"""
-            raise NotImplementedError()
-            for resid in itertools.chain(*ssbonds):
-                raise NotImplementedError()
-                raise ValueError(f"The residue {resid.get()} is not found in the protein structure")
+    def _validation_ssbonds(pdbpath: Path, ssbonds: List[Tuple[ResidueID, ResidueID]]) -> None:
+        """
+        チェックすべき項目
+        ・ssbondsのresidueがproteinに存在している
+        """
+        raise NotImplementedError()
 
     @staticmethod
     def __parse_ssbonds(ssbonds: List[Tuple[int, int]]) -> List[Tuple[ResidueID, ResidueID]]:
@@ -43,11 +41,14 @@ class Protein:
         raise NotImplementedError()
         return ssbonds
 
-    def __init__(self, pdb: str, ssbonds: List[Tuple[int, int]] = []):
-        self.__struct: Final[Structure] = get_structure(pdb)
+    def __init__(self, pdbpath: Path, ssbonds: List[Tuple[int, int]] = []):
+        self.__pdbpath: Final[Path] = pdbpath
         self.__ssbonds: Final[List[Tuple[ResidueID, ResidueID]]] = self.__parse_ssbonds(ssbonds)
-        self._validation_struct(self.__struct)
-        self._validation_ssbonds(self.__struct, self.__ssbonds)
+        self._validation_struct(self.__pdbpath)
+        self._validation_ssbonds(self.__pdbpath, self.__ssbonds)
 
+    @property
+    def pdbpath(self) -> Path:
+        return self.__pdbpath
     # getterが必要
     # def get(self) -> Structure:

@@ -1,5 +1,5 @@
 import abc
-from typing import Final
+from typing import Final, Optional
 import subprocess
 
 
@@ -16,8 +16,9 @@ class VariableInterface(abc.ABC):
 
 class Path(VariableInterface):
     @staticmethod
-    def _validation(path: str) -> None:
+    def _validation(path: str, ext: Optional[str] = None) -> None:
         """ファイルパスとして適切な文字列か否かのチェックが必要"""
+        """extが渡されている場合は、拡張子が一致するかのチェックも必要"""
         raise NotImplementedError()
         if True:
             raise ValueError(f"The path: {path} cannot be used as path")
@@ -28,9 +29,9 @@ class Path(VariableInterface):
         raise NotImplementedError()
         return path
 
-    def __init__(self, path: str = "."):
+    def __init__(self, path: str = ".", ext: Optional[str] = None):
         self.__path: Final[str] = self.__parse(path)
-        self._validation(self.__path)
+        self._validation(self.__path, ext)
 
     def get(self) -> str:
         return self.__path
@@ -50,6 +51,20 @@ class Name(VariableInterface):
 
     def get(self) -> str:
         return self.__name
+
+
+class PDBString(VariableInterface):
+    """PDB形式の文字列を表すクラス"""
+    @staticmethod
+    def _validation(pdbstring: str) -> None:
+        pass
+
+    def __init__(self, pdbstring: str):
+        self.__pdbstring: Final[str] = pdbstring
+        self._validation(self.__pdbstring)
+
+    def get(self) -> str:
+        return self.__pdbstring
 
 
 class Command(VariableInterface):
