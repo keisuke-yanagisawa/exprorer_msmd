@@ -1,4 +1,4 @@
-from typing import Final, Tuple
+from typing import Final, List, Union
 from .variable import VariableInterface
 
 
@@ -8,32 +8,47 @@ class IterIndices(VariableInterface):
     """
 
     @staticmethod
-    def _validation(indice_list: Tuple[int]) -> None:
+    # Notation 1-2 => 1,2  5-9:2 => 5,7,9
+    def __expand_index(ind_info: str) -> List[int]:
+        ret: List[int] = []
+        elems = ind_info.split(",")
+        for elem in elems:
+            if elem.find("-") == -1:
+                elem = int(elem)
+                ret.append(elem)
+            elif elem.find(":") == -1:
+                st, ed = elem.split("-")
+                st, ed = int(st), int(ed)
+                ret.extend(list(range(st, ed + 1)))
+            else:
+                window, offset = elem.split(":")
+                st, ed = window.split("-")
+                st, ed, offset = int(st), int(ed), int(offset)
+                ret.extend(list(range(st, ed + 1, offset)))
+        return ret
+
+    @staticmethod
+    def _validation(indice_list: List[int]) -> None:
         """iterationのindexの妥当性をチェックする"""
         if indice_list == []:
             raise ValueError("Empty index list")
         if min(indice_list) < 0:
             raise ValueError("Negative index exists")
-        if True:
-            # TODO: indexがすべて整数であることのチェック
-            raise NotImplementedError()
+        for vartype in [type(index) for index in indice_list]:
+            if vartype != int:
+                raise ValueError("Non-integer index exists")
 
-    @staticmethod
-    def __parse(index_str: str) -> Tuple[int]:
-        """
-        エラーチェックをわすれないようにする
-        「intしか存在しない」「負の数値が存在しない」「1つ以上の要素が存在する」
-        """
-
-        indice_tuple: Tuple[int] = tuple()
-        raise NotImplementedError()
+    @classmethod
+    def __parse(cls, index_str: str) -> List[int]:
+        indice_tuple: List[int] = cls.__expand_index(index_str)
         return indice_tuple
 
-    def __init__(self, index_str: str = "0"):
-        self.__indices: Final[Tuple[int]] = self.__parse(index_str)
+    def __init__(self, indices: Union[str, int] = "0"):
+        indices_str = str(indices)
+        self.__indices: Final[List[int]] = self.__parse(indices_str)
         self._validation(self.__indices)
 
-    def get(self) -> Tuple[int]:
+    def get(self) -> List[int]:
         return self.__indices
 
 

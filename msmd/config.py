@@ -29,7 +29,7 @@ class _GeneralConfig:
         self.ITER_INDICES: Final[IterIndices] = IterIndices(general_map["iter_index"])
         self.WORKING_DIRECTORY: Final[Path] = Path(general_map["workdir"])
         self.PROJECT_NAME: Final[Name] = Name(general_map["name"])
-        self.EXECUTABLE: Final[_ExecutableConfig] = _ExecutableConfig(general_map["executable"])
+        self.EXECUTABLE: Final[_ExecutableConfig] = _ExecutableConfig(general_map["executables"])
 
 
 class InputConfig:
@@ -37,9 +37,14 @@ class InputConfig:
     @staticmethod
     def __fill_default(input_map: Dict[str, Any]) -> Dict[str, Any]:
         ret_map = input_map
-        ret_map["protein"]["ssbond"] = ret_map["protein"].get("ssbond", [])
+
+        ret_map["protein"]["ssbond"] = ret_map["protein"].get("ssbond", None)
         ret_map["probe"]["mol2"] = ret_map["probe"].get("mol2", None)
         ret_map["probe"]["pdb"] = ret_map["probe"].get("pdb", None)
+
+        if ret_map["protein"]["ssbond"] is None:
+            ret_map["protein"]["ssbond"] = []
+
         return ret_map
 
     @staticmethod
@@ -105,7 +110,7 @@ class _SimulationConfig:
 
     def __init__(self, simulation_map: Dict[str, Any]):
         self.TITLE: Final[str] = simulation_map["title"]
-        self.SEQUENCE: Final[SimulationSequence] = self.__parse_sequence(simulation_map["sequence"], simulation_map["default"])
+        self.SEQUENCE: Final[SimulationSequence] = self.__parse_sequence(simulation_map["sequence"], simulation_map["general"])
 
 
 class _PMAPTypeConfig:
@@ -153,16 +158,16 @@ class _InverseMSMDConfig:
         return ret_list
 
     def __init__(self, profile_map: Dict[str, Any]):
-        self.TYPES: Final[List[_InverseMSMDTypeConfig]] = self.__parse_types(profile_map["types"])
+        self.TYPES: Final[List[_InverseMSMDTypeConfig]] = self.__parse_types(profile_map["profile"]["types"])
 
 
 class __Config:
     def __init__(self, config_map: Dict[str, Any]):
         self.GENERAL: Final[_GeneralConfig] = _GeneralConfig(config_map["general"])
         self.INPUT: Final[InputConfig] = InputConfig(config_map["input"])
-        self.SIMULATION: Final[_SimulationConfig] = _SimulationConfig(config_map["simulation"])
-        self.PMAP: Final[_PMAPConfig] = _PMAPConfig(config_map["pmap"])
-        self.INVERSE_MSMD: Final[_InverseMSMDConfig] = _InverseMSMDConfig(config_map["inverse_msmd"])
+        self.SIMULATION: Final[_SimulationConfig] = _SimulationConfig(config_map["exprorer_msmd"])
+        self.PMAP: Final[_PMAPConfig] = _PMAPConfig(config_map["map"])
+        self.INVERSE_MSMD: Final[_InverseMSMDConfig] = _InverseMSMDConfig(config_map["probe_profile"])
 
 
 def __load_yaml(path: str) -> dict:

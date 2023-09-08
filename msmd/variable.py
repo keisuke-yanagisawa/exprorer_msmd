@@ -1,6 +1,7 @@
 import abc
 from typing import Final, Optional
 import subprocess
+from .standard_library.os import getabsolutepath
 
 
 class VariableInterface(abc.ABC):
@@ -17,20 +18,12 @@ class VariableInterface(abc.ABC):
 class Path(VariableInterface):
     @staticmethod
     def _validation(path: str, ext: Optional[str] = None) -> None:
-        """ファイルパスとして適切な文字列か否かのチェックが必要"""
-        """extが渡されている場合は、拡張子が一致するかのチェックも必要"""
-        raise NotImplementedError()
-        if True:
-            raise ValueError(f"The path: {path} cannot be used as path")
-
-    @staticmethod
-    def __parse(path: str) -> str:
-        # TODO: パスの解析. 例えば、`~` をホームディレクトリに置き換えるなど
-        raise NotImplementedError()
-        return path
+        if (ext is not None) and (path.endswith(ext) is False):
+            raise ValueError(f"The path: {path} does not end with {ext}")
+        # TODO: ファイルパスとして適切な文字列か否かのチェックが必要
 
     def __init__(self, path: str = ".", ext: Optional[str] = None):
-        self.__path: Final[str] = self.__parse(path)
+        self.__path: Final[str] = getabsolutepath(path)
         self._validation(self.__path, ext)
 
     def get(self) -> str:
@@ -40,10 +33,8 @@ class Path(VariableInterface):
 class Name(VariableInterface):
     @staticmethod
     def _validation(name: str) -> None:
-        """ファイル名の一部として適切な文字列か否かのチェックが必要"""
-        raise NotImplementedError()
-        if True:
-            raise ValueError(f"The name: {name} cannot be used as path")
+        # TODO: ファイル名の一部として適切な文字列か否かのチェックが必要
+        pass
 
     def __init__(self, name: str):
         self.__name: Final[str] = name
