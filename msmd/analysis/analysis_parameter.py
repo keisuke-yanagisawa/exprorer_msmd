@@ -16,6 +16,9 @@ class CpptrajSelector(VariableInterface):
     def get(self) -> str:
         return self.__selector
 
+    def __str__(self) -> str:
+        return f"CpptrajSelector('{self.__selector}')"
+
 
 class PMAPNormalization(VariableInterface):
     @staticmethod
@@ -29,6 +32,9 @@ class PMAPNormalization(VariableInterface):
 
     def get(self) -> Literal["total", "snapshot", "gfe"]:
         return self.__normalization
+
+    def __str__(self):
+        return f"PMAPNormalization('{self.__normalization}')"
 
 
 # map: # settings to create a spatial probability distribution map (PMAP)

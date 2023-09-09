@@ -15,6 +15,9 @@ class Molar(VariableInterface):
     def get(self) -> float:
         return self.__molar
 
+    def __str__(self) -> str:
+        return f"Molar('{self.__molar}')"
+
 
 class PicoSecond(VariableInterface):
     @staticmethod
@@ -28,6 +31,9 @@ class PicoSecond(VariableInterface):
 
     def get(self) -> float:
         return self.__ps
+
+    def __str__(self) -> str:
+        return f"PicoSecond('{self.__ps}')"
 
 
 class Kelvin(VariableInterface):
@@ -43,6 +49,9 @@ class Kelvin(VariableInterface):
     def get(self) -> float:
         return self.__kelvin
 
+    def __str__(self):
+        return f"Kelvin('{self.__kelvin}')"
+
 
 class Angstrom(VariableInterface):
     @staticmethod
@@ -57,6 +66,9 @@ class Angstrom(VariableInterface):
     def get(self) -> float:
         return self.__distance
 
+    def __str__(self) -> str:
+        return f"Angstrom('{self.__distance}')"
+
 
 class Bar(VariableInterface):
     @staticmethod
@@ -70,3 +82,6 @@ class Bar(VariableInterface):
 
     def get(self) -> float:
         return self.__pressure
+
+    def __str__(self) -> str:
+        return f"Bar('{self.__pressure}')"

@@ -15,6 +15,9 @@ class PressureCoupling(VariableInterface):
     def get(self) -> str:
         return self.__pcoupl
 
+    def __str__(self) -> str:
+        return f"PressureCoupling('{self.__pcoupl}')"
+
 
 class NumStep(VariableInterface):
     @staticmethod
@@ -30,3 +33,6 @@ class NumStep(VariableInterface):
 
     def get(self) -> int:
         return self.__steps
+
+    def __str__(self):
+        return f"NumStep('{self.__steps}')"

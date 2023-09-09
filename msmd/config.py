@@ -1,7 +1,8 @@
 import os
 import yaml
 from typing import Final, Dict, Any, List, Tuple
-from .variable import Command, Path, Name
+from .executable.command import Executable
+from .variable import Path, Name
 from .parameter import IterIndices
 from .protein.parameter import Protein
 from .probe.parameter import Probe, AtomType
@@ -16,12 +17,26 @@ from .unit import Angstrom, Molar
 
 
 class _ExecutableConfig:
+    @staticmethod
+    def __fill_default(executable_map: Dict[str, str]) -> Dict[str, str]:
+        ret_map = executable_map
+        ret_map["python"] = ret_map.get("python", "python")
+        ret_map["gromacs"] = ret_map.get("gromacs", "gmx")
+        ret_map["packmol"] = ret_map.get("packmol", "packmol")
+        ret_map["tleap"] = ret_map.get("tleap", "tleap")
+        ret_map["cpptraj"] = ret_map.get("cpptraj", "cpptraj")
+        ret_map["parmchk"] = ret_map.get("parmchk", "parmchk2")
+        return ret_map
+
     def __init__(self, executable_map: Dict[str, str]):
-        self.PYTHON: Final[Command] = Command(executable_map["python"])
-        self.GROMACS: Final[Command] = Command(executable_map["gromacs"])
-        self.PACKMOL: Final[Command] = Command(executable_map["packmol"])
-        self.TLEAP: Final[Command] = Command(executable_map["tleap"])
-        self.CPPTRAJ: Final[Command] = Command(executable_map["cpptraj"])
+        tmp_map = self.__fill_default(executable_map)
+
+        self.PYTHON: Final[Executable] = Executable(tmp_map["python"])
+        self.GROMACS: Final[Executable] = Executable(tmp_map["gromacs"])
+        self.PACKMOL: Final[Executable] = Executable(tmp_map["packmol"])
+        self.TLEAP: Final[Executable] = Executable(tmp_map["tleap"])
+        self.CPPTRAJ: Final[Executable] = Executable(tmp_map["cpptraj"])
+        self.PARMCHK: Final[Executable] = Executable(tmp_map["parmchk"])
 
 
 class _GeneralConfig:

@@ -1,0 +1,20 @@
+seed {{ seed }}
+tolerance 2.0
+output {{ output }}
+add_amber_ter
+filetype pdb
+nloop 10
+structure {{ prot }}
+  number 1
+  fixed 0. 0. 0. 0. 0. 0.
+  centerofmass
+end structure
+
+{% for probe in probes %}
+
+structure {{ probe.pdb }}
+  number {{ probe.num }}
+  inside box -{{ probe.size }} -{{ probe.size }} -{{ probe.size }} {{ probe.size }} {{ probe.size }} {{ probe.size }}
+end structure
+
+{% endfor %}

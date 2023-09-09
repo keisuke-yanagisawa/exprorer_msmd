@@ -14,6 +14,10 @@ class VariableInterface(abc.ABC):
     def get(self):
         pass
 
+    @abc.abstractmethod
+    def __str__(self):
+        pass
+
 
 class Path(VariableInterface):
     @staticmethod
@@ -27,6 +31,13 @@ class Path(VariableInterface):
         self._validation(self.__path, ext)
 
     def get(self) -> str:
+        return self.__path
+
+    def __str__(self) -> str:
+        return f"Path('{self.__path}')"
+
+    @property
+    def path(self) -> str:
         return self.__path
 
 
@@ -43,6 +54,9 @@ class Name(VariableInterface):
     def get(self) -> str:
         return self.__name
 
+    def __str__(self) -> str:
+        return f"Name('{self.__name}')"
+
 
 class PDBString(VariableInterface):
     """PDB形式の文字列を表すクラス"""
@@ -57,17 +71,5 @@ class PDBString(VariableInterface):
     def get(self) -> str:
         return self.__pdbstring
 
-
-class Command(VariableInterface):
-    @staticmethod
-    def _validation(command: str) -> None:
-        which_returncode = subprocess.run(["which", command], capture_output=True).returncode
-        if which_returncode != 0:
-            raise ValueError(f"The command: {command} cannot be executed")
-
-    def __init__(self, command: str = "python"):
-        self.__command: Final[str] = command
-        self._validation(self.__command)
-
-    def get(self) -> str:
-        return self.__command
+    def __str__(self) -> str:
+        return f"PDBString('{self.__pdbstring}')"

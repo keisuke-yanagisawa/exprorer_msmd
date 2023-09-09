@@ -1,0 +1,14 @@
+source leaprc.protein.ff14SB
+source leaprc.water.tip3p
+
+prot = loadPDB {{ pdbfile }}
+
+addIons2 prot Na+ 0
+addIons2 prot Cl- 0
+solvateBox prot TIP3PBOX 10.0
+
+center prot
+charge prot
+
+saveAmberParm prot {{ tmp_parm7 }} {{ tmp_rst7 }}
+quit
