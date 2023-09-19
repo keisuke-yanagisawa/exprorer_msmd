@@ -21,8 +21,7 @@ RUN conda --version
 # install packages
 
 # libarchive is required for mamba
-RUN conda install -y -c conda-forge libarchive
-RUN conda install -y -c conda-forge mamba
+RUN conda install -y -c conda-forge libarchive mamba
 RUN mamba update conda
 
 RUN mamba install -y -c conda-forge \
