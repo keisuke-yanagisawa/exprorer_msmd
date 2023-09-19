@@ -116,7 +116,10 @@ def gen_pmap(dirpath: str,
     probe_id = setting_input["probe"]["cid"]
     maps = setting_pmap["maps"]
     box_size = setting_pmap["map_size"]
-    box_center = uPDB.get_structure(setting_input["protein"]["pdb"]).center_of_mass()
+    box_center = uPDB.get_attr(
+        uPDB.get_structure(setting_input["protein"]["pdb"]),
+        "coord"
+    ).mean(axis=0)  # structure.center_of_mass() may return "[ nan nan nan ]" due to unspecified atomic weight
 
     cpptraj_obj = Cpptraj(debug=debug)
     cpptraj_obj.set(topology, trajectory, ref_struct, probe_id)
