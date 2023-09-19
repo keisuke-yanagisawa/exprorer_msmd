@@ -175,7 +175,7 @@ if __name__ == "__main__":
     ngpus = len(gpuids)
     if not setting["general"]["multiprocessing"]:
         ngpus = 1
-    ncpus = os.cpu_count()
+    ncpus = len(os.sched_getaffinity(0))
     ncpus = 1 if ncpus is None else ncpus
     ncpus_per_gpu = ncpus // len(get_gpuids(ignore_cuda_visible_devices=True))
     if ncpus_per_gpu == 0:
