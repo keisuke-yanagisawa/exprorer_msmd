@@ -20,7 +20,7 @@ class SystemInterface(abc.ABC):
 
 class System(SystemInterface):
     @staticmethod
-    def __validation(top: Path, gro: Optional[Path]) -> None:
+    def __validation(top: Path, gro: Path) -> None:
         pass
         # 文字列操作で追加する情報があるので、parmedだけでは評価しきれない
         # どのようにvalidationを行うか検討すべき。
@@ -28,7 +28,7 @@ class System(SystemInterface):
     def get_system(self) -> "System":
         return self
 
-    def save(self, directory: Path) -> None:
+    def save(self, dir: Path) -> None:
         pass
 
     def add_position_restraint(self, probe: Probe) -> None:
@@ -39,25 +39,34 @@ class System(SystemInterface):
         ]
         raise NotImplementedError()
 
-    def add_pseudo_repulsion(self) -> None:
-        sigma: Final[Angstrom] = 20  # 2 nm
-        epsilon: Final[float] = 4.184e-6
+    def add_pseudo_repulsion(self, sigma: Angstrom = Angstrom(20), epsilon: float = 4.184e-6) -> None:
         # TODO: どのようなルールに基づいて処理をするのか？
         raise NotImplementedError()
 
-    def __init__(self, top: Path, gro: Optional[Path]):
+    def __init__(self, top: Path, gro: Path):
         self.__top: Final[Path] = top
-        self.__gro: Final[Optional[Path]] = gro
+        self.__gro: Final[Path] = gro
 
         self.__validation(self.__top, self.__gro)
 
 
 class Trajectory(SystemInterface):
+    @staticmethod
+    def __validation(top: Path, gro: Path, trj: Path) -> None:
+        # define as staticmethod to realize const method
+        pass
+
     def get_system(self) -> System:
         raise NotImplementedError()
 
-    def save(self, directory: Path) -> None:
+    def save(self, prefix: Path) -> None:
         pass
+
+    def __init__(self, top: Path, gro: Path, trj: Path):
+
+        self.__top: Final[Path] = top
+        self.__gro: Final[Path] = gro
+        self.__trj: Final[Path] = trj
 
 
 class PDBPreparator:
