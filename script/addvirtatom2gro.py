@@ -9,7 +9,7 @@ import numpy as np
 VERSION = "1.0.0"
 
 
-def center_of_mass(atoms: List[gromacs.Gro_atom]) -> npt.NDArray:
+def center_of_mass(atoms: List[gromacs.GroAtom]) -> npt.NDArray:
     """
     Calculate the center of mass of a list of atoms
     """
@@ -37,7 +37,7 @@ def addvirtatom2gro(gro_string: str,
     for resi in resi_set:
         mol = gro.get_atoms(resi=resi)
         com = center_of_mass(mol)
-        virt_atom = gromacs.Gro_atom()
+        virt_atom = gromacs.GroAtom()
         virt_atom.point = com
         virt_atom.atomtype = "VIS"
         virt_atom.resn = mol[0].resn
