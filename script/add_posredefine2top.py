@@ -1,4 +1,6 @@
+import os
 from typing import List
+import jinja2
 from scipy import constants
 
 VERSION = "2.0.0"
@@ -8,16 +10,13 @@ def position_restraint(atom_id_list: List[int], weight) -> str:
     """
     generate a string defining position restraint records
     """
-    ret_str = "; Position restraint\n"
-    ret_str += f'#ifdef POSRES{weight}\n'
-    ret_str += "[ position_restraints ]\n"
-    ret_str += "; atom  type      fx      fy      fz\n"
-
-    for atom_id in atom_id_list:
-        c = int(constants.calorie * weight)
-        ret_str += f"{atom_id: 6d}{1: 6d}{c: 6d}{c: 6d}{c: 6d}\n"
-    ret_str += '#endif\n'
-    return ret_str
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
+    template = env.get_template("./template/position_restraints")
+    return template.render({
+        "weight": weight,
+        "weight_in_calorie": weight * constants.calorie,
+        "atom_id_list": atom_id_list
+    })
 
 
 def gen_atom_id_list(gro_string: str,
