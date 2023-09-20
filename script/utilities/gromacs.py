@@ -1,7 +1,7 @@
+from typing import List, Tuple
 import numpy as np
 from scipy import constants
-from . import logger
-aLogger = logger.Logger()
+import warnings
 ATOMIC_NUMBER = {"H": 1, "C": 6, "N": 7, "O": 8, "F": 9, "Na": 11,
                  "Si": 14, "P": 15, "S": 16, "Cl": 17, "K": 19, "Ca": 20,
                  "Br": 35, "I": 53}
@@ -13,7 +13,7 @@ ATOMIC_WEIGHT = {1: 1.008, 6: 12.01, 7: 14.01, 8: 16.00, 9: 19.00,
                  -1: 0.000}  # for dummy atoms
 
 
-class Gro_atom():
+class GroAtom():
     def __init__(self, string=""):
         self.resi = -1
         self.resn = ""
@@ -45,7 +45,7 @@ class Gro_atom():
             self.point = tmp[:3]
             self.velocity = tmp[3:]
         else:
-            aLogger.warn("the dimension of atom coordinates/velocities are wrong: {}".format(tmp))
+            raise RuntimeError("the dimension of atom coordinates/velocities are wrong: {}".format(tmp))
 
         temp = [i for atype, i in ATOMIC_NUMBER.items() if self.atomtype.startswith(atype)]
         if (len(temp) == 1):
@@ -53,8 +53,8 @@ class Gro_atom():
         elif (len(temp) >= 2):
             self.atomic_num = temp[np.argmax([ATOMIC_STR_LEN[i] for i in temp])]
         else:  # len == 0
-            aLogger.warn("atomtype {} is not matched to any atom names".format(self.atomtype))
-            aLogger.warn("assume it is a kind of pseudo atom")
+            warnings.warn(f"""atomtype {self.atomtype} is not matched to any atom names. 
+                          Assume it is a kind of pseudo atom""", RuntimeWarning)
             self.atomic_num = -1
 
         self.atomic_mass = ATOMIC_WEIGHT[self.atomic_num]
@@ -70,10 +70,10 @@ class Gro_atom():
 
 class Gro():
     def __init__(self, path=""):
-        self.description = ""
-        self.natoms = 0
-        self.box_size = [0, 0, 0]
-        self.atoms = []
+        self.description: str = ""
+        self.natoms: int = 0
+        self.box_size: List[float] = [0, 0, 0]
+        self.atoms: List[GroAtom] = []
         if path != "":
             self.parse(path)
 
@@ -84,7 +84,7 @@ class Gro():
         self.natoms = int(lines[1])
         self.box_size = [float(s) for s in lines[-1].split()]
         for line in lines[2:-1]:
-            self.atoms.append(Gro_atom(line))
+            self.atoms.append(GroAtom(line))
 
     def __update_atomid(self):
         for i in range(len(self.atoms)):
@@ -108,9 +108,8 @@ class Gro():
         return ret_atoms
 
     def add_atom(self, atom):
-        if not isinstance(atom, Gro_atom):
-            aLogger.error("the input is NON-GRO_ATOM")
-            return
+        if not isinstance(atom, GroAtom):
+            raise TypeError("the input is NON-GRO_ATOM")
         atom.atom_id = max([a.atom_id for a in self.atoms]) + 1
         self.atoms.append(atom)
         self.natoms = len(self.atoms)
