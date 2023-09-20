@@ -22,33 +22,19 @@ def position_restraint(atom_id_list: List[int]) -> str:
 
 
 def gen_atom_id_list(gro_string: str,
-                     target: str,
-                     RES: List[str],
-                     INV: bool = False) -> List[int]:
+                     except_resns: List[str]) -> List[int]:
     """
     generate a list of atom ids for a given residue name
-    if INV == True, then a list of atom ids NOT in RES is returned
     """
     atom_id_list = []
-
-    MOLECULE = target == "molecule"
-
-    mol_resi = -1
-    mol_first_atom = -1 if MOLECULE else 1
+    mol_first_atom = 1
     gro_strings = gro_string.split("\n")[2:-2]
     for line in gro_strings:
-        resi = int(line[:5])
         resn = line[5:10].strip()
         atom = line[10:15].strip()
         nr = int(line[15:20])
-        if MOLECULE and (resn in RES) != INV:
-            if mol_resi == -1:
-                mol_resi = resi
-                mol_first_atom = nr
-            if mol_resi != resi:
-                break
         if not atom.strip().startswith("H"):
-            if (resn in RES) != INV:
+            if not (resn in except_resns):
                 atom_id_list.append(nr - mol_first_atom + 1)
     return atom_id_list
 
@@ -84,8 +70,6 @@ def add_posredefine2top(top_string: str,
 
     atom_id_list = gen_atom_id_list(
         gro_string,
-        "protein",
-        ["WAT", "Na+", "Cl-", "CA", "MG", "ZN", "CU", cid],
-        True
+        ["WAT", "Na+", "Cl-", "CA", "MG", "ZN", "CU", cid]
     )
     return embed_posre(top_string, atom_id_list)
