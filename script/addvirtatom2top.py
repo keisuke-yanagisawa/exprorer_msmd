@@ -8,7 +8,7 @@ VIS      VIS          0.00000  0.00000   V     0.00000e+00   0.00000e+00 ; virtu
 
 [ nonbond_params ]
 ; i j func sigma epsilon
-VIS   VIS    1  2.000000e+00   4.184000e-06
+VIS   VIS    1  {sigma:1.6e}   {epsilon:1.6e}
 """
 
 
