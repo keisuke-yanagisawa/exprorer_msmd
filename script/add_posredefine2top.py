@@ -4,21 +4,20 @@ from scipy import constants
 VERSION = "2.0.0"
 
 
-def position_restraint(atom_id_list: List[int]) -> str:
+def position_restraint(atom_id_list: List[int], weight) -> str:
     """
     generate a string defining position restraint records
     """
     ret_str = "; Position restraint\n"
-    for weight in [1000, 500, 200, 100, 50, 20, 10, 0]:
-        ret_str += f'#ifdef POSRES{weight}\n'
-        ret_str += "[ position_restraints ]\n"
-        ret_str += "; atom  type      fx      fy      fz\n"
+    ret_str += f'#ifdef POSRES{weight}\n'
+    ret_str += "[ position_restraints ]\n"
+    ret_str += "; atom  type      fx      fy      fz\n"
 
-        for atom_id in atom_id_list:
-            c = int(constants.calorie * weight)
-            ret_str += f"{atom_id: 6d}{1: 6d}{c: 6d}{c: 6d}{c: 6d}\n"
-        ret_str += '#endif\n'
-    return "\n" + ret_str + "\n"
+    for atom_id in atom_id_list:
+        c = int(constants.calorie * weight)
+        ret_str += f"{atom_id: 6d}{1: 6d}{c: 6d}{c: 6d}{c: 6d}\n"
+    ret_str += '#endif\n'
+    return ret_str
 
 
 def gen_atom_id_list(gro_string: str,
@@ -52,7 +51,14 @@ def embed_posre(top_string: str,
             curr_section = line[line.find("[") + 1:line.find("]")].strip()
             if curr_section == "moleculetype":
                 if mol_count == 1:
-                    ret.append(position_restraint(atom_id_list))
+                    ret.append(position_restraint(atom_id_list, 1000))
+                    ret.append(position_restraint(atom_id_list, 500))
+                    ret.append(position_restraint(atom_id_list, 200))
+                    ret.append(position_restraint(atom_id_list, 100))
+                    ret.append(position_restraint(atom_id_list, 50))
+                    ret.append(position_restraint(atom_id_list, 20))
+                    ret.append(position_restraint(atom_id_list, 10))
+                    ret.append(position_restraint(atom_id_list, 0))
                 mol_count += 1
 
         ret.append(line)
