@@ -1,0 +1,7 @@
+; Position restraints
+#ifdef POSRES{{ weight }}
+[ position_restraints ]
+; atom  type      fx      fy      fz
+{% for atom_id in atom_id_list %}
+{{ '%6d' % atom_id }}     1{{ '%6d' % weight_in_calorie}}{{ '%6d' % weight_in_calorie}}{{ '%6d' % weight_in_calorie}}{% endfor %}
+#endif

@@ -1,4 +1,5 @@
 import abc
+import tempfile
 from typing import Final, Optional
 from .variable import Path, PDBString
 from .unit import Angstrom
@@ -20,6 +21,16 @@ class SystemInterface(abc.ABC):
 
 class System(SystemInterface):
     @staticmethod
+    def create_system_from_strings(top_str: str, gro_str: str) -> "System":
+        top: Path = Path(tempfile.mkstemp(suffix=".top")[1])
+        gro: Path = Path(tempfile.mkstemp(suffix=".gro")[1])
+        with open(top.get(), "w") as f:
+            f.write(top_str)
+        with open(gro.get(), "w") as f:
+            f.write(gro_str)
+        return System(top, gro)
+
+    @staticmethod
     def __validation(top: Path, gro: Path) -> None:
         pass
         # 文字列操作で追加する情報があるので、parmedだけでは評価しきれない
@@ -31,14 +42,6 @@ class System(SystemInterface):
     def save(self, dir: Path) -> None:
         pass
 
-    def add_position_restraint(self, probe: Probe) -> None:
-        except_residues: Final[list[str]] = [
-            "WAT",
-            "Na+", "Cl-", "CA", "MG", "ZN", "CU",
-            probe.cid
-        ]
-        raise NotImplementedError()
-
     def add_pseudo_repulsion(self, sigma: Angstrom = Angstrom(20), epsilon: float = 4.184e-6) -> None:
         # TODO: どのようなルールに基づいて処理をするのか？
         raise NotImplementedError()
@@ -48,6 +51,14 @@ class System(SystemInterface):
         self.__gro: Final[Path] = gro
 
         self.__validation(self.__top, self.__gro)
+
+    @property
+    def top(self) -> Path:
+        return self.__top
+
+    @property
+    def gro(self) -> Path:
+        return self.__gro
 
 
 class Trajectory(SystemInterface):
@@ -67,6 +78,18 @@ class Trajectory(SystemInterface):
         self.__top: Final[Path] = top
         self.__gro: Final[Path] = gro
         self.__trj: Final[Path] = trj
+
+    @property
+    def top(self) -> Path:
+        return self.__top
+
+    @property
+    def gro(self) -> Path:
+        return self.__gro
+
+    @property
+    def trj(self) -> Path:
+        return self.__trj
 
 
 class PDBPreparator:
