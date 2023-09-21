@@ -18,7 +18,6 @@ touch $finished_info
 
 for stepname in {{ STEP_NAMES }}
 do
-    prev_cpt=""
     prev=$now
     now=$stepname
 
@@ -28,19 +27,20 @@ do
     
     rm -f ${now}.out.mdp ${now}.tpr ${now}.log ${now}.gro ${now}.trr ${now}.edr ${now}.cpt
     echo $GMX grompp -f ${now}.mdp -po ${now}.out.mdp -o ${now}.tpr \
-	-c ${prev}.gro -p ${top} \
-	-r ${prev}.gro -n index.ndx ${prev_cpt}
-    echo $GMX mdrun -reprod -v -s ${now} -deffnm ${now} -cpi ${now}.cpt
+      -c ${prev}.gro -p ${top} \
+      -r ${prev}.gro -n index.ndx
+    echo $GMX mdrun -reprod -v -s ${now}.tpr \
+      -cpo ${now}.cpt -x ${now}.xtc -c ${now}.gro -e ${now}.edr -g ${now}.log \
+      && echo $now >> $finished_info
 
     $GMX grompp -f ${now}.mdp -po ${now}.out.mdp -o ${now}.tpr \
-	  -c ${prev}.gro -p ${top} \
-	  -r ${prev}.gro -n index.ndx ${prev_cpt}
-    $GMX mdrun -reprod -v -s ${now} -deffnm ${now} -cpi ${now}.cpt && echo $now >> $finished_info
+      -c ${prev}.gro -p ${top} \
+      -r ${prev}.gro -n index.ndx
+    $GMX mdrun -reprod -v -s ${now}.tpr \
+      -cpo ${now}.cpt -x ${now}.xtc -c ${now}.gro -e ${now}.edr -g ${now}.log \
+      && echo $now >> $finished_info
 
-    prev_cpt="-t $now.cpt"
 done
 
-# trr -> cpt
-# -t ${prev_cpt} trr? cpt?
 
 ln -s $stepname.xtc {{ OUT_TRAJ }}
