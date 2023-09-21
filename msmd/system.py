@@ -1,25 +1,11 @@
-import abc
 import tempfile
-from typing import Final, Optional
+from typing import Final
 from .variable import Path, PDBString
 from .unit import Angstrom
-from .probe.parameter import Probe
 from .parmed import convert as parmed_convert
-import parmed as pmd
 
 
-class SystemInterface(abc.ABC):
-    @abc.abstractmethod
-    def get_system(self) -> "System":
-        pass
-
-    @abc.abstractmethod
-    def save(self, directory: Path) -> None:
-        """ファイルに書き出して保存する。"""
-        pass
-
-
-class System(SystemInterface):
+class System:
     @staticmethod
     def create_system_from_strings(top_str: str, gro_str: str) -> "System":
         top: Path = Path(tempfile.mkstemp(suffix=".top")[1])
@@ -61,7 +47,7 @@ class System(SystemInterface):
         return self.__gro
 
 
-class Trajectory(SystemInterface):
+class Trajectory:
     @staticmethod
     def __validation(top: Path, gro: Path, trj: Path) -> None:
         # define as staticmethod to realize const method

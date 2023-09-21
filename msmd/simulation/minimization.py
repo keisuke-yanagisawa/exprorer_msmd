@@ -1,5 +1,5 @@
 from . import interface
-from ..system import SystemInterface, Trajectory
+from ..system import System, Trajectory
 from ..variable import Path, Name
 from .simulation_parameter import NumStep
 from typing import Final, Dict, Any
@@ -8,7 +8,7 @@ from typing import Final, Dict, Any
 class MinimizationStep(interface.SimulationInterface):
     def _create_mdp(self) -> Path:
         # テンポラリディレクトリパスを作り、そこにファイルを作る
-        pass
+        raise NotImplementedError()
 
     def __init__(self, step_config: Dict[str, Any]):
         self.NAME: Final[Name] = Name(step_config["name"])
@@ -17,9 +17,9 @@ class MinimizationStep(interface.SimulationInterface):
         self.DEFINE: Final[str] = step_config["define"]
         self.NSTLOG: Final[NumStep] = NumStep(step_config["nstlog"])
 
-    def run(self, initial: SystemInterface) -> Trajectory:
+    def run(self, initial: Trajectory) -> Trajectory:
         # 入力された系に対してMDを実行する
         raise NotImplementedError()
 
-
-# TODO: heating, Equilibration, Productionも作る
+    def run_from_system(self, initial: System) -> Trajectory:
+        raise NotImplementedError()

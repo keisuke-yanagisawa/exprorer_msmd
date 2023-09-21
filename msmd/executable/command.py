@@ -1,6 +1,6 @@
 import subprocess
+from typing import Final
 from ..variable import VariableInterface
-from ..standard_library.logging.logger import logger
 
 
 class Executable(VariableInterface):

@@ -1,5 +1,5 @@
 from . import interface
-from ..system import SystemInterface, Trajectory
+from ..system import System, Trajectory
 from ..variable import Path, Name
 from ..unit import Kelvin, Bar
 from .simulation_parameter import NumStep, PressureCoupling
@@ -16,7 +16,7 @@ class HeatingStep(interface.SimulationInterface):
 
     def _create_mdp(self) -> Path:
         # テンポラリディレクトリパスを作り、そこにファイルを作る
-        pass
+        raise NotImplementedError()
 
     def __init__(self, step_config: Dict[str, Any]):
         step_config = self.__fill_default(step_config)
@@ -33,6 +33,9 @@ class HeatingStep(interface.SimulationInterface):
         self.TARGET_TEMP: Final[Kelvin] = Kelvin(step_config["target_temp"])
         self.PRESSURE: Final[Bar] = Bar(step_config["pressure"])
 
-    def run(self, initial: SystemInterface) -> Trajectory:
+    def run(self, initial: Trajectory) -> Trajectory:
         # 入力された系に対してMDを実行する
         raise NotImplementedError()
+
+    def run_from_system(self, initlal: System) -> Trajectory:
+        raise RuntimeError("Equilibration step cannot be run from System. Initial minimization steps are required.")
