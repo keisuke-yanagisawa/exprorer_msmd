@@ -26,14 +26,14 @@ do
     fi
     
     rm -f ${now}.out.mdp ${now}.tpr ${now}.log ${now}.gro ${now}.trr ${now}.edr ${now}.cpt
-    echo $GMX grompp -f ${now}.mdp -po ${now}.out.mdp -o ${now}.tpr \
+    echo $GMX grompp -f ${now}.mdp -o ${now}.tpr \
       -c ${prev}.gro -p ${top} \
       -r ${prev}.gro -n index.ndx
     echo $GMX mdrun -reprod -v -s ${now}.tpr \
       -cpo ${now}.cpt -x ${now}.xtc -c ${now}.gro -e ${now}.edr -g ${now}.log \
       && echo $now >> $finished_info
 
-    $GMX grompp -f ${now}.mdp -po ${now}.out.mdp -o ${now}.tpr \
+    $GMX grompp -f ${now}.mdp -o ${now}.tpr \
       -c ${prev}.gro -p ${top} \
       -r ${prev}.gro -n index.ndx
     $GMX mdrun -reprod -v -s ${now}.tpr \
