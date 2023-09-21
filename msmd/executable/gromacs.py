@@ -41,7 +41,7 @@ class Gromacs(object):
         """return: tpr_path"""
         tpr_path = Path(tempfile.mkstemp(suffix=".tpr")[1])
         comm = Command(f"""{self.__exe.get()} grompp \
-                           -f {input_mdp.get()} \
+                           -f {input_mdp.get()} -po /dev/null \
                            -o {tpr_path.get()} -c {gro.get()} -p {top.get()} -r {gro.get()} \
                            -n {ndx.get()}""")
         comm.run()
@@ -58,7 +58,7 @@ class Gromacs(object):
         xtc_path = Path(tempfile.mkstemp(suffix=".xtc")[1])
 
         comm = Command(f"""{self.__exe.get()} mdrun -reprod -v -s {tpr.get()} \
-                           -cpo {cpt_path.get()} -x {xtc_path.get()} -c {gro_path.get()} \
+                           -o /dev/null -cpo {cpt_path.get()} -x {xtc_path.get()} -c {gro_path.get()} \
                            -e {edr_path.get()} -g {log_path.get()} \
                            && echo {name.get()} >> {finished_step_list_file.get()}""")
         comm.run()
