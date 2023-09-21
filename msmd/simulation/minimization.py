@@ -1,9 +1,8 @@
-import tempfile
 from . import interface
 from ..system import System, SystemInterface, Trajectory
 from ..variable import Path, Name
 from .simulation_parameter import NumStep
-from typing import Final, Dict, Any
+from typing import Final, Dict, Any, Optional
 from msmd.executable.gromacs import Gromacs
 from msmd.jinja2 import render_file
 
@@ -26,7 +25,16 @@ class MinimizationStep(interface.SimulationInterface):
         self.NSTLOG: Final[NumStep] = NumStep(step_config["nstlog"])
         self.PBC: Final[str] = step_config["pbc"]
 
-    def run(self, initial: SystemInterface) -> Trajectory:
+    def run(self, initial: SystemInterface, outdir: Optional[Path] = None) -> Trajectory:
         input_mdp = self._create_mdp()
         system: System = initial.get_system()
-        return Gromacs().run(self.NAME, system, input_mdp)
+        gromacs = Gromacs()
+        traj = gromacs.run(self.NAME, system, input_mdp)
+        if outdir is not None:
+            gromacs.save(outdir, self.NAME)
+            traj.save(outdir, self.NAME)
+        return traj
+
+    @property
+    def name(self) -> Name:
+        return self.NAME

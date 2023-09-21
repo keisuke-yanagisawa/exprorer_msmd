@@ -1,3 +1,5 @@
+import os
+import shutil
 import tempfile
 from typing import Final, Tuple
 from msmd.system import System, Trajectory
@@ -12,17 +14,23 @@ class Gromacs(object):
         self.__debug: Final[bool] = debug
 
     def run(self, name: Name, system: System, input_mdp: Path) -> Trajectory:
-        ndx_path = self.__make_ndx(system.gro)
-        tpr_path = self.__grompp(input_mdp, system.gro, system.top, ndx_path)
-        cpt_path, edr_path, gro_path, log_path, xtc_path = self.__mdrun(name, tpr_path)
+        self.__input_mdp = input_mdp
+        self.__ndx = self.__make_ndx(system.gro)
+        self.__tpr = self.__grompp(self.__input_mdp, system.gro, system.top, self.__ndx)
+        cpt_path, edr_path, gro_path, log_path, xtc_path = self.__mdrun(name, self.__tpr)
         return Trajectory(top=system.top, gro=gro_path,
                           trj=xtc_path, edr=edr_path,
                           log=log_path, cpt=cpt_path)
 
+    def save(self, basedirpath: Path, prefix: Name) -> None:
+        path_prefix: Path = basedirpath + prefix
+        os.makedirs(basedirpath.get(), exist_ok=True)
+        shutil.copy(self.__ndx.get(), path_prefix.get() + ".ndx")
+        shutil.copy(self.__tpr.get(), path_prefix.get() + ".tpr")
+        shutil.copy(self.__input_mdp.get(), path_prefix.get() + ".mdp")
+
     def __make_ndx(self, gro: Path) -> Path:
-
         ndx_path = Path(tempfile.mkstemp(suffix=".ndx")[1])
-
         comm = Command(f"""{self.__exe.get()} make_ndx -f {gro.get()} -o {ndx_path.get()}<< EOF
                            q
                            EOF""")
@@ -55,3 +63,13 @@ class Gromacs(object):
                            && echo {name.get()} >> {finished_step_list_file.get()}""")
         comm.run()
         return (cpt_path, edr_path, gro_path, log_path, xtc_path)
+
+    # TODO: create_pdb は Gromacsの計算実施とは別軸の話なので、同じクラスに入っているのは違和感。
+    def create_pdb(self, gro: Path) -> Path:
+        pdb_path = Path(tempfile.mkstemp(suffix=".pdb")[1])
+        comm = Command(f"""{self.__exe.get()} trjconv -s {gro.get()} \
+                           -f {gro.get()} -o {pdb_path.get()}.pdb <<EOF
+                            0
+                            EOF""")
+        comm.run()
+        return pdb_path

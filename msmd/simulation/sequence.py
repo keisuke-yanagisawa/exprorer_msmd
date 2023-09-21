@@ -11,17 +11,15 @@ class SimulationSequence:
         self.seq = seq
 
     def run(self, initial: System, outdir: Optional[Path] = None) -> Trajectory:
-        do_output_files = outdir is not None
 
         first_sim = self.seq[0]
-        traj: Trajectory = first_sim.run(initial)
-        if do_output_files:
-            traj.save(outdir)
+        traj: Trajectory = first_sim.run(initial, outdir)
 
         other_sims = self.seq[1:]
         for sim in other_sims:
-            traj = sim.run(traj)
-            if do_output_files:
-                traj.save(outdir)
+            traj = sim.run(traj, outdir)
 
         return traj
+
+    def __iter__(self):
+        return self.seq.__iter__()

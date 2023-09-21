@@ -1,7 +1,10 @@
 import abc
+import os
+import shutil
 import tempfile
 from typing import Final
-from .variable import Path, PDBString
+
+from .variable import Name, Path, PDBString
 from .unit import Angstrom
 from .parmed import convert as parmed_convert
 
@@ -12,7 +15,7 @@ class SystemInterface(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def save(self, directory: Path) -> None:
+    def save(self, basedirpath: Path, prefix: Name) -> None:
         """ファイルに書き出して保存する。"""
         pass
 
@@ -47,8 +50,16 @@ class System(SystemInterface):
     def get_system(self) -> "System":
         return self
 
-    def save(self, dir: Path) -> None:
-        pass
+    def save(self, basedirpath: Path, prefix: Name) -> None:
+        os.makedirs(basedirpath.get(), exist_ok=True)
+
+        path_prefix: Path = basedirpath + prefix
+        shutil.copy(self.__top.get(), path_prefix.get() + ".top")
+        shutil.copy(self.__gro.get(), path_prefix.get() + ".gro")
+
+        from msmd.executable.gromacs import Gromacs
+        pdb_path = Gromacs().create_pdb(self.__gro)
+        shutil.copy(pdb_path.get(), path_prefix.get() + ".pdb")
 
     def add_pseudo_repulsion(self, sigma: Angstrom = Angstrom(20), epsilon: float = 4.184e-6) -> None:
         # TODO: どのようなルールに基づいて処理をするのか？
@@ -78,8 +89,20 @@ class Trajectory(SystemInterface):
     def get_system(self) -> System:
         return System(self.__top, self.__gro)
 
-    def save(self, prefix: Path) -> None:
-        pass
+    def save(self, basedirpath: Path, prefix: Name) -> None:
+        path_prefix: Path = basedirpath + prefix
+
+        os.makedirs(basedirpath.get(), exist_ok=True)
+        shutil.copy(self.__top.get(), path_prefix.get() + ".top")
+        shutil.copy(self.__gro.get(), path_prefix.get() + ".gro")
+        shutil.copy(self.__trj.get(), path_prefix.get() + ".xtc")
+        shutil.copy(self.__edr.get(), path_prefix.get() + ".edr")
+        shutil.copy(self.__log.get(), path_prefix.get() + ".log")
+        shutil.copy(self.__cpt.get(), path_prefix.get() + ".cpt")
+
+        from msmd.executable.gromacs import Gromacs
+        pdb_path = Gromacs().create_pdb(self.__gro)
+        shutil.copy(pdb_path.get(), path_prefix.get() + ".pdb")
 
     def __init__(self, top: Path, gro: Path, trj: Path, edr: Path, log: Path, cpt: Path):
 

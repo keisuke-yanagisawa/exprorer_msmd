@@ -40,9 +40,9 @@ class _ExecutableConfig:
 
 
 class _GeneralConfig:
-    def __init__(self, general_map: Dict[str, Any]):
+    def __init__(self, general_map: Dict[str, Any], config_file_dir_path: str):
         self.ITER_INDICES: Final[IterIndices] = IterIndices(general_map["iter_index"])
-        self.WORKING_DIRECTORY: Final[Path] = Path(general_map["workdir"])
+        self.WORKING_DIRECTORY: Final[Path] = Path(config_file_dir_path) + Path(general_map["workdir"])
         self.PROJECT_NAME: Final[Name] = Name(general_map["name"])
         self.EXECUTABLE: Final[_ExecutableConfig] = _ExecutableConfig(general_map["executables"])
 
@@ -63,24 +63,29 @@ class InputConfig:
         return ret_map
 
     @staticmethod
-    def __parse_protein(protein_map: Dict[str, Any]) -> Protein:
-        __pdb: Path = Path(protein_map["pdb"], "pdb")
+    def __parse_protein(protein_map: Dict[str, Any], config_file_dir_path: str) -> Protein:
+        __pdb: Path = Path(config_file_dir_path + "/" + protein_map["pdb"], "pdb")
         __ssbond: List[Tuple[int, int]] = protein_map["ssbond"]
         return Protein(__pdb, __ssbond)
 
     @staticmethod
-    def __parse_probe(probe_map: Dict[str, Any]) -> Probe:
+    def __parse_probe(probe_map: Dict[str, Any], config_file_dir_path: str) -> Probe:
         __cid = probe_map["cid"]
-        __mol2 = probe_map["mol2"]
-        __pdb = probe_map["pdb"]
+
+        probe_map["mol2"] = __cid + ".mol2" if probe_map["mol2"] is None else probe_map["mol2"]
+        __mol2 = config_file_dir_path + "/" + probe_map["mol2"]
+
+        probe_map["pdb"] = __cid + ".pdb" if probe_map["pdb"] is None else probe_map["pdb"]
+        __pdb = config_file_dir_path + "/" + probe_map["pdb"]
+
         __atom_type = AtomType(probe_map["atomtype"])
         __concentration = Molar(probe_map["molar"])
         return Probe(__cid, __mol2, __pdb, __atom_type, __concentration)
 
-    def __init__(self, input_map: Dict[str, Any]):
+    def __init__(self, input_map: Dict[str, Any], config_file_dir_path: str):
         tmp_map = self.__fill_default(input_map)
-        self.PROTEIN: Final[Protein] = self.__parse_protein(tmp_map["protein"])
-        self.PROBE: Final[Probe] = self.__parse_probe(tmp_map["probe"])
+        self.PROTEIN: Final[Protein] = self.__parse_protein(tmp_map["protein"], config_file_dir_path)
+        self.PROBE: Final[Probe] = self.__parse_probe(tmp_map["probe"], config_file_dir_path)
 
 
 class _SimulationStepFactory:
@@ -177,19 +182,20 @@ class _InverseMSMDConfig:
 
 
 class __Config:
-    def __init__(self, config_map: Dict[str, Any]):
-        self.GENERAL: Final[_GeneralConfig] = _GeneralConfig(config_map["general"])
-        self.INPUT: Final[InputConfig] = InputConfig(config_map["input"])
+    @staticmethod
+    def __load_yaml(path: str) -> dict:
+        if os.path.exists(path) is False:
+            raise FileNotFoundError(f"The file: {path} is not found")
+        with open(path, "r") as f:
+            return yaml.safe_load(f)
+
+    def __init__(self, yamlpath: str):
+        config_map = self.__load_yaml(yamlpath)
+        self.GENERAL: Final[_GeneralConfig] = _GeneralConfig(config_map["general"], os.path.dirname(yamlpath))
+        self.INPUT: Final[InputConfig] = InputConfig(config_map["input"], os.path.dirname(yamlpath))
         self.SIMULATION: Final[_SimulationConfig] = _SimulationConfig(config_map["exprorer_msmd"])
         self.PMAP: Final[_PMAPConfig] = _PMAPConfig(config_map["map"])
         self.INVERSE_MSMD: Final[_InverseMSMDConfig] = _InverseMSMDConfig(config_map["probe_profile"])
-
-
-def __load_yaml(path: str) -> dict:
-    if os.path.exists(path) is False:
-        raise FileNotFoundError(f"The file: {path} is not found")
-    with open(path, "r") as f:
-        return yaml.safe_load(f)
 
 
 CONFIG: __Config
@@ -198,4 +204,4 @@ CONFIG: __Config
 
 def load_config(yaml: str) -> None:
     global CONFIG
-    CONFIG = __Config(__load_yaml(yaml))
+    CONFIG = __Config(yaml)

@@ -1,5 +1,5 @@
 import abc
-from typing import Final, Optional
+from typing import Final, Optional, Union
 import subprocess
 from .standard_library.os import getabsolutepath
 
@@ -27,14 +27,22 @@ class Path(VariableInterface):
         # TODO: ファイルパスとして適切な文字列か否かのチェックが必要
 
     def __init__(self, path: str = ".", ext: Optional[str] = None):
-        self.__path: Final[str] = getabsolutepath(path)
+        self.__path: Final[str] = path
         self._validation(self.__path, ext)
 
     def get(self) -> str:
-        return self.__path
+        return getabsolutepath(self.__path)
 
     def __str__(self) -> str:
         return f"Path('{self.__path}')"
+
+    def __add__(self, other: Union["Path", "Name"]) -> "Path":
+        if isinstance(other, Name):
+            return Path(self.__path + "/" + other.get())
+        elif isinstance(other, Path):
+            return Path(self.__path + "/" + other.__path)
+        else:
+            raise TypeError(f"Cannot add Path and {type(other)}")
 
     @property
     def path(self) -> str:

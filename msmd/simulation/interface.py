@@ -1,5 +1,6 @@
 import abc
-from ..variable import Path
+from typing import Optional
+from ..variable import Name, Path
 from ..system import SystemInterface, Trajectory
 
 
@@ -9,5 +10,10 @@ class SimulationInterface(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def run(self, initial: SystemInterface) -> Trajectory:
+    def run(self, initial: SystemInterface, outdir: Optional[Path] = None) -> Trajectory:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def name(self) -> Name:
         pass

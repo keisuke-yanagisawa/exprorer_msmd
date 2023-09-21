@@ -55,4 +55,7 @@ class IterIndices(VariableInterface):
         index_str = ", ".join([str(index) for index in self.__indices])
         return f"IterIndices('[{index_str}]')"
 
+    def __iter__(self):
+        return iter(self.__indices)
+
 # class LogLevel:
