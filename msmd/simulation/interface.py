@@ -1,6 +1,6 @@
 import abc
 from ..variable import Path
-from ..system import System, Trajectory
+from ..system import SystemInterface, Trajectory
 
 
 class SimulationInterface(abc.ABC):
@@ -9,9 +9,5 @@ class SimulationInterface(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def run(self, initial: Trajectory) -> Trajectory:
-        pass
-
-    @abc.abstractmethod
-    def run_from_system(self, initial: System) -> Trajectory:
+    def run(self, initial: SystemInterface) -> Trajectory:
         pass

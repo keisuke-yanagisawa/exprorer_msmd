@@ -118,7 +118,7 @@ class _SimulationConfig:
     @staticmethod
     def __parse_sequence(sequence_map: List[Dict[str, Any]], default_parameters: Dict[str, Any]) -> SimulationSequence:
         factory = _SimulationStepFactory(default_parameters)
-        simulation_seq: List[SimulationInterface] = []
+        simulation_seq: List[interface.SimulationInterface] = []
         for step_config in sequence_map:
             simulation_seq.append(factory.create(step_config))
         return SimulationSequence(simulation_seq)

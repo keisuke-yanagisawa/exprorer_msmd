@@ -12,9 +12,9 @@ def render_str(template_name: str,
     return template.render(kwargs)
 
 
-def render_file(template_name: str,
+def render_file(template_name: str, suffix: str = ".in",
                 **kwargs) -> Path:
-    out = Path(tempfile.mkstemp(suffix=".in")[1])
+    out = Path(tempfile.mkstemp(suffix=suffix)[1])
     with open(out.path, "w") as fout:
         fout.write(render_str(template_name, **kwargs))
     return out

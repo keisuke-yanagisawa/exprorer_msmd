@@ -1,5 +1,6 @@
+from msmd.executable.gromacs import Gromacs
 from . import interface
-from ..system import System, Trajectory
+from ..system import System, SystemInterface, Trajectory
 from ..variable import Path, Name
 from ..unit import Kelvin, Bar
 from .simulation_parameter import NumStep, PressureCoupling
@@ -23,9 +24,7 @@ class EquilibrationStep(interface.SimulationInterface):
         self.TEMPERATURE: Final[Kelvin] = Kelvin(step_config["temperature"])
         self.PRESSURE: Final[Bar] = Bar(step_config["pressure"])
 
-    def run(self, initial: Trajectory) -> Trajectory:
-        # 入力された系に対してMDを実行する
-        raise NotImplementedError()
-
-    def run_from_system(self, initlal: System) -> Trajectory:
-        raise RuntimeError("Equilibration step cannot be run from System. Initial minimization steps are required.")
+    def run(self, initial: SystemInterface) -> Trajectory:
+        input_mdp = self._create_mdp()
+        system: System = initial.get_system()
+        return Gromacs().run(self.NAME, system, input_mdp)

@@ -1,49 +1,57 @@
 import tempfile
-from typing import Final
-
-from msmd.system import Trajectory
-
+from typing import Final, Tuple
+from msmd.system import System, Trajectory
 from .command import Executable, Command
 from ..variable import Name, Path
 
 
 class Gromacs(object):
-    def __init__(self, exe: Executable, debug=False):
-        self.__exe: Final[Executable] = exe
+    def __init__(self, debug=False):
+        from msmd.config import CONFIG
+        self.__exe: Final[Executable] = CONFIG.GENERAL.EXECUTABLE.GROMACS
         self.__debug: Final[bool] = debug
 
-    def make_ndx(self, gro: Path) -> None:
+    def run(self, name: Name, system: System, input_mdp: Path) -> Trajectory:
+        ndx_path = self.__make_ndx(system.gro)
+        tpr_path = self.__grompp(input_mdp, system.gro, system.top, ndx_path)
+        cpt_path, edr_path, gro_path, log_path, xtc_path = self.__mdrun(name, tpr_path)
+        return Trajectory(top=system.top, gro=gro_path,
+                          trj=xtc_path, edr=edr_path,
+                          log=log_path, cpt=cpt_path)
 
-        self.__ndx = Path(tempfile.mkstemp(suffix=".ndx")[1])
+    def __make_ndx(self, gro: Path) -> Path:
 
-        comm = Command(f"""{self.__exe} make_ndx -f {gro.get()} -o {self.__ndx.get()}<< EOF
+        ndx_path = Path(tempfile.mkstemp(suffix=".ndx")[1])
+
+        comm = Command(f"""{self.__exe.get()} make_ndx -f {gro.get()} -o {ndx_path.get()}<< EOF
                            q
                            EOF""")
         comm.run()
+        return ndx_path
 
-    def grompp(self, name: Name, input_mdp: Path, gro: Path, top: Path, prev_cpt: Path):
-        self.__mdp = Path(tempfile.mkstemp(suffix=".mdp")[1])
-        comm = Command(f"""{self.__exe} grompp \
-                           -f {input_mdp} -po {self.__mdp} \
-                           -o {name.get()}.tpr -c {gro.get()} -p {top.get()} -r {gro.get()} \
-                           -n {self.__ndx} {prev_cpt.get()}""")
+    def __grompp(self, input_mdp: Path, gro: Path, top: Path, ndx: Path) -> Path:
+        """return: tpr_path"""
+        tpr_path = Path(tempfile.mkstemp(suffix=".tpr")[1])
+        comm = Command(f"""{self.__exe.get()} grompp \
+                           -f {input_mdp.get()} \
+                           -o {tpr_path.get()} -c {gro.get()} -p {top.get()} -r {gro.get()} \
+                           -n {ndx.get()}""")
         comm.run()
+        return tpr_path
 
-    def mdrun(self, name: Name) -> Trajectory:
-        finished_step_list_file = Path("finished_step_list")
-        self.__cpt = Path(tempfile.mkstemp(suffix=".cpt")[1])
-        comm = Command(f"""{self.__exe} mdrun \
-                           -reprod -v -s {name.get()} -deffnm {name.get()} \
-                           -cpi {self.__cpt.get()} \
+    def __mdrun(self, name: Name, tpr: Path) -> Tuple[Path, Path, Path, Path, Path]:
+        """return (cpt_path, edr_path, gro_path, log_path, xtc_path)"""
+        finished_step_list_file = Path("finished_step_list")  # これの処理どうする？Command自体がCalledProcessErrorを投げてくれるので、外で処理できる
+
+        cpt_path = Path(tempfile.mkstemp(suffix=".cpt")[1])
+        edr_path = Path(tempfile.mkstemp(suffix=".edr")[1])
+        gro_path = Path(tempfile.mkstemp(suffix=".gro")[1])
+        log_path = Path(tempfile.mkstemp(suffix=".log")[1])
+        xtc_path = Path(tempfile.mkstemp(suffix=".xtc")[1])
+
+        comm = Command(f"""{self.__exe.get()} mdrun -reprod -v -s {tpr.get()} \
+                           -cpo {cpt_path.get()} -x {xtc_path.get()} -c {gro_path.get()} \
+                           -e {edr_path.get()} -g {log_path.get()} \
                            && echo {name.get()} >> {finished_step_list_file.get()}""")
         comm.run()
-        raise NotImplementedError()
-
-
-"""{exe} make_ndx -f {gro} << EOF
-q
-EOF
-"""
-
-"""{exe} grompp -f {mdp}. -po {output_mdp} -o {stepname}.tpr -c {previous}.gro -p {top} -r {previous}.gro -n index.ndx {previous_cpt}"""
-""""""
+        return (cpt_path, edr_path, gro_path, log_path, xtc_path)

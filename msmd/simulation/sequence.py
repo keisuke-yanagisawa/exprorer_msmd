@@ -14,12 +14,11 @@ class SimulationSequence:
         do_output_files = outdir is not None
 
         first_sim = self.seq[0]
-        other_sims = self.seq[1:]
-
-        traj: Trajectory = first_sim.run_from_system(initial)
+        traj: Trajectory = first_sim.run(initial)
         if do_output_files:
             traj.save(outdir)
 
+        other_sims = self.seq[1:]
         for sim in other_sims:
             traj = sim.run(traj)
             if do_output_files:

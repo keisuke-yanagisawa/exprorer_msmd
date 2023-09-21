@@ -1,17 +1,7 @@
 import tempfile
-from typing import Optional, Tuple
+from typing import Tuple
 from .variable import Path
 import parmed as pmd
-
-
-def _convert_top_only(intop: Path, outtop: Path) -> Path:
-    system = pmd.load_file(intop.path)
-    if outtop.path.endswith(".top"):  # この if ってどういう意味？
-        protein_indices = [[list(t[1])[0] for t in system.split() if len(t[1]) == 1]]
-        system.save(outtop.path, overwrite=True, combine=protein_indices)
-    else:
-        system.save(outtop.path, overwrite=True)
-    return outtop
 
 
 def _convert_all(intop: Path, outtop: Path, inxyz: Path, outxyz: Path):
@@ -30,11 +20,7 @@ def _convert_all(intop: Path, outtop: Path, inxyz: Path, outxyz: Path):
     return outtop, outxyz
 
 
-def convert(intop: Path, inxyz: Optional[Path] = None) -> Tuple[Path, Optional[Path]]:
+def convert(intop: Path, inxyz: Path) -> Tuple[Path, Path]:
     outtop = Path(tempfile.mkstemp(suffix=".top")[1])
     outxyz = Path(tempfile.mkstemp(suffix=".gro")[1])
-    if inxyz is not None:
-        return _convert_all(intop, outtop, inxyz, outxyz)
-    else:
-        ret = _convert_top_only(intop, outtop)
-        return ret, None
+    return _convert_all(intop, outtop, inxyz, outxyz)

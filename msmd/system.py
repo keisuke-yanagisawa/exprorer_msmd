@@ -1,3 +1,4 @@
+import abc
 import tempfile
 from typing import Final
 from .variable import Path, PDBString
@@ -5,7 +6,28 @@ from .unit import Angstrom
 from .parmed import convert as parmed_convert
 
 
-class System:
+class SystemInterface(abc.ABC):
+    @abc.abstractmethod
+    def get_system(self) -> "System":
+        pass
+
+    @abc.abstractmethod
+    def save(self, directory: Path) -> None:
+        """ファイルに書き出して保存する。"""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def top(self) -> Path:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def gro(self) -> Path:
+        pass
+
+
+class System(SystemInterface):
     @staticmethod
     def create_system_from_strings(top_str: str, gro_str: str) -> "System":
         top: Path = Path(tempfile.mkstemp(suffix=".top")[1])
@@ -47,23 +69,26 @@ class System:
         return self.__gro
 
 
-class Trajectory:
+class Trajectory(SystemInterface):
     @staticmethod
     def __validation(top: Path, gro: Path, trj: Path) -> None:
         # define as staticmethod to realize const method
         pass
 
     def get_system(self) -> System:
-        raise NotImplementedError()
+        return System(self.__top, self.__gro)
 
     def save(self, prefix: Path) -> None:
         pass
 
-    def __init__(self, top: Path, gro: Path, trj: Path):
+    def __init__(self, top: Path, gro: Path, trj: Path, edr: Path, log: Path, cpt: Path):
 
         self.__top: Final[Path] = top
         self.__gro: Final[Path] = gro
         self.__trj: Final[Path] = trj
+        self.__edr: Final[Path] = edr
+        self.__log: Final[Path] = log
+        self.__cpt: Final[Path] = cpt
 
     @property
     def top(self) -> Path:
