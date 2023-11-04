@@ -76,7 +76,7 @@ class Cpptraj(object):
         for i in range(len(maps)):
             maps[i]["grid"] = f"{self.basedir}/{self.prefix}_{maps[i]['suffix']}.dx"
 
-        self.frames = len(open(rmsdfile).readlines()) - 1  # -1 for header line
+        self.frames = len(open(f"{self.basedir}/{rmsdfile}").readlines()) - 1  # -1 for header line
         self.last_volume = float(open(tmp_volumefile).readlines()[-1].split()[1])
         os.system(f"rm {tmp_volumefile}")
         for i in range(len(maps)):
