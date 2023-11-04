@@ -43,7 +43,7 @@ class Cpptraj(object):
         self._gen_parm7()
 
         _, self.inp = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_INP)
-        _, tmp_rmsdfile = tempfile.mkstemp(suffix=".dat")
+        rmsdfile = "rmsd.dat"
         _, tmp_volumefile = tempfile.mkstemp(suffix=".dat")
 
         data = {
@@ -56,7 +56,7 @@ class Cpptraj(object):
             "map_voxel": " ".join([str(n) for n in self.voxel]) + " gridcenter " + " ".join([str(x) for x in box_center]),
             "prefix": self.prefix,
             "maps": maps,
-            "tmp_rmsdfile": tmp_rmsdfile,
+            "rmsdfile": rmsdfile,
             "tmp_volumefile": tmp_volumefile,
         }
 
@@ -67,13 +67,16 @@ class Cpptraj(object):
             logger.info(template.render(data))
         command = Command(f"{self.exe} < {self.inp}")
         logger.debug(command)
-        logger.info(command.run())
+        try:
+            logger.info(command.run())
+        except e:
+            Command(f"cat {self.inp}")
+            raise e
 
         for i in range(len(maps)):
             maps[i]["grid"] = f"{self.basedir}/{self.prefix}_{maps[i]['suffix']}.dx"
 
-        self.frames = len(open(tmp_rmsdfile).readlines()) - 1  # -1 for header line
-        os.system(f"rm {tmp_rmsdfile}")
+        self.frames = len(open(rmsdfile).readlines()) - 1  # -1 for header line
         self.last_volume = float(open(tmp_volumefile).readlines()[-1].split()[1])
         os.system(f"rm {tmp_volumefile}")
         for i in range(len(maps)):
