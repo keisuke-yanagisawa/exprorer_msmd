@@ -132,17 +132,32 @@ def parse_yaml(yamlpath: str) -> dict:
         setting["input"]["probe"]["pdb"] \
             = setting["input"]["probe"]["cid"] + ".pdb"
 
+    setting["general"]["workdir"] = expandpath(setting["general"]["workdir"])
     setting["general"]["workdir"] = setting["general"]["workdir"] \
         if setting["general"]["workdir"].startswith("/") \
+           or setting["general"]["workdir"].startswith("$HOME") \
+           or setting["general"]["workdir"].startswith("~") \
         else YAML_DIR_PATH + "/" + setting["general"]["workdir"]
+
+    setting["input"]["protein"]["pdb"] = expandpath(setting["input"]["protein"]["pdb"])
     setting["input"]["protein"]["pdb"] = setting["input"]["protein"]["pdb"] \
         if setting["input"]["protein"]["pdb"].startswith("/") \
+           or setting["input"]["protein"]["pdb"].startswith("$HOME") \
+           or setting["input"]["protein"]["pdb"].startswith("~") \
         else YAML_DIR_PATH + "/" + setting["input"]["protein"]["pdb"]
+
+    setting["input"]["probe"]["pdb"] = expandpath(setting["input"]["probe"]["pdb"])
     setting["input"]["probe"]["pdb"] = setting["input"]["probe"]["pdb"] \
         if setting["input"]["probe"]["pdb"].startswith("/") \
+           or setting["input"]["probe"]["pdb"].startswith("$HOME") \
+           or setting["input"]["probe"]["pdb"].startswith("~") \
         else YAML_DIR_PATH + "/" + setting["input"]["probe"]["pdb"]
+
+    setting["input"]["probe"]["mol2"] = expandpath(setting["input"]["probe"]["mol2"])
     setting["input"]["probe"]["mol2"] = setting["input"]["probe"]["mol2"] \
         if setting["input"]["probe"]["mol2"].startswith("/") \
+           or setting["input"]["probe"]["mol2"].startswith("$HOME") \
+           or setting["input"]["probe"]["mol2"].startswith("~") \
         else YAML_DIR_PATH + "/" + setting["input"]["probe"]["mol2"]
 
     if setting["input"]["protein"]["ssbond"] is None:
