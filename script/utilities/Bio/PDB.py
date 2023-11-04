@@ -23,6 +23,7 @@ from Bio.PDB.Model import Model
 from Bio.PDB.Structure import Structure
 import numpy.typing as npt
 from ..scipy.spatial_func import estimate_volume
+from ..util import expandpath
 
 
 class AtomSelector(PDB.Select):
@@ -137,7 +138,7 @@ class PDBIOhelper():
     """
 
     def __init__(self, path: str):
-        self.path = path
+        self.path = expandpath(path)
         self.open()
 
     def __enter__(self):
@@ -197,6 +198,7 @@ def get_structure(filepath: str, structname="") -> Structure:
     Bio.PDB.Structure
         Structure object of the PDB file
     """
+    filepath = expandpath(filepath)
     if filepath.endswith(".gz"):
         fileobj = gzip.open(filepath, "rt")
     else:
@@ -414,6 +416,7 @@ def save(structs, path) -> None:
     structs : Bio.PDB.Struct or list of Bio.PDB.Struct
     path : str
     """
+    path = expandpath(path)
 
     if not isinstance(structs, Iterable):
         structs = [structs]
