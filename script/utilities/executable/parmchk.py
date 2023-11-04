@@ -3,6 +3,7 @@ import os
 from .execute import Command
 from .. import const
 from ..logger import logger
+from ..util import expandpath
 
 
 class Parmchk(object):
@@ -12,6 +13,7 @@ class Parmchk(object):
         self.debug = debug
 
     def set(self, mol2, at):
+        mol2 = expandpath(mol2)
         if at not in self.at_indices:
             raise ValueError(f"atomtype {at} is not supported")
         if not os.path.exists(mol2):
