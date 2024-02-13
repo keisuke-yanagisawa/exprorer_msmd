@@ -1,4 +1,4 @@
-FROM kyanagis/exprorer_msmd:2024.02.13
+FROM kyanagis/exprorer_msmd:2024.02.12
 
 # ====== settings for git / ssh =======
 RUN echo "mkdir -p /root/.ssh" >> /etc/bash.bashrc
