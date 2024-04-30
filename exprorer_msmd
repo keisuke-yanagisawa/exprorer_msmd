@@ -175,7 +175,8 @@ if __name__ == "__main__":
     # Raise EnvironmentError if GPU is not available
     gpuids = get_gpuids()
     # gpuids = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-    gpuids = ast.literal_eval(args.mps)
+    if args.mps is not None:
+        gpuids = ast.literal_eval(args.mps)
     
     ngpus = len(gpuids)
     if not setting["general"]["multiprocessing"]:
