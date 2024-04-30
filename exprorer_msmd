@@ -5,6 +5,7 @@ import argparse
 import tempfile
 import os
 import pathlib
+import ast
 
 from joblib import Parallel, delayed
 
@@ -150,6 +151,7 @@ if __name__ == "__main__":
     parser.add_argument("--skip-postprocess", action="store_true")
     parser.add_argument("--version", action="version", version=VERSION)
     parser.add_argument("--iter-index", help=argparse.SUPPRESS)  # overwrite iter_index of config yaml
+    parser.add_argument("--mps", type=str, help='List of MPS values')  # add mps argument and accept as a string
     args = parser.parse_args()
 
     # initial logger level is "warn"
@@ -172,6 +174,9 @@ if __name__ == "__main__":
     # Count num. of GPUs and allocate CPU cores to each GPU
     # Raise EnvironmentError if GPU is not available
     gpuids = get_gpuids()
+    # gpuids = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    gpuids = ast.literal_eval(args.mps)
+    
     ngpus = len(gpuids)
     if not setting["general"]["multiprocessing"]:
         ngpus = 1
