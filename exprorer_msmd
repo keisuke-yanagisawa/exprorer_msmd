@@ -5,7 +5,7 @@ import argparse
 import tempfile
 import os
 import pathlib
-import ast
+import subprocess
 
 from joblib import Parallel, delayed
 
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     parser.add_argument("--skip-postprocess", action="store_true")
     parser.add_argument("--version", action="version", version=VERSION)
     parser.add_argument("--iter-index", help=argparse.SUPPRESS)  # overwrite iter_index of config yaml
-    parser.add_argument("--mps", type=str, help='List of MPS values')  # add mps argument and accept as a string
+    parser.add_argument("--mps", type=int, help='MPS values')  # add mps argument and accept as a string
     args = parser.parse_args()
 
     # initial logger level is "warn"
@@ -173,23 +173,50 @@ if __name__ == "__main__":
 
     # Count num. of GPUs and allocate CPU cores to each GPU
     # Raise EnvironmentError if GPU is not available
-    gpuids = get_gpuids()
-    # gpuids = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    gpuids = []
     if args.mps is not None:
-        gpuids = ast.literal_eval(args.mps)
+        setting["general"]["mps"] = args.mps
     
+    for elem in get_gpuids():
+        gpuids.extend([elem] * setting["general"]["mps"])
+
+    def is_mps_control_running(command):
+        try:
+            output = subprocess.check_output(command, shell=True, text=True)
+            lines = output.strip().split('\n')
+            if len(lines) >= 3:
+                return True
+            else:
+                return False
+        except subprocess.CalledProcessError:
+            return False
+
+    if setting["general"]["mps"]>1:
+        if not is_mps_control_running("ps x | grep nvidia-cuda-mps-control"):
+            print(subprocess.check_output("ps x | grep nvidia-cuda-mps-control", shell=True, text=True))
+            raise RuntimeError("nvidia-cuda-mps-server is not running. Please start it before using MPS.")
+        else:
+            print(subprocess.check_output("ps x | grep nvidia-cuda-mps-control", shell=True, text=True))
+            print("nvidia-cuda-mps-server is running.")
+
     ngpus = len(gpuids)
     if not setting["general"]["multiprocessing"]:
         ngpus = 1
     ncpus = len(os.sched_getaffinity(0))
     ncpus = 1 if ncpus is None else ncpus
+
+    ratio_available_gpus = len(get_gpuids(ignore_cuda_visible_devices=True)) / len(get_gpuids(ignore_cuda_visible_devices=False))
+    ncpus_per_run = int(ncpus * ratio_available_gpus / len(gpuids))
+    if ncpus_per_run == 0:
+        raise EnvironmentError("The number of CPU threads must be equal to "
+                         "or greater than the number of runs executed simultaneously")
     ncpus_per_gpu = ncpus // len(get_gpuids(ignore_cuda_visible_devices=True))
     if ncpus_per_gpu == 0:
         raise EnvironmentError("The number of CPU threads must be "
                                "equal to or greater than the number of available GPUs")
 
     logger.info(f"{ncpus} threads are detected")
-    logger.info(f"{ngpus} parallel execution with {ncpus_per_gpu} CPU threads per process")
+    logger.info(f"{ngpus} parallel execution with {ncpus_per_run} CPU threads per process")
 
     # prepare systems
     # n_jobs = num of CPU cores, not num of GPUs
@@ -211,7 +238,7 @@ if __name__ == "__main__":
     if not args.skip_simulation:
         gpuids = (gpuids * len(indices))[:len(indices)]
         trajectories = Parallel(n_jobs=ngpus, backend='threading')(
-            delayed(execute_single_simulation)(idx, setting, gpuid, ncpus_per_gpu, top=top, gro=gro, pdb=pdb, debug=args.debug)
+            delayed(execute_single_simulation)(idx, setting, gpuid, ncpus_per_run, top=top, gro=gro, pdb=pdb, debug=args.debug)
             for idx, gpuid, top, gro, pdb in zip(indices, gpuids, tops, gros, pdbs)
         )
     else:
