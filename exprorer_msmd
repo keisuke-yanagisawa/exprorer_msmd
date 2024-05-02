@@ -5,12 +5,12 @@ import argparse
 import tempfile
 import os
 import pathlib
-import subprocess
 
 from joblib import Parallel, delayed
 
 from script.utilities import util
 from script.utilities.GPUtil import get_gpuids
+from script.utilities.GPUtil import is_mps_control_running
 from script.genpmap import gen_pmap
 from script.utilities.pmd import convert as pmd_convert
 from script.generate_msmd_system import generate_msmd_system
@@ -151,7 +151,6 @@ if __name__ == "__main__":
     parser.add_argument("--skip-postprocess", action="store_true")
     parser.add_argument("--version", action="version", version=VERSION)
     parser.add_argument("--iter-index", help=argparse.SUPPRESS)  # overwrite iter_index of config yaml
-    parser.add_argument("--mps", type=int, help='MPS values')  # add mps argument and accept as a string
     args = parser.parse_args()
 
     # initial logger level is "warn"
@@ -173,30 +172,16 @@ if __name__ == "__main__":
 
     # Count num. of GPUs and allocate CPU cores to each GPU
     # Raise EnvironmentError if GPU is not available
+
+    num_process_per_gpu=setting["general"]["mps"]
     gpuids = []
-    if args.mps is not None:
-        setting["general"]["mps"] = args.mps
-    
-    for elem in get_gpuids():
-        gpuids.extend([elem] * setting["general"]["mps"])
+    for _ in range(num_process_per_gpu):
+        gpuids.extend(get_gpuids())
 
-    def is_mps_control_running(command):
-        try:
-            output = subprocess.check_output(command, shell=True, text=True)
-            lines = output.strip().split('\n')
-            if len(lines) >= 3:
-                return True
-            else:
-                return False
-        except subprocess.CalledProcessError:
-            return False
-
-    if setting["general"]["mps"]>1:
-        if not is_mps_control_running("ps x | grep nvidia-cuda-mps-control"):
-            print(subprocess.check_output("ps x | grep nvidia-cuda-mps-control", shell=True, text=True))
+    if num_process_per_gpu > 1:
+        if not is_mps_control_running():
             raise RuntimeError("nvidia-cuda-mps-server is not running. Please start it before using MPS.")
         else:
-            print(subprocess.check_output("ps x | grep nvidia-cuda-mps-control", shell=True, text=True))
             print("nvidia-cuda-mps-server is running.")
 
     ngpus = len(gpuids)
@@ -210,10 +195,6 @@ if __name__ == "__main__":
     if ncpus_per_run == 0:
         raise EnvironmentError("The number of CPU threads must be equal to "
                          "or greater than the number of runs executed simultaneously")
-    ncpus_per_gpu = ncpus // len(get_gpuids(ignore_cuda_visible_devices=True))
-    if ncpus_per_gpu == 0:
-        raise EnvironmentError("The number of CPU threads must be "
-                               "equal to or greater than the number of available GPUs")
 
     logger.info(f"{ncpus} threads are detected")
     logger.info(f"{ngpus} parallel execution with {ncpus_per_run} CPU threads per process")
