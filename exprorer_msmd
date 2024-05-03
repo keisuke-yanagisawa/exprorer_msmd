@@ -173,7 +173,7 @@ if __name__ == "__main__":
     # Count num. of GPUs and allocate CPU cores to each GPU
     # Raise EnvironmentError if GPU is not available
 
-    num_process_per_gpu=setting["general"]["mps"]
+    num_process_per_gpu=setting["general"]["num_process_per_gpu"]
     gpuids = get_gpuids() * num_process_per_gpu
     print(gpuids)
     if num_process_per_gpu > 1:
