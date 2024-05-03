@@ -1,11 +1,11 @@
-%VERSION  VERSION_STAMP = V0001.000  DATE = 04/19/23  06:00:55                  
+%VERSION  VERSION_STAMP = V0001.000  DATE = 05/03/24  21:34:13                  
 %FLAG TITLE                                                                     
 %FORMAT(20a4)                                                                   
 default_name                                                                    
 %FLAG POINTERS                                                                  
 %FORMAT(10I8)                                                                   
     4527      16    4477      43     162      49     266      86       0       0
-    6471    1476      43      49      86      31      56      54      22       0
+    6471    1476      43      49      86      31      56      54      22       1
        0       0       0       0       0       0       0       1      23       0
        0
 %FLAG ATOM_NAME                                                                 
@@ -3443,9 +3443,9 @@ H2  O   H1  H2  O   H1  H2
       87      88      89      90      91     104     118     133      92      93
       94      95      96      97      98      99     100     101     102     103
      104     105     119     134     106     107     108     109     110     111
-     112     113     114     115     116     117     118     119     120     135
+     112     113     114     115     116     117     118     119     120      -1
      121     122     123     124     125     126     127     128     129     130
-     131     132     133     134     135     136
+     131     132     133     134      -1     136
 %FLAG RESIDUE_LABEL                                                             
 %FORMAT(20a4)                                                                   
 MET ASP LYS A11 A11 A11 A11 A11 A11 WAT WAT WAT WAT WAT WAT WAT WAT WAT WAT WAT 
@@ -6132,13 +6132,13 @@ WAT WAT WAT WAT WAT WAT WAT WAT WAT WAT WAT WAT WAT WAT WAT WAT
        0
 %FLAG HBOND_ACOEF                                                               
 %FORMAT(5E16.8)                                                                 
-
+  0.00000000E+00
 %FLAG HBOND_BCOEF                                                               
 %FORMAT(5E16.8)                                                                 
-
+  0.00000000E+00
 %FLAG HBCUT                                                                     
 %FORMAT(5E16.8)                                                                 
-
+  0.00000000E+00
 %FLAG AMBER_ATOM_TYPE                                                           
 %FORMAT(20a4)                                                                   
 N3  H   H   H   CX  HP  2C  HC  HC  2C  H1  H1  S   CT  H1  H1  H1  C   O   N   
