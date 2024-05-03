@@ -174,15 +174,13 @@ if __name__ == "__main__":
     # Raise EnvironmentError if GPU is not available
 
     num_process_per_gpu=setting["general"]["mps"]
-    gpuids = []
-    for _ in range(num_process_per_gpu):
-        gpuids.extend(get_gpuids())
-
+    gpuids = get_gpuids() * num_process_per_gpu
+    print(gpuids)
     if num_process_per_gpu > 1:
         if not is_mps_control_running():
             raise RuntimeError("nvidia-cuda-mps-server is not running. Please start it before using MPS.")
         else:
-            print("nvidia-cuda-mps-server is running.")
+            logger.info("nvidia-cuda-mps-server is running.")
 
     ngpus = len(gpuids)
     if not setting["general"]["multiprocessing"]:
