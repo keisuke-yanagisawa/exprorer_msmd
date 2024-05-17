@@ -85,6 +85,9 @@ def set_default(setting: dict) -> None:
         setting["exprorer_msmd"]["general"]["temperature"] = 300
     if "pressure" not in setting["exprorer_msmd"]["general"]:
         setting["exprorer_msmd"]["general"]["pressure"] = 1.0
+    if "num_process_per_gpu" not in setting["general"]:
+        setting["general"]["num_process_per_gpu"] = 1
+
 
 
 def ensure_compatibility_v1_1(setting: dict):
