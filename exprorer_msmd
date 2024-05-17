@@ -188,7 +188,7 @@ if __name__ == "__main__":
     ncpus = len(os.sched_getaffinity(0))
     ncpus = 1 if ncpus is None else ncpus
 
-    ratio_available_gpus = len(get_gpuids(ignore_cuda_visible_devices=True)) / len(get_gpuids(ignore_cuda_visible_devices=False))
+    ratio_available_gpus = len(get_gpuids(ignore_cuda_visible_devices=False)) / len(get_gpuids(ignore_cuda_visible_devices=True))
     ncpus_per_run = int(ncpus * ratio_available_gpus / len(gpuids))
     if ncpus_per_run == 0:
         raise EnvironmentError("The number of CPU threads must be equal to "
