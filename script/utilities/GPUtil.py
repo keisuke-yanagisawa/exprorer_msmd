@@ -1,6 +1,7 @@
 import math
 import os
 import sys
+import subprocess
 
 import GPUtil
 
@@ -29,3 +30,15 @@ def get_gpuids(ignore_cuda_visible_devices=False):
         ngpus = 1
 
     return list(gpuids)
+
+def is_mps_control_running() -> bool:
+    # check if nvidia-cuda-mps-control process is running
+    try:
+        output = subprocess.check_output("ps x | grep nvidia-cuda-mps-control", shell=True, text=True)
+        lines = output.strip().split('\n')
+        if len(lines) >= 3:
+            return True
+        else:
+            return False
+    except subprocess.CalledProcessError:
+        return False
