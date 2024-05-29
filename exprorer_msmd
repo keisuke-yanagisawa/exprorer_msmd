@@ -9,18 +9,18 @@ import pathlib
 from joblib import Parallel, delayed
 
 from script.utilities import util
-from script.utilities.GPUtil import get_gpuids
-from script.utilities.GPUtil import is_mps_control_running
+from script.utilities.GPUtil import get_gpuids, is_mps_control_running
 from script.genpmap import gen_pmap
 from script.utilities.pmd import convert as pmd_convert
+from script.utilities.const import IONS
 from script.generate_msmd_system import generate_msmd_system
 from script.addvirtatom2top import addvirtatom2top
 from script.addvirtatom2gro import addvirtatom2gro
-from script.add_posredefine2top import add_posredefine2top
+from script.add_posredefine2top import embed_posre
 from script.mdrun import prepare_sequence, prepare_md_files
-
+import parmed as pmd
+import numpy as np
 VERSION = "0.2.0"
-
 
 def preprocess(index, setting, debug=False):
     prepdirpath = f'{setting["general"]["workdir"]}/system{index}/prep'
@@ -43,20 +43,18 @@ def preprocess(index, setting, debug=False):
     _, tmptop = tempfile.mkstemp(suffix=".top")
     _, tmpgro = tempfile.mkstemp(suffix=".gro")
     parm7, rst7 = generate_msmd_system(setting, debug=debug, seed=index)
-    pmd_convert(parm7, tmptop, inxyz=rst7, outxyz=tmpgro)
+    system_obj = pmd.load_file(parm7, rst7)
+    atom_ids_protein_nonH = np.where(system_obj._get_selection_array(f"!@H* & !:WAT,{PROBE_ID},{','.join(IONS)}"))[0]+1
 
     # add virtual atoms for pseudo repulsion between probes
+    pmd_convert(parm7, tmptop, inxyz=rst7, outxyz=tmpgro)
     top_string = open(tmptop).read()
     top_string = addvirtatom2top(top_string, PROBE_ID)
     gro_string = open(tmpgro).read()
     gro_string = addvirtatom2gro(gro_string, PROBE_ID)
 
     # define position restraints of heavy atoms
-    top_string = add_posredefine2top(
-        top_string,
-        gro_string,
-        PROBE_ID
-    )
+    top_string = embed_posre(top_string, atom_ids_protein_nonH, prefix="POSRES", strength=[1000,500,200,100,50,20,10,0])
 
     open(top, "w").write(top_string)
     open(gro, "w").write(gro_string)
