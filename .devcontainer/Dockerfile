@@ -1,6 +1,4 @@
-FROM kyanagis/exprorer_msmd:2024.02.12
-
-RUN mamba install -y pytest
+FROM kyanagis/exprorer_msmd:2023.09.19
 
 # ====== settings for git / ssh =======
 RUN echo "mkdir -p /root/.ssh" >> /etc/bash.bashrc
