@@ -34,7 +34,7 @@ def get_gpuids(ignore_cuda_visible_devices=False):
 def is_mps_control_running() -> bool:
     # check if nvidia-cuda-mps-control process is running
     try:
-        output = subprocess.check_output("ps aux", shell=True, text=True)
+        output = subprocess.check_output("ps aux | grep nvidia-cuda-mps-control", shell=True, text=True)
         lines = output.strip().split('\n')
         filtered_lines = [line for line in lines if 'grep' not in line]
         if len(filtered_lines) > 0:
