@@ -2,17 +2,19 @@ import os
 from typing import List
 import jinja2
 from scipy import constants
+import numpy.typing as npt
 
 VERSION = "2.0.0"
 
 
-def position_restraint(atom_id_list: List[int], weight) -> str:
+def position_restraint(atom_id_list: npt.ArrayLike, prefix: str, weight) -> str:
     """
     generate a string defining position restraint records
     """
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
     template = env.get_template("./template/position_restraints")
     return template.render({
+        "define_name": f"{prefix}{weight}",
         "weight": weight,
         "weight_in_calorie": weight * constants.calorie,
         "atom_id_list": atom_id_list
@@ -38,7 +40,9 @@ def gen_atom_id_list(gro_string: str,
 
 
 def embed_posre(top_string: str,
-                atom_id_list: List[int]) -> str:
+                atom_id_list: npt.ArrayLike,
+                prefix: str,
+                strength: list[int]) -> str:
     """
     embed position restraint records into a given topology string
     """
@@ -50,14 +54,8 @@ def embed_posre(top_string: str,
             curr_section = line[line.find("[") + 1:line.find("]")].strip()
             if curr_section == "moleculetype":
                 if mol_count == 1:
-                    ret.append(position_restraint(atom_id_list, 1000))
-                    ret.append(position_restraint(atom_id_list, 500))
-                    ret.append(position_restraint(atom_id_list, 200))
-                    ret.append(position_restraint(atom_id_list, 100))
-                    ret.append(position_restraint(atom_id_list, 50))
-                    ret.append(position_restraint(atom_id_list, 20))
-                    ret.append(position_restraint(atom_id_list, 10))
-                    ret.append(position_restraint(atom_id_list, 0))
+                    for s in strength:
+                        ret.append(position_restraint(atom_id_list, prefix, s))
                 mol_count += 1
 
         ret.append(line)
@@ -67,14 +65,6 @@ def embed_posre(top_string: str,
 
 
 def add_posredefine2top(top_string: str,
-                        gro_string: str,
-                        cid: str) -> str:
-    """
-    add position restraint records to a given topology string
-    """
+                        atom_id_list: list[int]) -> str:
 
-    atom_id_list = gen_atom_id_list(
-        gro_string,
-        ["WAT", "Na+", "Cl-", "CA", "MG", "ZN", "CU", cid]
-    )
     return embed_posre(top_string, atom_id_list)
