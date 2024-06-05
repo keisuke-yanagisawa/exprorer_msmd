@@ -103,6 +103,7 @@ def gen_pmap(dirpath: str,
              setting_pmap: dict,
              traj: str,
              top: str,
+             resnum: str,
              debug=False):
 
     traj_start, traj_stop, traj_offset \
@@ -124,6 +125,7 @@ def gen_pmap(dirpath: str,
     cpptraj_obj = Cpptraj(debug=debug)
     cpptraj_obj.set(topology, trajectory, ref_struct, probe_id)
     cpptraj_obj.run(
+        resnum=resnum,
         basedir=dirpath,
         prefix=name,
         box_size=box_size,
