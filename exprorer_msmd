@@ -45,7 +45,7 @@ def preprocess(index, setting, debug=False):
     parm7, rst7 = generate_msmd_system(setting, debug=debug, seed=index)
     system_obj = pmd.load_file(parm7, rst7)
     atom_ids_protein_nonH = np.where(system_obj._get_selection_array(f"!@H* & !:WAT,{PROBE_ID},{','.join(IONS)}"))[0]+1
-    atom_ids_protein_CA = np.where(system_obj._get_selection_array(f"@CA* & !:WAT,{PROBE_ID},{','.join(IONS)}"))[0] + 1
+    
 
     # add virtual atoms for pseudo repulsion between probes
     pmd_convert(parm7, tmptop, inxyz=rst7, outxyz=tmpgro)
@@ -56,8 +56,7 @@ def preprocess(index, setting, debug=False):
 
     # define position restraints of heavy atoms
     top_string = embed_posre(top_string, atom_ids_protein_nonH, prefix="POSRES", strength=[1000,500,200,100,50,20,10,0])
-    # define position restraints of CA
-    top_string = embed_posre(top_string, atom_ids_protein_CA, prefix="CAPOSRES", strength=[1000,500,200,100,50,20,10,0])
+   
 
     open(top, "w").write(top_string)
     open(gro, "w").write(gro_string)
