@@ -26,7 +26,7 @@ class Cpptraj(object):
 
         return self
 
-    def run(self, basedir, prefix, box_center=[0., 0., 0.], box_size=80, interval=1,
+    def run(self, resnum, basedir, prefix, box_center=[0., 0., 0.], box_size=80, interval=1,
             traj_start: Union[str, int] = 1,
             traj_stop: Union[str, int] = "last",
             traj_offset: Union[str, int] = 1,
@@ -44,6 +44,7 @@ class Cpptraj(object):
 
         _, self.inp = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_INP)
         rmsdfile = "rmsd.dat"
+        res_rmsdfile = "res_rmsd.dat"
         _, tmp_volumefile = tempfile.mkstemp(suffix=".dat")
 
         data = {
@@ -57,7 +58,9 @@ class Cpptraj(object):
             "prefix": self.prefix,
             "maps": maps,
             "rmsdfile": rmsdfile,
+            "res_rmsdfile": res_rmsdfile,
             "tmp_volumefile": tmp_volumefile,
+            "resnum": resnum,
         }
 
         env = jinja2.Environment(loader=jinja2.FileSystemLoader(f"{os.path.dirname(__file__)}/template"))

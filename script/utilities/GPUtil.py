@@ -34,11 +34,10 @@ def get_gpuids(ignore_cuda_visible_devices=False):
 def is_mps_control_running() -> bool:
     # check if nvidia-cuda-mps-control process is running
     try:
-        output = subprocess.check_output("ps x | grep nvidia-cuda-mps-control", shell=True, text=True)
-        lines = output.strip().split('\n')
-        if len(lines) >= 3:
-            return True
-        else:
+        output = subprocess.check_output("echo get_default_active_thread_percentage | nvidia-cuda-mps-control", shell=True, text=True)
+        if "Cannot find MPS control daemon process" in output:
             return False
+        else:
+            return True
     except subprocess.CalledProcessError:
         return False

@@ -11,6 +11,7 @@ fiximagedbonds
 autoimage
 
 rms ToREF ref [REF] @CA&(!:CA)&(!:{{ cid }}) @CA&(!:CA)&(!:{{ cid }}) out {{ basedir }}/{{ rmsdfile }}
+rms ToREF1 ref [REF] :{{ resnum }}&@CA&(!:CA)&(!:{{ cid }}) :{{ resnum }}&@CA&(!:CA)&(!:{{ cid }}) out {{ basedir }}/{{ res_rmsdfile }}
 
 {% for MAP in maps %}
 grid {{ basedir }}/{{ prefix }}_{{ MAP.suffix }}.dx {{ map_voxel }} :{{ cid }}&{{ MAP.selector }}

@@ -1,9 +1,8 @@
 general:
-  iter_index: 0
+  iter_index: 0,1
   # iter_index: 1-2,4,5-9:2 # MSMD indices to be calculated / Notation 1-2 => 1,2  5-9:2 => 5,7,9
-  #num_process_per_gpu: 1
-  workdir: ../output/example_protocol # output directory / absolute path or relative path from THIS YAML FILE
-  name: TEST_PROJECT
+  workdir: ../debug # output directory / absolute path or relative path from THIS YAML FILE
+  name: DEBUG
   # loglevel: debug # not implemented
   executables:
     python  : python
@@ -14,7 +13,7 @@ general:
 
 input:
   protein:
-    pdb : 1agw_renum.pdb # relative path from THIS YAML FILE
+    pdb : 1F47B.pdb # relative path from THIS YAML FILE
     ssbond : # disulfide bonds of the protein structure
       # - [54, 192] # format: [resi_from, resi_to] 
       # - [231, 10]
@@ -23,12 +22,12 @@ input:
     ### assigned if they are not provided
     # mol2 : A11.mol2 # relative path from THIS YAML FILE
     # pdb  : A11.pdb  # relative path from THIS YAML FILE
-    cid  : A04
+    cid  : A11
     atomtype: gaff2
     molar: 0.25
 
 exprorer_msmd:
-  title    : Inverse MSMD protocol
+  title    : DEBUG protocol
   general  :
     # dt          : 0.002
     # temperature : 300
@@ -40,7 +39,7 @@ exprorer_msmd:
     - name   : min1
       title  : Energy minimization with position restraints
       type   : minimization
-      define : -DCAPOSRES1000
+      define : -DPOSRES1000
       nsteps : 200
       nstlog : 1 # steps
 
@@ -54,8 +53,8 @@ exprorer_msmd:
     - name          : heat
       title         : Heating system from 0 K to 300 K
       type          : heating
-      define        : -DCAPOSRES1000
-      nsteps        : 100000
+      define        : -DPOSRES1000
+      nsteps        : 10000
       nstxtcout     : 500 # steps
       nstlog        : 500 # steps
       nstenergy     : 500 # steps
@@ -67,8 +66,8 @@ exprorer_msmd:
     - name      : equil1
       title     : Equilibration stage 1 - 10 kcal/mol/A^2 constraints
       type      : equilibration
-      define    : -DCAPOSRES1000
-      nsteps    : 50000
+      define    : -DPOSRES1000
+      nsteps    : 5000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
       nstenergy : 500 # steps
@@ -80,7 +79,7 @@ exprorer_msmd:
       title     : Equilibration stage 2 - 5.0 kcal/mol/A^2 constraints
       type      : equilibration
       define    : -DPOSRES500
-      nsteps    : 50000
+      nsteps    : 5000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
       nstenergy : 500 # steps
@@ -91,8 +90,8 @@ exprorer_msmd:
     - name      : equil3
       title     : Equilibration stage 3 - 2.0 kcal/mol/A^2 constraints
       type      : equilibration
-      define    : -DCAPOSRES200
-      nsteps    : 50000
+      define    : -DPOSRES200
+      nsteps    : 5000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
       nstenergy : 500 # steps
@@ -103,8 +102,8 @@ exprorer_msmd:
     - name      : equil4
       title     : Equilibration stage 4 - 1.0 kcal/mol/A^2 constraints
       type      : equilibration
-      define    : -DCAPOSRES100
-      nsteps    : 50000
+      define    : -DPOSRES100
+      nsteps    : 5000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
       nstenergy : 500 # steps
@@ -115,8 +114,8 @@ exprorer_msmd:
     - name      : equil5
       title     : Equilibration stage 5 - 0.5 kcal/mol/A^2 constraints
       type      : equilibration
-      define    : -DCAPOSRES50
-      nsteps    : 50000
+      define    : -DPOSRES50
+      nsteps    : 5000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
       nstenergy : 500 # steps
@@ -127,8 +126,8 @@ exprorer_msmd:
     - name      : equil6
       title     : Equilibration stage 6 - 0.2 kcal/mol/A^2 constraints
       type      : equilibration
-      define    : -DCAPOSRES20
-      nsteps    : 50000
+      define    : -DPOSRES20
+      nsteps    : 5000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
       nstenergy : 500 # steps
@@ -140,7 +139,7 @@ exprorer_msmd:
       title     : Equilibration stage 7 - 0.1 kcal/mol/A^2 constraints
       type      : equilibration
       define    : -DPOSRES10
-      nsteps    : 50000
+      nsteps    : 5000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
       nstenergy : 500 # steps
@@ -152,7 +151,7 @@ exprorer_msmd:
       title     : Equilibration stage 8 - no constraints
       type      : equilibration
       define    : ""
-      nsteps    : 50000
+      nsteps    : 5000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
       nstenergy : 500 # steps
@@ -163,11 +162,11 @@ exprorer_msmd:
     - name      : pr
       title     : Production Run
       type      : production
-      define    : -DCAPOSRES10
-      nsteps    : 20000000
-      nstxtcout : 5000 # steps
-      nstenergy : 5000 # steps
-      nstlog    : 5000 # steps
+      define    : ""
+      nsteps    : 10000
+      nstxtcout : 100 # steps
+      nstenergy : 40 # steps
+      nstlog    : 100 # steps
       # ref_t     : 300
       pcoupl    : Parrinello-Rahman
       # ref_p     : 1.0
@@ -175,21 +174,22 @@ exprorer_msmd:
 map: # MAP generation
   type: pmap
   # valid_dist: 5            # PMAP valid distance from protein atoms
-  snapshot: 1-4001:1 #2001-4001:1 # steps / "NAME" trajectory will be used with "NAME|" 
+  snapshot: 1-101:1 # steps / "NAME" trajectory will be used with "NAME|" 
   maps:
     - suffix: nVH
       selector: (!@VIS)&(!@H*)
     - suffix: nV
       selector: (!@VIS)
   map_size: 80 # 80 A * 80 A * 80 A
-  normalization: snapshot # total or snapshot
+  normalization: total # total or snapshot
 
 probe_profile:
   resenv: # Extract residue environments around probe molecules
     map: nVH # map suffix
-    threshold: 0.001 # probability threshold of "preferred" residue environment
+    threshold: 0.2 # probability threshold of "preferred" residue environment
     # env_dist: 4    # residue environment distance from a probe molecule
-    # align: [" C1 ", " C2 ", " C3 ", " O1 "] # all heavy atoms are used if "align" is not defined
+    snapshots: 1-101:1 # reduce calculation cost (but less environments)
+    align: [" C1 ", " C2 ", " C3 ", " O1 "] # all heavy atoms are used if "align" is not defined
 
   profile:
     types:
@@ -231,3 +231,5 @@ probe_profile:
       - name: met
         atoms:
           - ["MET", " CB "]
+
+  

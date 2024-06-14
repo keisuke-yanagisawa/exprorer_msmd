@@ -1,46 +1,53 @@
-general:
-  iter_index: 0
-  # iter_index: 1-2,4,5-9:2 # MSMD indices to be calculated / Notation 1-2 => 1,2  5-9:2 => 5,7,9
-  #num_process_per_gpu: 1
-  workdir: ../output/example_protocol # output directory / absolute path or relative path from THIS YAML FILE
-  name: TEST_PROJECT
+general: # General settings
+  iter_index: 0,1 # indices of iterations to be executed
+  # Notation "1-2" => 1,2  "5-9:2" => 5,7,9  "1-2,5-9:2" => 1,2,5,7,9
+
+  workdir: ../output/example_protocol # output directory 
+  # absolute path or relative path from THIS YAML FILE
+
+  name: TEST_PROJECT # name of the project
+  # it is used as a part of output file names
+
   # loglevel: debug # not implemented
-  executables:
+
+  executables: # executable commands to be used
     python  : python
     gromacs : gmx
     packmol : packmol
     tleap   : tleap
     cpptraj : cpptraj
 
-input:
-  protein:
-    pdb : 1agw_renum.pdb # relative path from THIS YAML FILE
+input: # Input files
+  protein: # Protein structure
+    pdb : 1F47B.pdb # relative path from THIS YAML FILE
     ssbond : # disulfide bonds of the protein structure
       # - [54, 192] # format: [resi_from, resi_to] 
       # - [231, 10]
-  probe: 
+
+  probe: # Probe molecules
+    cid  : A11 # residue name of the probe molecule
     ### [cid].mol2, [cid].pdb will be automatically 
     ### assigned if they are not provided
     # mol2 : A11.mol2 # relative path from THIS YAML FILE
     # pdb  : A11.pdb  # relative path from THIS YAML FILE
-    cid  : A04
-    atomtype: gaff2
-    molar: 0.25
+    atomtype: gaff2 # gaff or gaff2
+    molar: 0.25 # concentration of the probe molecule (mol/L)
 
-exprorer_msmd:
+exprorer_msmd: # MSMD simulation settings
   title    : Inverse MSMD protocol
-  general  :
-    # dt          : 0.002
-    # temperature : 300
-    # pressure    : 1.0
-    pbc         : xyz
+  general  : # General settings for MSMD simulation
+    # dt          : 0.002 # [ps]
+    # temperature : 300   # [K]
+    # pressure    : 1.0   # [bar]
+    pbc         : xyz   # periodic boundary condition
 
   sequence :
-    # names are used as file names and thus they must be identical
+    # names must be identical
+    # names are used as output file names 
     - name   : min1
       title  : Energy minimization with position restraints
       type   : minimization
-      define : -DCAPOSRES1000
+      define : -DPOSRES1000
       nsteps : 200
       nstlog : 1 # steps
 
@@ -54,7 +61,7 @@ exprorer_msmd:
     - name          : heat
       title         : Heating system from 0 K to 300 K
       type          : heating
-      define        : -DCAPOSRES1000
+      define        : -DPOSRES1000
       nsteps        : 100000
       nstxtcout     : 500 # steps
       nstlog        : 500 # steps
@@ -67,7 +74,7 @@ exprorer_msmd:
     - name      : equil1
       title     : Equilibration stage 1 - 10 kcal/mol/A^2 constraints
       type      : equilibration
-      define    : -DCAPOSRES1000
+      define    : -DPOSRES1000
       nsteps    : 50000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
@@ -91,7 +98,7 @@ exprorer_msmd:
     - name      : equil3
       title     : Equilibration stage 3 - 2.0 kcal/mol/A^2 constraints
       type      : equilibration
-      define    : -DCAPOSRES200
+      define    : -DPOSRES200
       nsteps    : 50000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
@@ -103,7 +110,7 @@ exprorer_msmd:
     - name      : equil4
       title     : Equilibration stage 4 - 1.0 kcal/mol/A^2 constraints
       type      : equilibration
-      define    : -DCAPOSRES100
+      define    : -DPOSRES100
       nsteps    : 50000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
@@ -115,7 +122,7 @@ exprorer_msmd:
     - name      : equil5
       title     : Equilibration stage 5 - 0.5 kcal/mol/A^2 constraints
       type      : equilibration
-      define    : -DCAPOSRES50
+      define    : -DPOSRES50
       nsteps    : 50000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
@@ -127,7 +134,7 @@ exprorer_msmd:
     - name      : equil6
       title     : Equilibration stage 6 - 0.2 kcal/mol/A^2 constraints
       type      : equilibration
-      define    : -DCAPOSRES20
+      define    : -DPOSRES20
       nsteps    : 50000
       nstxtcout : 500 # steps
       nstlog    : 500 # steps
@@ -163,7 +170,7 @@ exprorer_msmd:
     - name      : pr
       title     : Production Run
       type      : production
-      define    : -DCAPOSRES10
+      define    : ""
       nsteps    : 20000000
       nstxtcout : 5000 # steps
       nstenergy : 5000 # steps
@@ -172,29 +179,29 @@ exprorer_msmd:
       pcoupl    : Parrinello-Rahman
       # ref_p     : 1.0
 
-map: # MAP generation
+map: # settings to create a spatial probability distribution map (PMAP)
   type: pmap
   # valid_dist: 5            # PMAP valid distance from protein atoms
-  snapshot: 1-4001:1 #2001-4001:1 # steps / "NAME" trajectory will be used with "NAME|" 
-  maps:
-    - suffix: nVH
-      selector: (!@VIS)&(!@H*)
+  snapshot: 2001-4001:1 # steps / "NAME" trajectory will be used with "NAME|" 
+  maps: # list of maps to be created
+    - suffix: nVH # suffix of the map file name
+      selector: (!@VIS)&(!@H*) # atoms to be used to create the PMAP
     - suffix: nV
       selector: (!@VIS)
   map_size: 80 # 80 A * 80 A * 80 A
-  normalization: snapshot # total or snapshot
+  normalization: total # total or snapshot
 
-probe_profile:
+probe_profile: # settings to create a residue interaction profile (inverse MSMD)
   resenv: # Extract residue environments around probe molecules
     map: nVH # map suffix
     threshold: 0.001 # probability threshold of "preferred" residue environment
     # env_dist: 4    # residue environment distance from a probe molecule
     # align: [" C1 ", " C2 ", " C3 ", " O1 "] # all heavy atoms are used if "align" is not defined
 
-  profile:
+  profile: # list of residue interaction profiles to be created
     types:
-      - name: anion
-        atoms:
+      - name: anion # name of the profile
+        atoms: # atoms to be used to create the profile
           - ["ASP", " CB "]
           - ["GLU", " CB "]
       - name: cation
