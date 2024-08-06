@@ -116,6 +116,7 @@ def gen_pmap(dirpath: str,
     probe_id = setting_input["probe"]["cid"]
     maps = setting_pmap["maps"]
     box_size = setting_pmap["map_size"]
+    rmsd_mask = setting_pmap["rmsd_mask"]
     box_center = uPDB.get_attr(
         uPDB.get_structure(setting_input["protein"]["pdb"]),
         "coord"
@@ -124,6 +125,7 @@ def gen_pmap(dirpath: str,
     cpptraj_obj = Cpptraj(debug=debug)
     cpptraj_obj.set(topology, trajectory, ref_struct, probe_id)
     cpptraj_obj.run(
+        rmsd_mask=rmsd_mask,
         basedir=dirpath,
         prefix=name,
         box_size=box_size,
