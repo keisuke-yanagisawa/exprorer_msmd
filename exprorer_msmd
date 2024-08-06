@@ -127,7 +127,6 @@ def execute_single_simulation(index, setting, gpuid, ncpus, top, gro, pdb, debug
 
 def postprocess(index, setting, top, traj, debug=False):
     sysdirpath = f'{setting["general"]["workdir"]}/system{index}'
-    resnum = setting["general"]["resnum"]
     # generate pmap files
     gen_pmap(sysdirpath,
              setting["general"],
@@ -135,8 +134,7 @@ def postprocess(index, setting, top, traj, debug=False):
              setting["map"],
              traj=traj,
              top=top,
-             debug=debug,
-             resnum=resnum)
+             debug=debug)
 
 
 if __name__ == "__main__":

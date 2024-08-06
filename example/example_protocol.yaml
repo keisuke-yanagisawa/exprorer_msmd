@@ -16,6 +16,7 @@ general: # General settings
     packmol : packmol
     tleap   : tleap
     cpptraj : cpptraj
+  num_process_per_gpu: 1
 
 input: # Input files
   protein: # Protein structure
@@ -183,6 +184,7 @@ map: # settings to create a spatial probability distribution map (PMAP)
   type: pmap
   # valid_dist: 5            # PMAP valid distance from protein atoms
   snapshot: 2001-4001:1 # steps / "NAME" trajectory will be used with "NAME|" 
+  rmsd_mask: "@CA&(!:CA)" # Superimpose protein structures with this mask. Default is all C-alpha atoms.
   maps: # list of maps to be created
     - suffix: nVH # suffix of the map file name
       selector: (!@VIS)&(!@H*) # atoms to be used to create the PMAP

@@ -72,6 +72,8 @@ def set_default(setting: dict) -> None:
     """
     if "multiprocessing" not in setting["general"]:
         setting["general"]["multiprocessing"] = -1
+    if "rmsd_mask" not in setting["map"]:
+        setting["map"]["rmsd_mask"] = "@CA&(!:CA)"
     if "valid_dist" not in setting["map"]:
         setting["map"]["valid_dist"] = 5
     if "threshold" not in setting["probe_profile"]:

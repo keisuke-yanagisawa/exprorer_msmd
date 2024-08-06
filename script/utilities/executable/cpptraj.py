@@ -26,10 +26,16 @@ class Cpptraj(object):
 
         return self
 
-    def run(self, resnum, basedir, prefix, box_center=[0., 0., 0.], box_size=80, interval=1,
+    def run(self,
+            basedir,
+            prefix,
+            box_center=[0., 0., 0.], 
+            box_size: int = 80,
+            interval: float = 1,
             traj_start: Union[str, int] = 1,
             traj_stop: Union[str, int] = "last",
             traj_offset: Union[str, int] = 1,
+            rmsd_mask: str = "@CA&(!:CA)",
             maps: list = [{"suffix": "nVH", "selector": "(!@VIS)&(!@H*)"}]):
         # TODO: input "maps" variable should be a read-only list (shared between threads)
         maps = copy.deepcopy(maps)
@@ -44,7 +50,6 @@ class Cpptraj(object):
 
         _, self.inp = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_INP)
         rmsdfile = "rmsd.dat"
-        res_rmsdfile = "res_rmsd.dat"
         _, tmp_volumefile = tempfile.mkstemp(suffix=".dat")
 
         data = {
@@ -58,9 +63,8 @@ class Cpptraj(object):
             "prefix": self.prefix,
             "maps": maps,
             "rmsdfile": rmsdfile,
-            "res_rmsdfile": res_rmsdfile,
             "tmp_volumefile": tmp_volumefile,
-            "resnum": resnum,
+            "rmsd_mask": rmsd_mask,
         }
 
         env = jinja2.Environment(loader=jinja2.FileSystemLoader(f"{os.path.dirname(__file__)}/template"))

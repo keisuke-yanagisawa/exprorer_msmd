@@ -10,6 +10,7 @@ general:
     packmol : packmol
     tleap   : tleap
     cpptraj : cpptraj
+  num_process_per_gpu: 1
 
 input:
   protein:
@@ -175,6 +176,7 @@ map: # MAP generation
   type: pmap
   # valid_dist: 5            # PMAP valid distance from protein atoms
   snapshot: 2001-4001:1 # steps / "NAME" trajectory will be used with "NAME|" 
+  rmsd_mask: "@CA&(!:CA)" # Superimpose protein structures with this mask. Default is all C-alpha atoms.
   maps:
     - suffix: nVH
       selector: (!@VIS)&(!@H*)
