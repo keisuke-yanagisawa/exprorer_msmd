@@ -1,6 +1,7 @@
 import os
 import random
 import string
+from pathlib import Path
 from typing import Union
 
 import yaml
@@ -108,16 +109,16 @@ def ensure_compatibility_v1_1(setting: dict):
         setting["map"]["normalization"] = "total"
 
 
-def parse_yaml(yamlpath: str) -> dict:
-    YAML_PATH = getabsolutepath(yamlpath)
-    YAML_DIR_PATH = os.path.dirname(YAML_PATH)
-    if not os.path.exists(YAML_PATH):
+def parse_yaml(yamlpath: Path) -> dict:
+    YAML_PATH = Path(getabsolutepath(str(yamlpath)))
+    YAML_DIR_PATH = YAML_PATH.parent
+    if not YAML_PATH.exists():
         raise FileNotFoundError("YAML file not found: %s" % YAML_PATH)
-    if os.path.isdir(YAML_PATH):
+    if YAML_PATH.is_dir():
         raise IsADirectoryError("Given YAML file path %s is a directory" % YAML_PATH)
     if not os.path.splitext(YAML_PATH)[1][1:] == "yaml":
         raise ValueError("YAML file must have .yaml extension: %s" % YAML_PATH)
-    with open(YAML_PATH) as fin:
+    with YAML_PATH.open() as fin:
         setting: dict = yaml.safe_load(fin)  # type: ignore
 
     ensure_compatibility_v1_1(setting)
@@ -134,7 +135,7 @@ def parse_yaml(yamlpath: str) -> dict:
         if setting["general"]["workdir"].startswith("/")
         or setting["general"]["workdir"].startswith("$HOME")
         or setting["general"]["workdir"].startswith("~")
-        else YAML_DIR_PATH + "/" + setting["general"]["workdir"]
+        else YAML_DIR_PATH / setting["general"]["workdir"]
     )
 
     setting["input"]["protein"]["pdb"] = expandpath(setting["input"]["protein"]["pdb"])
@@ -143,7 +144,7 @@ def parse_yaml(yamlpath: str) -> dict:
         if setting["input"]["protein"]["pdb"].startswith("/")
         or setting["input"]["protein"]["pdb"].startswith("$HOME")
         or setting["input"]["protein"]["pdb"].startswith("~")
-        else YAML_DIR_PATH + "/" + setting["input"]["protein"]["pdb"]
+        else YAML_DIR_PATH / setting["input"]["protein"]["pdb"]
     )
 
     setting["input"]["probe"]["pdb"] = expandpath(setting["input"]["probe"]["pdb"])
@@ -152,7 +153,7 @@ def parse_yaml(yamlpath: str) -> dict:
         if setting["input"]["probe"]["pdb"].startswith("/")
         or setting["input"]["probe"]["pdb"].startswith("$HOME")
         or setting["input"]["probe"]["pdb"].startswith("~")
-        else YAML_DIR_PATH + "/" + setting["input"]["probe"]["pdb"]
+        else YAML_DIR_PATH / setting["input"]["probe"]["pdb"]
     )
 
     setting["input"]["probe"]["mol2"] = expandpath(setting["input"]["probe"]["mol2"])
@@ -161,7 +162,7 @@ def parse_yaml(yamlpath: str) -> dict:
         if setting["input"]["probe"]["mol2"].startswith("/")
         or setting["input"]["probe"]["mol2"].startswith("$HOME")
         or setting["input"]["probe"]["mol2"].startswith("~")
-        else YAML_DIR_PATH + "/" + setting["input"]["probe"]["mol2"]
+        else YAML_DIR_PATH / setting["input"]["probe"]["mol2"]
     )
 
     if setting["input"]["protein"]["ssbond"] is None:

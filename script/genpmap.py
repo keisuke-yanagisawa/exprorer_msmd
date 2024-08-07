@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os
+from pathlib import Path
 from typing import Optional
 
 import gridData
@@ -15,7 +16,7 @@ from script.utilities.executable import Cpptraj
 VERSION = "1.0.0"
 
 
-def mask_generator(ref_struct: str, reference_grid: gridData.Grid, distance: Optional[float] = None) -> gridData.Grid:
+def mask_generator(ref_struct: Path, reference_grid: gridData.Grid, distance: Optional[float] = None) -> gridData.Grid:
     """
     input
         ref_struct: path to reference structure
@@ -67,7 +68,7 @@ def convert_to_gfe(grid_path: str, mean_proba: float, temperature: float = 300) 
 
 
 def convert_to_pmap(
-    grid_path: str, ref_struct: str, valid_distance: float, normalize: str = "snapshot", frames: int = 1
+    grid_path: Path, ref_struct: Path, valid_distance: float, normalize: str = "snapshot", frames: int = 1
 ):
     grid = gridData.Grid(grid_path)
     mask = mask_generator(ref_struct, grid, valid_distance)
@@ -87,22 +88,23 @@ def parse_snapshot_setting(string: str):
 
 
 def gen_pmap(
-    dirpath: str, setting_general: dict, setting_input: dict, setting_pmap: dict, traj: str, top: str, debug=False
+    dirpath: Path, setting_general: dict, setting_input: dict, setting_pmap: dict, traj: Path, top: Path, debug=False
 ):
 
     traj_start, traj_stop, traj_offset = parse_snapshot_setting(setting_pmap["snapshot"])
 
-    name = setting_general["name"]
+    name: str = setting_general["name"]
 
-    trajectory = util.getabsolutepath(traj)
-    topology = util.getabsolutepath(top)
-    ref_struct = setting_input["protein"]["pdb"]
-    probe_id = setting_input["probe"]["cid"]
-    maps = setting_pmap["maps"]
-    box_size = setting_pmap["map_size"]
-    box_center = uPDB.get_attr(uPDB.get_structure(setting_input["protein"]["pdb"]), "coord").mean(
-        axis=0
-    )  # structure.center_of_mass() may return "[ nan nan nan ]" due to unspecified atomic weight
+    trajectory = Path(util.getabsolutepath(str(traj)))
+    topology = Path(util.getabsolutepath(str(top)))
+    ref_struct = Path(setting_input["protein"]["pdb"])
+    probe_id: str = setting_input["probe"]["cid"]
+    maps: list = setting_pmap["maps"]
+    box_size: int = setting_pmap["map_size"]
+    box_center: npt.NDArray[np.float_] = uPDB.get_attr(
+        uPDB.get_structure(setting_input["protein"]["pdb"]), "coord"
+    ).mean(axis=0)
+    # structure.center_of_mass() may return "[ nan nan nan ]" due to unspecified atomic weight
 
     cpptraj_obj = Cpptraj(debug=debug)
     cpptraj_obj.set(topology, trajectory, ref_struct, probe_id)

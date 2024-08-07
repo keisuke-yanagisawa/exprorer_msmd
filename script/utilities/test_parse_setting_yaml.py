@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest import TestCase
 
 from script.utilities.util import expand_index, parse_yaml
@@ -7,7 +8,7 @@ class TestParseNormalSettingYaml(TestCase):
 
     def __init__(self, *args, **kwargs):
         super(TestParseNormalSettingYaml, self).__init__(*args, **kwargs)
-        self.yaml_path = "script/utilities/test_data/normal_setting.yaml"
+        self.yaml_path = Path("script/utilities/test_data/normal_setting.yaml")
 
     def test_parse_yaml(self):
         """check normal yaml file can be parsed"""
@@ -37,15 +38,15 @@ class TestParseSettingYamlErrorCases(TestCase):
 
     def test_yaml_file_does_not_exist(self):
         with self.assertRaises(FileNotFoundError):
-            parse_yaml("script/utilities/test_data/does_not_exist.yaml")
+            parse_yaml(Path("script/utilities/test_data/does_not_exist.yaml"))
 
     def test_yaml_file_is_directory(self):
         with self.assertRaises(IsADirectoryError):
-            parse_yaml("script/utilities/test_data")
+            parse_yaml(Path("script/utilities/test_data"))
 
     def test_yaml_file_is_not_yaml(self):
         with self.assertRaises(ValueError):
-            parse_yaml("script/utilities/test_data/normal_setting.json")
+            parse_yaml(Path("script/utilities/test_data/normal_setting.json"))
 
 
 class TestExpandIndex(TestCase):

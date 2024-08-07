@@ -1,4 +1,5 @@
 import tempfile
+from pathlib import Path
 from typing import List
 
 from Bio.PDB.Atom import Atom
@@ -54,8 +55,8 @@ def align_res_env(
     # print(ref_probe_c_coords)
 
     sup = SuperImposer()
-    _, tmppdb = tempfile.mkstemp(suffix=".pdb")
-    with uPDB.PDBIOhelper(tmppdb) as pdbio:
+    tmppdb = Path(tempfile.mkstemp(suffix=".pdb")[1])
+    with uPDB.PDBIOhelper(str(tmppdb)) as pdbio:
         for model in tqdm(struct, desc="[align res. env.]", disable=not verbose):
 
             # print(struct, i)

@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest import TestCase
 
 import gridData
@@ -10,7 +11,7 @@ class TestGenDistanceGrid(TestCase):
         super(TestGenDistanceGrid, self).__init__(*args, **kwargs)
         self.grid = gridData.Grid()
         self.grid.load("script/test_data/small_grid.dx")
-        self.input_pdb = "script/test_data/tripeptide.pdb"
+        self.input_pdb = Path("script/test_data/tripeptide.pdb")
 
     def test_gen_distance_grid(self):
         g = gen_distance_grid(self.grid, self.input_pdb)

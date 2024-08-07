@@ -4,6 +4,7 @@ import argparse
 import os
 import pathlib
 import tempfile
+from pathlib import Path
 
 import numpy as np
 import parmed as pmd
@@ -24,44 +25,44 @@ from script.utilities.pmd import convert as pmd_convert
 VERSION = "0.2.0"
 
 
-def preprocess(index, setting, debug=False):
-    prepdirpath = f'{setting["general"]["workdir"]}/system{index}/prep'
-    pathlib.Path(prepdirpath).mkdir(parents=True, exist_ok=True)
+def preprocess(index, setting, debug=False) -> tuple[Path, Path, Path]:
+    prepdirpath: Path = Path(f'{setting["general"]["workdir"]}/system{index}/prep')
+    prepdirpath.mkdir(parents=True, exist_ok=True)
 
     PROBE_ID = setting["input"]["probe"]["cid"]
     JOB_NAME = setting["general"]["name"]
-    top = f"{prepdirpath}/{JOB_NAME}.top"
-    gro = f"{prepdirpath}/{JOB_NAME}.gro"
-    pdb = f"{prepdirpath}/{JOB_NAME}.pdb"
+    top: Path = prepdirpath / f"{JOB_NAME}.top"
+    gro: Path = prepdirpath / f"{JOB_NAME}.gro"
+    pdb: Path = prepdirpath / f"{JOB_NAME}.pdb"
 
-    if os.path.exists(top) and os.path.exists(gro) and os.path.exists(pdb):
+    if top.exists() and gro.exists() and pdb.exists():
         return top, gro, pdb
 
-    exe_gromacs = setting["general"]["executables"]["gromacs"]
+    exe_gromacs: Path = Path(setting["general"]["executables"]["gromacs"])
 
     # create a protein-water-probe system
-    _, tmptop = tempfile.mkstemp(suffix=".top")
-    _, tmpgro = tempfile.mkstemp(suffix=".gro")
+    tmptop: Path = Path(tempfile.mkstemp(suffix=".top")[1])
+    tmpgro: Path = Path(tempfile.mkstemp(suffix=".gro")[1])
     parm7, rst7 = generate_msmd_system(setting, debug=debug, seed=index)
-    system_obj = pmd.load_file(parm7, rst7)
+    system_obj = pmd.load_file(str(parm7), str(rst7))
     atom_ids_protein_nonH = (
         np.where(system_obj._get_selection_array(f"!@H* & !:WAT,{PROBE_ID},{','.join(IONS)}"))[0] + 1
     )
 
     # add virtual atoms for pseudo repulsion between probes
     pmd_convert(parm7, tmptop, inxyz=rst7, outxyz=tmpgro)
-    top_string = open(tmptop).read()
-    top_string = addvirtatom2top(top_string, PROBE_ID)
-    gro_string = open(tmpgro).read()
-    gro_string = addvirtatom2gro(gro_string, PROBE_ID)
+    top_string: str = tmptop.open().read()
+    top_string: str = addvirtatom2top(top_string, PROBE_ID)
+    gro_string: str = tmpgro.open().read()
+    gro_string: str = addvirtatom2gro(gro_string, PROBE_ID)
 
     # define position restraints of heavy atoms
     top_string = embed_posre(
         top_string, atom_ids_protein_nonH, prefix="POSRES", strength=[1000, 500, 200, 100, 50, 20, 10, 0]
     )
 
-    open(top, "w").write(top_string)
-    open(gro, "w").write(gro_string)
+    top.write_text(top_string)
+    gro.write_text(gro_string)
 
     # create a pdb file with virtual atoms
     os.system(
@@ -134,8 +135,9 @@ def execute_single_simulation(index, setting, gpuid, ncpus, top, gro, pdb, debug
     return f"{simdirpath}/{JOB_NAME}.xtc"
 
 
-def postprocess(index, setting, top, traj, debug=False):
-    sysdirpath = f'{setting["general"]["workdir"]}/system{index}'
+def postprocess(index: int, setting, top: Path, traj: Path, debug: bool = False):
+    workdir = Path(setting["general"]["workdir"])
+    sysdirpath = workdir / f"system{index}"
 
     # generate pmap files
     gen_pmap(sysdirpath, setting["general"], setting["input"], setting["map"], traj=traj, top=top, debug=debug)
@@ -166,7 +168,7 @@ if __name__ == "__main__":
     indices = set(util.expand_index(setting["general"]["iter_index"]))
 
     jobname = setting["general"]["name"]
-    workdir = setting["general"]["workdir"]
+    workdir = Path(setting["general"]["workdir"])
     logger.info(f"job name: {jobname}")
     logger.info(f"workdir: {workdir}")
 
@@ -203,30 +205,28 @@ if __name__ == "__main__":
     # prepare systems
     # n_jobs = num of CPU cores, not num of GPUs
     if not args.skip_preprocess:
-        files = Parallel(n_jobs=ncpus, backend="threading")(
+        files: list[tuple[Path, Path, Path]] = Parallel(n_jobs=ncpus, backend="threading")(
             delayed(preprocess)(idx, setting, debug=args.debug) for idx in indices
-        )
+        )  # type: ignore
         tops = [elem[0] for elem in files]
         gros = [elem[1] for elem in files]
         pdbs = [elem[2] for elem in files]
     else:
-        prepdirpath = "{workdir}/system{index}/prep"
-        tops = [prepdirpath.format(workdir=workdir, index=idx) + f"/{jobname}.top" for idx in indices]
-        gros = [prepdirpath.format(workdir=workdir, index=idx) + f"/{jobname}.gro" for idx in indices]
-        pdbs = [prepdirpath.format(workdir=workdir, index=idx) + f"/{jobname}.pdb" for idx in indices]
+        tops = [workdir / f"system{index}" / "prep" / f"{jobname}.top" for index in indices]
+        gros = [workdir / f"system{index}" / "prep" / f"{jobname}.gro" for index in indices]
+        pdbs = [workdir / f"system{index}" / "prep" / f"{jobname}.pdb" for index in indices]
 
     # execute MSMD simulations parallelly
     if not args.skip_simulation:
         gpuids = (gpuids * len(indices))[: len(indices)]
-        trajectories = Parallel(n_jobs=ngpus, backend="threading")(
+        trajectories: list[Path] = Parallel(n_jobs=ngpus, backend="threading")(
             delayed(execute_single_simulation)(
                 idx, setting, gpuid, ncpus_per_run, top=top, gro=gro, pdb=pdb, debug=args.debug
             )
             for idx, gpuid, top, gro, pdb in zip(indices, gpuids, tops, gros, pdbs)
-        )
+        )  # type: ignore
     else:
-        simdirpath = "{workdir}/system{index}/simulation"
-        trajectories = [simdirpath.format(workdir=workdir, index=idx) + f"/{jobname}.xtc" for idx in indices]
+        trajectories = [workdir / f"system{idx}" / "simulation" / f"{jobname}.xtc" for idx in indices]
 
     # postprocess (generate PMAPs)
     # n_jobs = num of CPU cores, not num of GPUs

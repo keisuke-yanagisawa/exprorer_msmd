@@ -2,8 +2,9 @@
 
 import os
 import tempfile
+from pathlib import Path
 from subprocess import getoutput as gop
-from typing import Tuple
+from typing import Literal, Tuple
 
 from script.utilities import const
 from script.utilities.executable import Packmol, Parmchk, TLeap
@@ -29,7 +30,7 @@ quit
 """
 
 
-def protein_pdb_preparation(pdbfile: str) -> str:
+def protein_pdb_preparation(pdbfile: Path) -> Path:
     """
     remove OXT and ANISOU from pdbfile to avoid tleap error
     -----
@@ -38,20 +39,20 @@ def protein_pdb_preparation(pdbfile: str) -> str:
     output
         tmp1: path to pdb file without OXT and ANISOU
     """
-    _, tmp1 = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)
+    tmp1 = Path(tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)[1])
     gop(f"grep -v OXT {pdbfile} | grep -v ANISOU > {tmp1}")
     return tmp1
 
 
-def __calculate_boxsize(pdbfile: str) -> float:
+def __calculate_boxsize(pdbfile: Path) -> float:
     tmpdir = tempfile.mkdtemp()
     tmp_prefix = f"{tmpdir}/{const.TMP_PREFIX}"
     with open(f"{tmp_prefix}.in", "w") as fout:
-        fout.write(tmp_leap.format(pdbfile=pdbfile, tmp_prefix=tmp_prefix))
+        fout.write(tmp_leap.format(pdbfile=str(pdbfile), tmp_prefix=tmp_prefix))
     logger.info(gop(f"tleap -f {tmp_prefix}.in | tee {tmp_prefix}.in.result"))
 
     try:
-        size = calculate_boxsize(f"{tmp_prefix}.rst7")
+        size = calculate_boxsize(Path(f"{tmp_prefix}.rst7"))
     except ValueError as e:
         logger.error("====tleap input commands====")
         logger.error(gop(f"cat {tmp_prefix}.in"))
@@ -62,7 +63,7 @@ def __calculate_boxsize(pdbfile: str) -> float:
     return size
 
 
-def calculate_boxsize(rst7: str) -> float:
+def calculate_boxsize(rst7: Path) -> float:
     """
     get longest box size from rst7 file
     """
@@ -73,7 +74,7 @@ def calculate_boxsize(rst7: str) -> float:
     return box_size
 
 
-def _create_frcmod(mol2file: str, atomtype: str, debug: bool = False) -> str:
+def _create_frcmod(mol2file: Path, atomtype: Literal["gaff", "gaff2"], debug: bool = False) -> Path:
     """
     create frcmod file from mol2 file
     -----
@@ -83,27 +84,27 @@ def _create_frcmod(mol2file: str, atomtype: str, debug: bool = False) -> str:
     output
         cfrcmod: path to frcmod file
     """
-    _, cfrcmod = tempfile.mkstemp(suffix=".frcmod")
+    cfrcmod = Path(tempfile.mkstemp(suffix=".frcmod")[1])
     Parmchk(debug=debug).set(mol2file, atomtype).run(frcmod=cfrcmod)
     return cfrcmod
 
 
 def create_system(
-    setting_protein: dict, setting_probe: dict, probe_frcmod: str, debug: bool = False, seed: int = -1
-) -> Tuple[str, str]:
+    setting_protein: dict, setting_probe: dict, probe_frcmod: Path, debug: bool = False, seed: int = -1
+) -> Tuple[Path, Path]:
     """
     create system from protein and probe
     """
-    pdbpath = protein_pdb_preparation(setting_protein["pdb"])
+    pdbpath = protein_pdb_preparation(Path(setting_protein["pdb"]))
     boxsize = __calculate_boxsize(pdbpath)
     ssbonds = setting_protein["ssbond"]
-    cmol = setting_probe["mol2"]
-    cpdb = setting_probe["pdb"]
+    cmol = Path(setting_probe["mol2"])
+    cpdb = Path(setting_probe["pdb"])
     cid = setting_probe["cid"]
     atomtype = setting_probe["atomtype"]
     probemolar = float(setting_probe["molar"])
 
-    _, box_pdb = tempfile.mkstemp(suffix=".pdb")
+    box_pdb = Path(tempfile.mkstemp(suffix=".pdb")[1])
     Packmol(debug=debug).set(pdbpath, cpdb, boxsize, probemolar).run(box_pdb, seed=seed)
 
     tleap_obj = TLeap(debug=debug).set(cid, cmol, probe_frcmod, box_pdb, boxsize, ssbonds, atomtype)
@@ -122,7 +123,7 @@ def create_system(
     return tleap_obj.parm7, tleap_obj.rst7
 
 
-def generate_msmd_system(setting: dict, debug: bool = False, seed: int = -1) -> Tuple[str, str]:
+def generate_msmd_system(setting: dict, debug: bool = False, seed: int = -1) -> tuple[Path, Path]:
     """
     generate msmd system
     -----
@@ -134,6 +135,8 @@ def generate_msmd_system(setting: dict, debug: bool = False, seed: int = -1) -> 
         parm7: path to parm7 file
         rst7: path to rst7 file
     """
-    cfrcmod = _create_frcmod(setting["input"]["probe"]["mol2"], setting["input"]["probe"]["atomtype"], debug=debug)
+    cfrcmod = _create_frcmod(
+        Path(setting["input"]["probe"]["mol2"]), setting["input"]["probe"]["atomtype"], debug=debug
+    )
     parm7, rst7 = create_system(setting["input"]["protein"], setting["input"]["probe"], cfrcmod, debug=debug, seed=seed)
     return parm7, rst7

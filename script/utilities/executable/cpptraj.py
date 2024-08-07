@@ -1,9 +1,12 @@
 import copy
 import os
 import tempfile
+from pathlib import Path
 from typing import Union
 
 import jinja2
+import numpy as np
+import numpy.typing as npt
 
 from .. import const
 from ..logger import logger
@@ -12,15 +15,15 @@ from .execute import Command
 
 
 class Cpptraj(object):
-    def __init__(self, debug=False):
-        self.exe = os.getenv("CPPTRAJ", "cpptraj")
+    def __init__(self, debug: bool = False):
+        self.exe: Path = Path(os.getenv("CPPTRAJ", "cpptraj"))
         self.debug = debug
 
-    def _gen_parm7(self):
-        _, self.parm7 = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PARM7)
+    def _gen_parm7(self) -> None:
+        self.parm7 = Path(tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PARM7)[1])
         self.parm7, _ = pmd_convert(self.topology, self.parm7)
 
-    def set(self, topology, trajectory, ref_struct, probe_id):
+    def set(self, topology: Path, trajectory: Path, ref_struct: Path, probe_id: str) -> "Cpptraj":
         self.topology = topology
         self.trajectory = trajectory
         self.ref_struct = ref_struct
@@ -30,11 +33,11 @@ class Cpptraj(object):
 
     def run(
         self,
-        basedir,
-        prefix,
-        box_center=[0.0, 0.0, 0.0],
-        box_size=80,
-        interval=1,
+        basedir: Path,
+        prefix: str,
+        box_center: npt.NDArray[np.float_] = np.array([0.0, 0.0, 0.0]),
+        box_size: int = 80,
+        interval: float = 1.0,
         traj_start: Union[str, int] = 1,
         traj_stop: Union[str, int] = "last",
         traj_offset: Union[str, int] = 1,
@@ -44,19 +47,19 @@ class Cpptraj(object):
         maps = copy.deepcopy(maps)
         self.basedir = basedir
         self.prefix = prefix
-        self.voxel = [box_size, interval] * 3  # x, y, z
-        self.frame_info = [traj_start, traj_stop, traj_offset]
+        self.voxel: list[Union[int, float]] = [box_size, interval] * 3  # x, y, z
+        self.frame_info: tuple[Union[str, int], Union[str, int], Union[str, int]] = (traj_start, traj_stop, traj_offset)
         for i in range(len(maps)):
-            _, maps[i]["atominfofile"] = tempfile.mkstemp(suffix=".dat")
+            maps[i]["atominfofile"] = Path(tempfile.mkstemp(suffix=".dat")[1])
 
         self._gen_parm7()
 
-        _, self.inp = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_INP)
-        rmsdfile = "rmsd.dat"
-        _, tmp_volumefile = tempfile.mkstemp(suffix=".dat")
+        self.inp = Path(tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_INP)[1])
+        rmsdfile = Path("rmsd.dat")
+        tmp_volumefile = Path(tempfile.mkstemp(suffix=".dat")[1])
 
         data = {
-            "basedir": self.basedir,
+            "basedir": str(self.basedir),
             "top": self.parm7,
             "traj": self.trajectory,
             "cid": self.probe_id,
@@ -67,8 +70,8 @@ class Cpptraj(object):
             + " ".join([str(x) for x in box_center]),
             "prefix": self.prefix,
             "maps": maps,
-            "rmsdfile": rmsdfile,
-            "tmp_volumefile": tmp_volumefile,
+            "rmsdfile": str(rmsdfile),
+            "tmp_volumefile": str(tmp_volumefile),
         }
 
         env = jinja2.Environment(loader=jinja2.FileSystemLoader(f"{os.path.dirname(__file__)}/template"))
@@ -80,12 +83,12 @@ class Cpptraj(object):
         logger.debug(command)
         try:
             logger.info(command.run())
-        except e:
+        except Exception as e:
             Command(f"cat {self.inp}")
             raise e
 
         for i in range(len(maps)):
-            maps[i]["grid"] = f"{self.basedir}/{self.prefix}_{maps[i]['suffix']}.dx"
+            maps[i]["grid"] = self.basedir / f"{self.prefix}_{maps[i]['suffix']}.dx"
 
         self.frames = len(open(f"{self.basedir}/{rmsdfile}").readlines()) - 1  # -1 for header line
         self.last_volume = float(open(tmp_volumefile).readlines()[-1].split()[1])

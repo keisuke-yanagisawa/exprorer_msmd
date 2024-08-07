@@ -1,8 +1,9 @@
 import numpy as np
+import numpy.typing as npt
 from scipy.spatial import KDTree
 
 
-def estimate_volume(points, radii, granularity=10):
+def estimate_volume(points: npt.NDArray[np.float_], radii: npt.NDArray[np.float_], granularity=10):
     """
     Calculate the volume of a set of spheres.
     Estimate by the number of occupied voxels.
@@ -44,5 +45,5 @@ def estimate_volume(points, radii, granularity=10):
     # count the number of occupied voxels
     occupied = np.zeros(len(grid_points), dtype=bool)
     for point, radius in zip(points, radii):
-        occupied[tree.query_ball_point(point, radius)] = True
+        occupied[tree.query_ball_point(point, radius, p=2)] = True
     return occupied.sum() * x_pitch * y_pitch * z_pitch

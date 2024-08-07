@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest import TestCase
 
 from script.utilities.Bio import PDB as uPDB
@@ -10,9 +11,9 @@ class TestCpptraj(TestCase):
     def __init__(self, *args, **kwargs):
         super(TestCpptraj, self).__init__(*args, **kwargs)
         self.cpptraj = Cpptraj()
-        self.trajectory_path = "script/utilities/executable/test_data/cpptraj/trajectory.xtc"
-        self.topology_path = "script/utilities/executable/test_data/cpptraj/topology.top"
-        self.ref_struct_path = "script/utilities/executable/test_data/cpptraj/inputprotein.pdb"
+        self.trajectory_path = Path("script/utilities/executable/test_data/cpptraj/trajectory.xtc")
+        self.topology_path = Path("script/utilities/executable/test_data/cpptraj/topology.top")
+        self.ref_struct_path = Path("script/utilities/executable/test_data/cpptraj/inputprotein.pdb")
         self.probe_id = "A11"
         self.maps = [{"suffix": "nVH", "selector": "(!@VIS)&(!@H*)"}]
         self.box_size = 80
@@ -25,7 +26,7 @@ class TestCpptraj(TestCase):
             cpptraj_obj = Cpptraj()
             cpptraj_obj.set(self.topology_path, self.trajectory_path, self.ref_struct_path, self.probe_id)
             cpptraj_obj.run(
-                basedir=tmpdir,
+                basedir=Path(tmpdir),
                 prefix="TEST",
                 box_size=self.box_size,
                 box_center=self.box_center,

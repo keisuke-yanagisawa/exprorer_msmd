@@ -1,4 +1,5 @@
 import warnings
+from pathlib import Path
 from unittest import TestCase
 
 from script.utilities.executable.packmol import Packmol
@@ -7,9 +8,10 @@ from script.utilities.executable.packmol import Packmol
 class TestPackmol(TestCase):
     def __init__(self, *args, **kwargs):
         super(TestPackmol, self).__init__(*args, **kwargs)
-        self.protein_pdb = "script/utilities/executable/test_data/tripeptide.pdb"
-        self.cosolv_pdb = "script/utilities/executable/test_data/A11.pdb"
-        self.cosolv_mol2 = "script/utilities/executable/test_data/A11.mol2"
+        __testdata_dir = Path("script/utilities/executable/test_data")
+        self.protein_pdb = __testdata_dir / "tripeptide.pdb"
+        self.cosolv_pdb = __testdata_dir / "A11.pdb"
+        self.cosolv_mol2 = __testdata_dir / "A11.mol2"
 
     def test_run_packmol(self):
         packmol = Packmol()
@@ -47,13 +49,13 @@ class TestPackmol(TestCase):
     def test_no_protein(self):
         with self.assertRaises(FileNotFoundError):
             packmol = Packmol()
-            packmol.set(protein_pdb="NOTHING.pdb", cosolv_pdb=self.cosolv_pdb, box_size=20, molar=0.1)
+            packmol.set(protein_pdb=Path("NOTHING.pdb"), cosolv_pdb=self.cosolv_pdb, box_size=20, molar=0.1)
             packmol.run(seed=1)
 
     def test_no_cosolvent(self):
         with self.assertRaises(FileNotFoundError):
             packmol = Packmol()
-            packmol.set(protein_pdb=self.protein_pdb, cosolv_pdb="NOTHING.pdb", box_size=20, molar=0.1)
+            packmol.set(protein_pdb=self.protein_pdb, cosolv_pdb=Path("NOTHING.pdb"), box_size=20, molar=0.1)
             packmol.run(seed=1)
 
     def test_cosolvent_is_not_pdb(self):

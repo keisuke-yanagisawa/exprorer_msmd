@@ -1,4 +1,5 @@
 import copy
+from pathlib import Path
 
 import numpy as np
 from Bio import PDB
@@ -7,7 +8,7 @@ from tqdm import tqdm
 from script.utilities.Bio import PDB as uPDB
 
 
-def gen_distance_grid(g_ref, pdbpath, verbose=True):
+def gen_distance_grid(g_ref, pdbpath: Path, verbose=True):
     grid_points = np.array([p for p in g_ref.centers()], dtype="int8")
     pdb = uPDB.get_structure(pdbpath)
     coords = []
