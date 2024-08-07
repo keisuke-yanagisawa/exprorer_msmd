@@ -1,3 +1,5 @@
+from pathlib import Path
+from typing import Literal
 from unittest import TestCase
 
 from script.generate_msmd_system import _create_frcmod, calculate_boxsize, generate_msmd_system
@@ -7,8 +9,9 @@ from script.utilities import util
 class TestBoxSizeCalculation(TestCase):
     def __init__(self, *args, **kwargs):
         super(TestBoxSizeCalculation, self).__init__(*args, **kwargs)
-        self.rstfile = "script/test_data/tripeptide.rst7"
-        self.pdbfile = "script/test_data/tripeptide.pdb"
+        __testdata_dir = Path("script/test_data")
+        self.rstfile = __testdata_dir / "tripeptide.rst7"
+        self.pdbfile = __testdata_dir / "tripeptide.pdb"
 
     def test_calculate_boxsize(self):
         box_size = calculate_boxsize(self.rstfile)
@@ -23,9 +26,10 @@ class TestBoxSizeCalculation(TestCase):
 class TestGenerateMsmdSystem(TestCase):
     def __init__(self, *args, **kwargs):
         super(TestGenerateMsmdSystem, self).__init__(*args, **kwargs)
-        self.setting_file = "script/test_data/setting.yaml"
-        self.expected_parm7_file = "script/test_data/tripeptide_A11.parm7"
-        self.expected_rst7_file = "script/test_data/tripeptide_A11.rst7"
+        __testdata_dir = Path("script/test_data")
+        self.setting_file = __testdata_dir / "setting.yaml"
+        self.expected_parm7_file = __testdata_dir / "tripeptide_A11.parm7"
+        self.expected_rst7_file = __testdata_dir / "tripeptide_A11.rst7"
 
     def test_generate_msmd_system(self):
         settings = util.parse_yaml(self.setting_file)
@@ -44,10 +48,11 @@ class TestGenerateMsmdSystem(TestCase):
 class TestCreateFrcmod(TestCase):
     def __init__(self, *args, **kwargs):
         super(TestCreateFrcmod, self).__init__(*args, **kwargs)
-        self.mol2file = "script/test_data/A11.mol2"
-        self.pdbfile = "script/test_data/A11.pdb"
-        self.expected_frcmod = "script/test_data/A11.frcmod"
-        self.atomtype = "gaff2"
+        __testdata_dir = Path("script/test_data")
+        self.mol2file = __testdata_dir / "A11.mol2"
+        self.pdbfile = __testdata_dir / "A11.pdb"
+        self.expected_frcmod = __testdata_dir / "A11.frcmod"
+        self.atomtype: Literal["gaff", "gaff2"] = "gaff2"
 
     def test_create_frcmod(self):
         frcmod_path = _create_frcmod(self.mol2file, self.atomtype)
@@ -58,11 +63,11 @@ class TestCreateFrcmod(TestCase):
 
     def test_invalid_atomtype(self):
         with self.assertRaises(ValueError):
-            _create_frcmod(self.mol2file, "INVALID")
+            _create_frcmod(self.mol2file, "INVALID")  # type: ignore
 
     def test_mol2file_does_not_exist(self):
         with self.assertRaises(FileNotFoundError):
-            _create_frcmod("INVALID", self.atomtype)
+            _create_frcmod("INVALID", self.atomtype)  # type: ignore
 
     def test_invalid_mol2file(self):
         with self.assertRaises(ValueError):

@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest import TestCase
 
 import gridData
@@ -10,9 +11,10 @@ from script.utilities import GridUtil
 class TestMaskGenerator(TestCase):
     def __init__(self, *args, **kwargs):
         super(TestMaskGenerator, self).__init__(*args, **kwargs)
+        __testdata_dir = Path("script/test_data")
         self.grid = gridData.Grid()
-        self.grid.load("script/test_data/small_grid.dx")
-        self.ref_struct = "script/test_data/tripeptide.pdb"
+        self.grid.load(f"{__testdata_dir}/small_grid.dx")
+        self.ref_struct = __testdata_dir / "tripeptide.pdb"
 
     def test_generate_mask_distance_none(self):
         mask = mask_generator(self.ref_struct, self.grid, distance=None)

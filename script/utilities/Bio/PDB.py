@@ -14,6 +14,7 @@ import os
 import tempfile
 import warnings
 from collections.abc import Iterable
+from pathlib import Path
 from typing import Any, Callable, List, Literal, Optional, Union
 
 import numpy as np
@@ -93,7 +94,7 @@ class MultiModelPDBReader(object):
             self.file.seek(self.model_positions[idx])
             f.write(self.file.read(n_bytes_to_be_read))
             f.flush()
-            return get_structure(f.name)
+            return get_structure(Path(f.name))
 
     def _next(self) -> Union[int, None]:
         """
@@ -183,13 +184,13 @@ class PDBIOhelper:
             self.fo.write(f.read())
 
 
-def get_structure(filepath: str, structname="") -> Structure:
+def get_structure(filepath: Path, structname="") -> Structure:
     """
     Read PDB file.
 
     Parameters
     ----------
-    filepath : str
+    filepath : Path
         filepath to a PDB file
 
     Returns
@@ -197,8 +198,8 @@ def get_structure(filepath: str, structname="") -> Structure:
     Bio.PDB.Structure
         Structure object of the PDB file
     """
-    filepath = expandpath(filepath)
-    if filepath.endswith(".gz"):
+    filepath = Path(expandpath(str(filepath)))
+    if filepath.suffix == ".gz":
         fileobj = gzip.open(filepath, "rt")
     else:
         fileobj = open(filepath)
@@ -427,7 +428,7 @@ def save(structs, path) -> None:
         io.set_structure(struct)
         with tempfile.NamedTemporaryFile(suffix=".pdb") as fp:
             io.save(fp.name)
-            mod_structs.append(get_structure(fp.name)[0])
+            mod_structs.append(get_structure(Path(fp.name))[0])
 
     out_structure = Structure("")
     for struct in mod_structs:
@@ -452,7 +453,7 @@ def concatenate_structures(structs: List[Structure]) -> Structure:
         for struct in structs:
             out_helper.save(struct)
         out_helper.close()
-        ret_structure = get_structure(f.name)
+        ret_structure = get_structure(Path(f.name))
     return ret_structure
 
 
@@ -515,5 +516,5 @@ def extract_substructure(struct: Union[Structure, Model], sele: PDB.Select) -> S
     pdbio.set_structure(struct)
     with tempfile.NamedTemporaryFile(suffix=".pdb") as fp:
         pdbio.save(fp.name, select=sele)
-        substruct = get_structure(fp.name)
+        substruct = get_structure(Path(fp.name))
     return substruct

@@ -1,4 +1,5 @@
 import tempfile
+from pathlib import Path
 from unittest import TestCase
 
 from script.utilities.executable.parmchk import Parmchk
@@ -7,11 +8,12 @@ from script.utilities.executable.parmchk import Parmchk
 class TestParmchk(TestCase):
     def __init__(self, *args, **kwargs):
         super(TestParmchk, self).__init__(*args, **kwargs)
-        self.probe_mol2 = "script/utilities/executable/test_data/A11.mol2"
-        self.expected_probe_frcmod = "script/utilities/executable/test_data/A11.frcmod"
+        __testdata_dir = Path("script/utilities/executable/test_data")
+        self.probe_mol2 = __testdata_dir / "A11.mol2"
+        self.expected_probe_frcmod = __testdata_dir / "A11.frcmod"
 
     def test_parmchk(self):
-        _, tmp_frcmod = tempfile.mkstemp(suffix=".frcmod")
+        tmp_frcmod = Path(tempfile.mkstemp(suffix=".frcmod")[1])
         parmchk = Parmchk()
         parmchk.set(mol2=self.probe_mol2, at="gaff2")
         parmchk.run(frcmod=tmp_frcmod)
@@ -23,11 +25,11 @@ class TestParmchk(TestCase):
     def test_file_does_not_exist(self):
         parmchk = Parmchk()
         with self.assertRaises(FileNotFoundError):
-            parmchk.set(mol2="NOTHING.mol2", at="gaff2")
+            parmchk.set(mol2=Path("NOTHING.mol2"), at="gaff2")
             parmchk.run()
 
     def test_at_is_not_supported(self):
         parmchk = Parmchk()
         with self.assertRaises(ValueError):
-            parmchk.set(mol2=self.probe_mol2, at="NOT_SUPPORTED_ID")
+            parmchk.set(mol2=self.probe_mol2, at="NOT_SUPPORTED_ID")  # type: ignore
             parmchk.run()

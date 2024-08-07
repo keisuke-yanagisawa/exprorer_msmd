@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest import TestCase
 
 import numpy as np
@@ -9,10 +10,12 @@ from script.utilities.Bio import PDB as uPDB
 class TestAlignResEnv(TestCase):
     def __init__(self, *args, **kwargs):
         super(TestAlignResEnv, self).__init__(*args, **kwargs)
-        self.single_atom_struct = uPDB.get_structure("script/test_data/singleatom.pdb")
-        self.two_atoms_struct = uPDB.get_structure("script/test_data/twoatoms.pdb")
-        self.two_models_struct = uPDB.get_structure("script/test_data/twomodels.pdb")
-        self.no_atom_struct = uPDB.get_structure("script/test_data/noatom.pdb")
+        __testdata_dir = Path("script/test_data")
+
+        self.single_atom_struct = uPDB.get_structure(__testdata_dir / "singleatom.pdb")
+        self.two_atoms_struct = uPDB.get_structure(__testdata_dir / "twoatoms.pdb")
+        self.two_models_struct = uPDB.get_structure(__testdata_dir / "twomodels.pdb")
+        self.no_atom_struct = uPDB.get_structure(__testdata_dir / "noatom.pdb")
 
     def test_single_structure(self):
         alignresenv.align_res_env(self.single_atom_struct, self.single_atom_struct[0], "VAL")

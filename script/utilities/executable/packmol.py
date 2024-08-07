@@ -3,6 +3,8 @@ import os
 import shutil
 import tempfile
 import warnings
+from pathlib import Path
+from typing import Optional
 
 import jinja2
 import numpy as np
@@ -11,7 +13,7 @@ from scipy import constants
 from .. import const
 from ..Bio.PDB import get_structure
 from ..logger import logger
-from ..scipy.spatial import estimate_volume
+from ..scipy.spatial_func import estimate_volume
 from .execute import Command
 
 # obtained from biopython/Bio/PDB/SASA.py
@@ -49,7 +51,7 @@ class Packmol(object):
         self.debug = debug
         self.box_pdb = None
 
-    def __is_cosolvent_pdb(self, pdb: str) -> bool:
+    def __is_cosolvent_pdb(self, pdb: Path) -> bool:
         """
         check if pdb is cosolvent pdb
         Assumption: cosolvent pdb has only one residue
@@ -58,7 +60,7 @@ class Packmol(object):
         residues = [residue for residue in struct.get_residues()]
         return len(residues) == 1
 
-    def __is_protein_pdb(self, pdb: str) -> bool:
+    def __is_protein_pdb(self, pdb: Path) -> bool:
         """
         check if pdb is protein pdb
         Assumption: protein has more than one residue
@@ -67,7 +69,7 @@ class Packmol(object):
         residues = [residue for residue in struct.get_residues()]
         return len(residues) > 1
 
-    def set(self, protein_pdb: str, cosolv_pdb: str, box_size: float, molar: float):
+    def set(self, protein_pdb: Path, cosolv_pdb: Path, box_size: float, molar: float):
         """
         protein_pdb: protein pdb file
         cosolv_pdb: cosolv pdb file
@@ -118,19 +120,19 @@ class Packmol(object):
         radii += _ATOMIC_RADII["C"]  # solvents' VdW radius: estimated by carbon radius.
         return estimate_volume(coords, radii)
 
-    def run(self, box_pdb=None, seed=-1):
+    def run(self, box_pdb: Optional[Path] = None, seed=-1):
         self.box_pdb = (
-            box_pdb if box_pdb is not None else tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)[1]
+            box_pdb if box_pdb is not None else Path(tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)[1])
         )
         self.seed = seed
 
         # shorten path length to pdb file
         # too long path cannot be treated by packmol
-        _, tmp_prot_pdb = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)
+        tmp_prot_pdb = Path(tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)[1])
 
         shutil.copy2(self.protein_pdb, tmp_prot_pdb)
 
-        _, tmp_pdb = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)
+        tmp_pdb = Path(tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)[1])
         shutil.copy2(self.cosolv_pdb, tmp_pdb)
 
         # determine the number of probe molecules

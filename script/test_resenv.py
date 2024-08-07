@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest import TestCase
 
 import gridData
@@ -10,11 +11,12 @@ from script.utilities.Bio import PDB as uPDB
 class TestResenv(TestCase):
     def __init__(self, *args, **kwargs):
         super(TestResenv, self).__init__(*args, **kwargs)
-        self.gridfile = "script/test_data/maxpmap_for_resenv.dx"
+        __testdata_dir = Path("script/test_data")
+        self.gridfile = __testdata_dir / "maxpmap_for_resenv.dx"
         self.grid = gridData.Grid(self.gridfile)
-        self.trajectory_file = "script/test_data/trajectory_for_resenv.pdb"
-        self.trajectory = uPDB.MultiModelPDBReader(self.trajectory_file)
-        self.expected_resenv_pdb = "script/test_data/resenv_expected.pdb"
+        self.trajectory_file = __testdata_dir / "trajectory_for_resenv.pdb"
+        self.trajectory = uPDB.MultiModelPDBReader(str(self.trajectory_file))
+        self.expected_resenv_pdb = __testdata_dir / "resenv_expected.pdb"
         self.resn = "A11"
 
     def test_normal_case(self):

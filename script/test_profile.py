@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest import TestCase
 
 import numpy as np
@@ -9,10 +10,11 @@ from script.utilities.Bio import PDB as uPDB
 class TestCreateResidueInteractionProfile(TestCase):
     def __init__(self, *args, **kwargs):
         super(TestCreateResidueInteractionProfile, self).__init__(*args, **kwargs)
-        self.single_atom_struct = uPDB.get_structure("script/test_data/singleatom.pdb")
-        self.two_atoms_struct = uPDB.get_structure("script/test_data/twoatoms.pdb")
-        self.two_models_struct = uPDB.get_structure("script/test_data/twomodels.pdb")
-        self.no_atom_struct = uPDB.get_structure("script/test_data/noatom.pdb")
+        __test_data = Path("script/test_data/")
+        self.single_atom_struct = uPDB.get_structure(__test_data / "singleatom.pdb")
+        self.two_atoms_struct = uPDB.get_structure(__test_data / "twoatoms.pdb")
+        self.two_models_struct = uPDB.get_structure(__test_data / "twomodels.pdb")
+        self.no_atom_struct = uPDB.get_structure(__test_data / "noatom.pdb")
 
     def test_normal_case(self):
         target_residue_atoms = [("VAL", " CA "), ("VAL", " N  ")]

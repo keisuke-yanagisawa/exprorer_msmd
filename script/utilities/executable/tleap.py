@@ -1,5 +1,6 @@
 import os
 import tempfile
+from pathlib import Path
 
 import jinja2
 
@@ -13,7 +14,7 @@ class TLeap(object):
         self.exe = os.getenv("TLEAP", "tleap")
         self.debug = debug
 
-    def set(self, cid, probe_path, frcmod, box_path, size, ssbonds, at):
+    def set(self, cid, probe_path: Path, frcmod: Path, box_path: Path, size, ssbonds, at):
         self.cid = cid
         self.probe_path = probe_path
         self.frcmod = frcmod
@@ -23,20 +24,20 @@ class TLeap(object):
         self.at = at
         return self
 
-    def run(self, oprefix):
+    def run(self, oprefix: str):
         self.oprefix = oprefix
-        self.parm7 = self.oprefix + ".parm7"
-        self.rst7 = self.oprefix + ".rst7"
+        self.parm7 = Path(self.oprefix + ".parm7")
+        self.rst7 = Path(self.oprefix + ".rst7")
 
         _, inputfile = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_INP)
         data = {
             "LIGAND_PARAM": f"leaprc.{self.at}",
             "SS_BONDS": self.ssbonds,
             "PROBE_ID": self.cid,
-            "PROBE_PATH": self.probe_path,
+            "PROBE_PATH": str(self.probe_path),
             "OUTPUT": self.oprefix,
-            "SYSTEM_PATH": self.box_path,
-            "PROBE_FRCMOD": self.frcmod,
+            "SYSTEM_PATH": str(self.box_path),
+            "PROBE_FRCMOD": str(self.frcmod),
             "SIZE": self.size,
         }
 
@@ -59,5 +60,5 @@ class TLeap(object):
             logger.error(f"cat {self.box_path}")
             logger.error(os.system(f"cat {self.box_path}"))
             return None
-        self._final_charge_value = float(final_charge_info.split()[-1])
+        self._final_charge_value = int(float(final_charge_info.split()[-1]))
         return self
