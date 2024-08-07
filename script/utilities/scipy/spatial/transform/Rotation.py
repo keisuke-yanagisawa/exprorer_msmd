@@ -9,6 +9,7 @@ Authors: Keisuke Yanagisawa
 """
 
 import warnings
+
 import numpy as np
 from numpy.linalg import norm
 from scipy.spatial.transform import Rotation as R
@@ -64,13 +65,9 @@ def __standardize_direction(coords, eps=1e-5, priority=None):
     # determine a coord which will be put on x-y plane
     second = __get_a_li_vector(coords, src[0], eps, priority=priority)
     if second is not None:
-        cos_theta = coords[first].dot(coords[second]) \
-            / norm(coords[first]) \
-            / norm(coords[second])
+        cos_theta = coords[first].dot(coords[second]) / norm(coords[first]) / norm(coords[second])
         sin_theta = np.sqrt(1 - cos_theta**2)
-        dst[1] = [norm(coords[second]) * cos_theta,
-                  norm(coords[second]) * sin_theta,
-                  0]
+        dst[1] = [norm(coords[second]) * cos_theta, norm(coords[second]) * sin_theta, 0]
         src[1] = coords[second]
 
     # calculate rotation matrix
@@ -127,8 +124,10 @@ class CoordinateStandardizer:
 
     def transform(self, coords):
         if not self.is_fitted:
-            raise RuntimeError("""This CoordinateStandardizer instance is not fitted yet.
-            Call 'fit' with appropriate arguments before using this standardizer.""")
+            raise RuntimeError(
+                """This CoordinateStandardizer instance is not fitted yet.
+            Call 'fit' with appropriate arguments before using this standardizer."""
+            )
 
         tmp = coords + self.d1
         tmp = self.rot.apply(tmp)

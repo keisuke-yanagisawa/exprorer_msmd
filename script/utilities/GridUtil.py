@@ -1,7 +1,9 @@
-import numpy as np
 import copy
+
+import numpy as np
 from Bio import PDB
 from tqdm import tqdm
+
 from script.utilities.Bio import PDB as uPDB
 
 
@@ -10,7 +12,7 @@ def gen_distance_grid(g_ref, pdbpath, verbose=True):
     pdb = uPDB.get_structure(pdbpath)
     coords = []
     for atom in pdb.get_atoms():
-        if (atom.full_id[3][0].strip() != ""):
+        if atom.full_id[3][0].strip() != "":
             continue
         coords.append(atom.coord)
     coords = np.array(coords, dtype="float32")

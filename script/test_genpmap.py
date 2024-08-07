@@ -1,8 +1,10 @@
 from unittest import TestCase
-from script.genpmap import mask_generator
+
 import gridData
-from script.utilities import GridUtil
 import numpy as np
+
+from script.genpmap import mask_generator
+from script.utilities import GridUtil
 
 
 class TestMaskGenerator(TestCase):

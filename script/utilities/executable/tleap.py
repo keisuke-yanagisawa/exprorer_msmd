@@ -1,9 +1,11 @@
-import tempfile
 import os
+import tempfile
+
 import jinja2
+
 from .. import const
-from .execute import Command
 from ..logger import logger
+from .execute import Command
 
 
 class TLeap(object):
@@ -35,7 +37,7 @@ class TLeap(object):
             "OUTPUT": self.oprefix,
             "SYSTEM_PATH": self.box_path,
             "PROBE_FRCMOD": self.frcmod,
-            "SIZE": self.size
+            "SIZE": self.size,
         }
 
         env = jinja2.Environment(loader=jinja2.FileSystemLoader(f"{os.path.dirname(__file__)}/template"))
@@ -48,8 +50,9 @@ class TLeap(object):
         output = command.run()
         logger.info(output)
         try:
-            final_charge_info = [s.strip() for s in output.split("\n")
-                                 if s.strip().startswith("Total unperturbed charge")][0]
+            final_charge_info = [
+                s.strip() for s in output.split("\n") if s.strip().startswith("Total unperturbed charge")
+            ][0]
         except IndexError as e:
             logger.error(e)
             logger.error(output)

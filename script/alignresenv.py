@@ -1,9 +1,11 @@
 import tempfile
 from typing import List
-from tqdm import tqdm
+
 from Bio.PDB.Atom import Atom
-from Bio.PDB.Structure import Structure
 from Bio.PDB.Model import Model
+from Bio.PDB.Structure import Structure
+from tqdm import tqdm
+
 from script.utilities.Bio import PDB as uPDB
 from script.utilities.Bio.sklearn_interface import SuperImposer
 
@@ -12,11 +14,9 @@ superimpose structures in accordance with specific atoms
 """
 
 
-def align_res_env(struct: Structure,
-                  reference: Model,
-                  resn: str,
-                  focused: List[str] = [],
-                  verbose: bool = False) -> Structure:
+def align_res_env(
+    struct: Structure, reference: Model, resn: str, focused: List[str] = [], verbose: bool = False
+) -> Structure:
     """
     Align the residues of models contained in a structure to a reference model
 

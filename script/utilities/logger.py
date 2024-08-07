@@ -1,6 +1,5 @@
 # https://qiita.com/yopya/items/63155923602bf97dec53
-from logging import Formatter, handlers, StreamHandler, getLogger
-from logging import DEBUG, ERROR, WARN, INFO, CRITICAL
+from logging import CRITICAL, DEBUG, ERROR, INFO, WARN, Formatter, StreamHandler, getLogger, handlers
 
 __DEFAULT_LOG_LEVEL__ = WARN
 
@@ -18,10 +17,8 @@ class Logger:
         self.logger.addHandler(self.handler)
 
         # file
-        if (path != ""):
-            self.handler = handlers.RotatingFileHandler(filename=path,
-                                                        maxBytes=1048576,
-                                                        backupCount=3)
+        if path != "":
+            self.handler = handlers.RotatingFileHandler(filename=path, maxBytes=1048576, backupCount=3)
             self.handler.setLevel(__DEFAULT_LOG_LEVEL__)
             self.handler.setFormatter(formatter)
             self.logger.addHandler(self.handler)
@@ -49,8 +46,7 @@ class Logger:
         elif level.lower() == "info":
             self.logger.setLevel(INFO)
             self.handler.setLevel(INFO)
-        elif level.lower() == "warn" \
-                or level.lower() == "warning":
+        elif level.lower() == "warn" or level.lower() == "warning":
             self.logger.setLevel(WARN)
             self.handler.setLevel(WARN)
         elif level.lower() == "error":

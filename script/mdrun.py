@@ -1,18 +1,17 @@
 #! /usr/bin/python3
 
 
-from typing import List
-import jinja2
-
 import os
+from typing import List
+
+import jinja2
 
 from .utilities.logger import logger
 
 VERSION = "1.0.0"
 
 
-def gen_mdp(protocol_dict: dict,
-            MD_DIR: str):
+def gen_mdp(protocol_dict: dict, MD_DIR: str):
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
     template = env.get_template(f"./template/{protocol_dict['type']}.mdp")
 
@@ -27,20 +26,14 @@ def gen_mdp(protocol_dict: dict,
         fout.write(template.render(protocol_dict))
 
 
-def gen_mdrun_job(step_names: List[str],
-                  name: str,
-                  path: str,
-                  top: str,
-                  gro: str,
-                  out_traj: str,
-                  post_comm: str = ""):
+def gen_mdrun_job(step_names: List[str], name: str, path: str, top: str, gro: str, out_traj: str, post_comm: str = ""):
     data = {
         "NAME": name,
         "TOP": top,
         "GRO": gro,
         "OUT_TRAJ": out_traj,
         "POST_COMMAND": post_comm,
-        "STEP_NAMES": " ".join(step_names)
+        "STEP_NAMES": " ".join(step_names),
     }
 
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
@@ -62,15 +55,8 @@ def prepare_sequence(sequence, general):
     return ret
 
 
-def prepare_md_files(index: int,
-                     sequence: List[dict],
-                     targetdir: str,
-                     jobname: str,
-                     top: str,
-                     gro: str,
-                     out_traj: str):
+def prepare_md_files(index: int, sequence: List[dict], targetdir: str, jobname: str, top: str, gro: str, out_traj: str):
     for step in sequence:
         step["seed"] = index
         gen_mdp(step, targetdir)
-    gen_mdrun_job([d["name"] for d in sequence],
-                  jobname, f"{targetdir}/mdrun.sh", top, gro, out_traj)
+    gen_mdrun_job([d["name"] for d in sequence], jobname, f"{targetdir}/mdrun.sh", top, gro, out_traj)

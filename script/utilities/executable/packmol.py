@@ -1,16 +1,18 @@
 import collections
-import tempfile
 import os
-from scipy import constants
-from .. import const
-from .execute import Command
 import shutil
-import jinja2
-from ..logger import logger
-from ..Bio.PDB import get_structure
-from ..scipy.spatial import estimate_volume
-import numpy as np
+import tempfile
 import warnings
+
+import jinja2
+import numpy as np
+from scipy import constants
+
+from .. import const
+from ..Bio.PDB import get_structure
+from ..logger import logger
+from ..scipy.spatial import estimate_volume
+from .execute import Command
 
 # obtained from biopython/Bio/PDB/SASA.py
 _ATOMIC_RADII = collections.defaultdict(lambda: 2.0)
@@ -117,8 +119,9 @@ class Packmol(object):
         return estimate_volume(coords, radii)
 
     def run(self, box_pdb=None, seed=-1):
-        self.box_pdb = box_pdb if box_pdb is not None \
-            else tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)[1]
+        self.box_pdb = (
+            box_pdb if box_pdb is not None else tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)[1]
+        )
         self.seed = seed
 
         # shorten path length to pdb file
@@ -140,11 +143,7 @@ class Packmol(object):
         _, inputfile = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_INP)
 
         _, inp = tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_INP)
-        probes = [{
-            "pdb": tmp_pdb,
-            "num": num,
-            "size": self.box_size / 2
-        }]
+        probes = [{"pdb": tmp_pdb, "num": num, "size": self.box_size / 2}]
 
         data = {
             "output": self.box_pdb,

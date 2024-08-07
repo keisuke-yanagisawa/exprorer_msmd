@@ -1,9 +1,11 @@
 import argparse
 import os
-from script.utilities.logger import logger
-from script.utilities import util
-import yaml
 from string import Template
+
+import yaml
+
+from script.utilities import util
+from script.utilities.logger import logger
 
 
 def read_yaml(path):
@@ -12,8 +14,7 @@ def read_yaml(path):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Run MSMD simulation")
+    parser = argparse.ArgumentParser(description="Run MSMD simulation")
     parser.add_argument("setting_yaml")
     parser.add_argument("-v,--verbose", dest="verbose", action="store_true")
     parser.add_argument("--debug", action="store_true")
@@ -62,6 +63,7 @@ if __name__ == "__main__":
         template = open(os.path.dirname(util.getabsolutepath(__file__)) + "/template/slurm", "r").read()
 
     import math
+
     njobs = math.ceil(len(indices) / args.run_per_job)
     for i, gr in enumerate([indices[i::njobs] for i in range(njobs)]):
         JOB_NAME = setting["general"]["name"]
@@ -71,19 +73,23 @@ if __name__ == "__main__":
         # generate slurm script
         os.system(f"mkdir -p {workdir}")
         with open(f"{workdir}/JOB{i}.sh", "w") as fout:
-            fout.write(template.format(**{
-                "GROUP": GROUP,
-                "QTYPE": QTYPE,
-                "runID": f"{i}",
-                "JOB_NAME": JOB_NAME,
-                "TIME_LENGTH": MAXTIME,
-                "use_singularity": use_singularity,
-                "singularity_prerequirement": singularity_prerequirement,
-                "singularity_sifpath": singularity_sifpath,
-                "singularity_bind": singularity_bind,
-                "PATH_EXPRORER_MSMD": os.path.dirname(util.getabsolutepath(__file__)) + "/exprorer_msmd",
-                "ITER_INDEX": ITER_INDEX,
-                "YAML": SETTING_YAML,
-                "NGPUS": len(gr)
-            }))
+            fout.write(
+                template.format(
+                    **{
+                        "GROUP": GROUP,
+                        "QTYPE": QTYPE,
+                        "runID": f"{i}",
+                        "JOB_NAME": JOB_NAME,
+                        "TIME_LENGTH": MAXTIME,
+                        "use_singularity": use_singularity,
+                        "singularity_prerequirement": singularity_prerequirement,
+                        "singularity_sifpath": singularity_sifpath,
+                        "singularity_bind": singularity_bind,
+                        "PATH_EXPRORER_MSMD": os.path.dirname(util.getabsolutepath(__file__)) + "/exprorer_msmd",
+                        "ITER_INDEX": ITER_INDEX,
+                        "YAML": SETTING_YAML,
+                        "NGPUS": len(gr),
+                    }
+                )
+            )
         os.system(f"sbatch {workdir}/JOB{i}.sh")

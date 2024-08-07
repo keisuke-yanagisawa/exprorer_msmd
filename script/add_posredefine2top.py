@@ -1,8 +1,9 @@
 import os
 from typing import List
+
 import jinja2
-from scipy import constants
 import numpy.typing as npt
+from scipy import constants
 
 VERSION = "2.0.0"
 
@@ -13,16 +14,17 @@ def position_restraint(atom_id_list: npt.ArrayLike, prefix: str, weight) -> str:
     """
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
     template = env.get_template("./template/position_restraints")
-    return template.render({
-        "define_name": f"{prefix}{weight}",
-        "weight": weight,
-        "weight_in_calorie": weight * constants.calorie,
-        "atom_id_list": atom_id_list
-    })
+    return template.render(
+        {
+            "define_name": f"{prefix}{weight}",
+            "weight": weight,
+            "weight_in_calorie": weight * constants.calorie,
+            "atom_id_list": atom_id_list,
+        }
+    )
 
 
-def gen_atom_id_list(gro_string: str,
-                     except_resns: List[str]) -> List[int]:
+def gen_atom_id_list(gro_string: str, except_resns: List[str]) -> List[int]:
     """
     generate a list of atom ids for a given residue name
     """
@@ -39,10 +41,7 @@ def gen_atom_id_list(gro_string: str,
     return atom_id_list
 
 
-def embed_posre(top_string: str,
-                atom_id_list: npt.ArrayLike,
-                prefix: str,
-                strength: list[int]) -> str:
+def embed_posre(top_string: str, atom_id_list: npt.ArrayLike, prefix: str, strength: list[int]) -> str:
     """
     embed position restraint records into a given topology string
     """
@@ -51,7 +50,7 @@ def embed_posre(top_string: str,
     mol_count = 0
     for line in top_string.split("\n"):
         if line.startswith("["):
-            curr_section = line[line.find("[") + 1:line.find("]")].strip()
+            curr_section = line[line.find("[") + 1 : line.find("]")].strip()
             if curr_section == "moleculetype":
                 if mol_count == 1:
                     for s in strength:
@@ -64,7 +63,6 @@ def embed_posre(top_string: str,
     return ret
 
 
-def add_posredefine2top(top_string: str,
-                        atom_id_list: list[int]) -> str:
+def add_posredefine2top(top_string: str, atom_id_list: list[int]) -> str:
 
     return embed_posre(top_string, atom_id_list)

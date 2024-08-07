@@ -1,8 +1,8 @@
 import numpy as np
-from Bio.SVDSuperimposer import SVDSuperimposer
-from sklearn.utils.validation import check_is_fitted
-from sklearn.base import TransformerMixin, BaseEstimator
 import numpy.typing as npt
+from Bio.SVDSuperimposer import SVDSuperimposer
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.utils.validation import check_is_fitted
 
 """
 BioPythonの関数をsklearnのモデルのように利用する関数/クラス群。
@@ -11,9 +11,7 @@ last update: 21 Jun, 2021
 Authors: Keisuke Yanagisawa
 """
 
-__all__ = [
-    "SuperImposer"
-]
+__all__ = ["SuperImposer"]
 
 
 class SuperImposer(TransformerMixin, BaseEstimator):

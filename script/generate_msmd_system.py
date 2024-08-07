@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 
-import tempfile
 import os
+import tempfile
 from subprocess import getoutput as gop
 from typing import Tuple
 
-from script.utilities.executable import Parmchk, Packmol, TLeap
 from script.utilities import const
+from script.utilities.executable import Packmol, Parmchk, TLeap
 from script.utilities.logger import logger
 
 VERSION = "2.0.0"
@@ -73,9 +73,7 @@ def calculate_boxsize(rst7: str) -> float:
     return box_size
 
 
-def _create_frcmod(mol2file: str,
-                   atomtype: str,
-                   debug: bool = False) -> str:
+def _create_frcmod(mol2file: str, atomtype: str, debug: bool = False) -> str:
     """
     create frcmod file from mol2 file
     -----
@@ -86,17 +84,13 @@ def _create_frcmod(mol2file: str,
         cfrcmod: path to frcmod file
     """
     _, cfrcmod = tempfile.mkstemp(suffix=".frcmod")
-    Parmchk(debug=debug) \
-        .set(mol2file, atomtype) \
-        .run(frcmod=cfrcmod)
+    Parmchk(debug=debug).set(mol2file, atomtype).run(frcmod=cfrcmod)
     return cfrcmod
 
 
-def create_system(setting_protein: dict,
-                  setting_probe: dict,
-                  probe_frcmod: str,
-                  debug: bool = False,
-                  seed: int = -1) -> Tuple[str, str]:
+def create_system(
+    setting_protein: dict, setting_probe: dict, probe_frcmod: str, debug: bool = False, seed: int = -1
+) -> Tuple[str, str]:
     """
     create system from protein and probe
     """
@@ -110,13 +104,9 @@ def create_system(setting_protein: dict,
     probemolar = float(setting_probe["molar"])
 
     _, box_pdb = tempfile.mkstemp(suffix=".pdb")
-    Packmol(debug=debug) \
-        .set(pdbpath, cpdb, boxsize, probemolar) \
-        .run(box_pdb, seed=seed)
+    Packmol(debug=debug).set(pdbpath, cpdb, boxsize, probemolar).run(box_pdb, seed=seed)
 
-    tleap_obj = TLeap(debug=debug) \
-        .set(cid, cmol, probe_frcmod, box_pdb,
-             boxsize, ssbonds, atomtype)
+    tleap_obj = TLeap(debug=debug).set(cid, cmol, probe_frcmod, box_pdb, boxsize, ssbonds, atomtype)
 
     while True:
         _, fileprefix = tempfile.mkstemp(suffix="")
@@ -132,9 +122,7 @@ def create_system(setting_protein: dict,
     return tleap_obj.parm7, tleap_obj.rst7
 
 
-def generate_msmd_system(setting: dict,
-                         debug: bool = False,
-                         seed: int = -1) -> Tuple[str, str]:
+def generate_msmd_system(setting: dict, debug: bool = False, seed: int = -1) -> Tuple[str, str]:
     """
     generate msmd system
     -----
@@ -146,11 +134,6 @@ def generate_msmd_system(setting: dict,
         parm7: path to parm7 file
         rst7: path to rst7 file
     """
-    cfrcmod = _create_frcmod(setting["input"]["probe"]["mol2"],
-                             setting["input"]["probe"]["atomtype"],
-                             debug=debug)
-    parm7, rst7 = create_system(setting["input"]["protein"],
-                                setting["input"]["probe"],
-                                cfrcmod, debug=debug,
-                                seed=seed)
+    cfrcmod = _create_frcmod(setting["input"]["probe"]["mol2"], setting["input"]["probe"]["atomtype"], debug=debug)
+    parm7, rst7 = create_system(setting["input"]["protein"], setting["input"]["probe"], cfrcmod, debug=debug, seed=seed)
     return parm7, rst7

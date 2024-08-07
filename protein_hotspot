@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-import glob
-from script.utilities.logger import logger
 import argparse
-from script import maxpmap
+import glob
 
+from script import maxpmap
 from script.utilities import util
+from script.utilities.logger import logger
+
 VERSION = "0.1.0"
 
 
@@ -17,14 +18,13 @@ def protein_hotspot(setting):
     for map in setting["map"]["maps"]:
         maxpmap.gen_max_pmap(
             glob.glob(f"{basedirpath}/system*/PMAP_{JOB_NAME}_{map['suffix']}.dx"),
-            f"{basedirpath}/maxPMAP_{JOB_NAME}_{map['suffix']}.dx"
+            f"{basedirpath}/maxPMAP_{JOB_NAME}_{map['suffix']}.dx",
         )
         logger.info(f"Output file: {basedirpath}/maxPMAP_{JOB_NAME}_{map['suffix']}.dx")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Calculate protein hotspot: aggregating PMAPs")
+    parser = argparse.ArgumentParser(description="Calculate protein hotspot: aggregating PMAPs")
     parser.add_argument("setting_yaml")
     parser.add_argument("-v,--verbose", dest="verbose", action="store_true")
     parser.add_argument("--debug", action="store_true")

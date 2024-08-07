@@ -1,5 +1,5 @@
-from scipy.spatial import KDTree
 import numpy as np
+from scipy.spatial import KDTree
 
 
 def estimate_volume(points, radii, granularity=10):

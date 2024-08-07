@@ -1,6 +1,8 @@
 from unittest import TestCase
-from script.utilities.executable.cpptraj import Cpptraj
+
 from script.utilities.Bio import PDB as uPDB
+from script.utilities.executable.cpptraj import Cpptraj
+
 # TODO: Add tests for cpptraj
 
 
@@ -18,6 +20,7 @@ class TestCpptraj(TestCase):
 
     def test_cpptraj_execution(self):
         import tempfile
+
         with tempfile.TemporaryDirectory() as tmpdir:
             cpptraj_obj = Cpptraj()
             cpptraj_obj.set(self.topology_path, self.trajectory_path, self.ref_struct_path, self.probe_id)
@@ -29,7 +32,7 @@ class TestCpptraj(TestCase):
                 traj_start=1,
                 traj_stop=5,
                 traj_offset=1,
-                maps=self.maps
+                maps=self.maps,
             )
 
     def test_is_cpptraj_output_indentical(self):

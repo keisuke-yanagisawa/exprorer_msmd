@@ -1,6 +1,8 @@
 from unittest import TestCase
-from script.utilities.GridUtil import gen_distance_grid
+
 import gridData
+
+from script.utilities.GridUtil import gen_distance_grid
 
 
 class TestGenDistanceGrid(TestCase):

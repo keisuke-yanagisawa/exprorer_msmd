@@ -1,6 +1,6 @@
+import os
 import random
 import string
-import os
 from typing import Union
 
 import yaml
@@ -89,7 +89,6 @@ def set_default(setting: dict) -> None:
         setting["general"]["num_process_per_gpu"] = 1
 
 
-
 def ensure_compatibility_v1_1(setting: dict):
     """
     Ensure compatibility with exprorer_msmd v1.1
@@ -100,9 +99,7 @@ def ensure_compatibility_v1_1(setting: dict):
         setting["map"]["snapshot"] = setting["exprorer_msmd"]["pmap"]["snapshots"]
     setting["map"]["snapshot"] = setting["map"]["snapshot"].split("|")[-1]
     if "maps" not in setting["map"]:
-        setting["map"]["maps"] = [
-            {"suffix": "nVH", "selector": "(!@VIS)&(!@H*)"}
-        ]
+        setting["map"]["maps"] = [{"suffix": "nVH", "selector": "(!@VIS)&(!@H*)"}]
     if "map_size" not in setting["map"]:
         setting["map"]["map_size"] = 80
     if "aggregation" not in setting["map"]:
@@ -126,42 +123,46 @@ def parse_yaml(yamlpath: str) -> dict:
     ensure_compatibility_v1_1(setting)
     set_default(setting)
 
-    if "mol2" not in setting["input"]["probe"] \
-       or setting["input"]["probe"]["mol2"] is None:
-        setting["input"]["probe"]["mol2"] \
-            = setting["input"]["probe"]["cid"] + ".mol2"
-    if "pdb" not in setting["input"]["probe"] \
-       or setting["input"]["probe"]["pdb"] is None:
-        setting["input"]["probe"]["pdb"] \
-            = setting["input"]["probe"]["cid"] + ".pdb"
+    if "mol2" not in setting["input"]["probe"] or setting["input"]["probe"]["mol2"] is None:
+        setting["input"]["probe"]["mol2"] = setting["input"]["probe"]["cid"] + ".mol2"
+    if "pdb" not in setting["input"]["probe"] or setting["input"]["probe"]["pdb"] is None:
+        setting["input"]["probe"]["pdb"] = setting["input"]["probe"]["cid"] + ".pdb"
 
     setting["general"]["workdir"] = expandpath(setting["general"]["workdir"])
-    setting["general"]["workdir"] = setting["general"]["workdir"] \
-        if setting["general"]["workdir"].startswith("/") \
-           or setting["general"]["workdir"].startswith("$HOME") \
-           or setting["general"]["workdir"].startswith("~") \
+    setting["general"]["workdir"] = (
+        setting["general"]["workdir"]
+        if setting["general"]["workdir"].startswith("/")
+        or setting["general"]["workdir"].startswith("$HOME")
+        or setting["general"]["workdir"].startswith("~")
         else YAML_DIR_PATH + "/" + setting["general"]["workdir"]
+    )
 
     setting["input"]["protein"]["pdb"] = expandpath(setting["input"]["protein"]["pdb"])
-    setting["input"]["protein"]["pdb"] = setting["input"]["protein"]["pdb"] \
-        if setting["input"]["protein"]["pdb"].startswith("/") \
-           or setting["input"]["protein"]["pdb"].startswith("$HOME") \
-           or setting["input"]["protein"]["pdb"].startswith("~") \
+    setting["input"]["protein"]["pdb"] = (
+        setting["input"]["protein"]["pdb"]
+        if setting["input"]["protein"]["pdb"].startswith("/")
+        or setting["input"]["protein"]["pdb"].startswith("$HOME")
+        or setting["input"]["protein"]["pdb"].startswith("~")
         else YAML_DIR_PATH + "/" + setting["input"]["protein"]["pdb"]
+    )
 
     setting["input"]["probe"]["pdb"] = expandpath(setting["input"]["probe"]["pdb"])
-    setting["input"]["probe"]["pdb"] = setting["input"]["probe"]["pdb"] \
-        if setting["input"]["probe"]["pdb"].startswith("/") \
-           or setting["input"]["probe"]["pdb"].startswith("$HOME") \
-           or setting["input"]["probe"]["pdb"].startswith("~") \
+    setting["input"]["probe"]["pdb"] = (
+        setting["input"]["probe"]["pdb"]
+        if setting["input"]["probe"]["pdb"].startswith("/")
+        or setting["input"]["probe"]["pdb"].startswith("$HOME")
+        or setting["input"]["probe"]["pdb"].startswith("~")
         else YAML_DIR_PATH + "/" + setting["input"]["probe"]["pdb"]
+    )
 
     setting["input"]["probe"]["mol2"] = expandpath(setting["input"]["probe"]["mol2"])
-    setting["input"]["probe"]["mol2"] = setting["input"]["probe"]["mol2"] \
-        if setting["input"]["probe"]["mol2"].startswith("/") \
-           or setting["input"]["probe"]["mol2"].startswith("$HOME") \
-           or setting["input"]["probe"]["mol2"].startswith("~") \
+    setting["input"]["probe"]["mol2"] = (
+        setting["input"]["probe"]["mol2"]
+        if setting["input"]["probe"]["mol2"].startswith("/")
+        or setting["input"]["probe"]["mol2"].startswith("$HOME")
+        or setting["input"]["probe"]["mol2"].startswith("~")
         else YAML_DIR_PATH + "/" + setting["input"]["probe"]["mol2"]
+    )
 
     if setting["input"]["protein"]["ssbond"] is None:
         setting["input"]["protein"]["ssbond"] = []
