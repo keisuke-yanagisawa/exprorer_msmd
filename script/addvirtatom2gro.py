@@ -1,11 +1,12 @@
-
 import tempfile
 from typing import List
 
+import numpy as np
+import numpy.typing as npt
+
 from .utilities import gromacs
 from .utilities.logger import logger
-import numpy.typing as npt
-import numpy as np
+
 VERSION = "1.0.0"
 
 
@@ -21,8 +22,7 @@ def center_of_mass(atoms: List[gromacs.GroAtom]) -> npt.NDArray:
     return tot_coordinates / tot_weight
 
 
-def addvirtatom2gro(gro_string: str,
-                    probe_id: str) -> str:
+def addvirtatom2gro(gro_string: str, probe_id: str) -> str:
     """
     Add virtual atoms to a gro file
     Virtual atoms are added to the center of mass of each probe

@@ -1,6 +1,7 @@
 FROM kyanagis/exprorer_msmd:2024.02.12
 
 RUN mamba install -y pytest
+RUN pip install mypy pytest isort
 
 # ====== settings for git / ssh =======
 RUN echo "mkdir -p /root/.ssh" >> /etc/bash.bashrc

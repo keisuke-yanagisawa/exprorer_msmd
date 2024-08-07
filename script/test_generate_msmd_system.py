@@ -1,5 +1,6 @@
 from unittest import TestCase
-from script.generate_msmd_system import calculate_boxsize, generate_msmd_system, _create_frcmod
+
+from script.generate_msmd_system import _create_frcmod, calculate_boxsize, generate_msmd_system
 from script.utilities import util
 
 

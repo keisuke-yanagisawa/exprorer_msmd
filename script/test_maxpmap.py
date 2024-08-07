@@ -1,6 +1,8 @@
 from unittest import TestCase
-from script.maxpmap import grid_max
+
 import gridData
+
+from script.maxpmap import grid_max
 
 
 class TestMaskGenerator(TestCase):
@@ -13,4 +15,6 @@ class TestMaskGenerator(TestCase):
         maxpmap = grid_max([self.grid1, self.grid2])
         self.assertAlmostEqual(self.grid1.grid[1, 5, 2], maxpmap.grid[1, 5, 2])  # -1
         self.assertAlmostEqual(self.grid1.grid[38, 59, 27], maxpmap.grid[38, 59, 27])  # 0
-        self.assertAlmostEqual(self.grid1.grid[44, 20, 32], maxpmap.grid[44, 20, 32])  # not -1 & not 0 for grid1, grid2[44,20,32] = 0
+        self.assertAlmostEqual(
+            self.grid1.grid[44, 20, 32], maxpmap.grid[44, 20, 32]
+        )  # not -1 & not 0 for grid1, grid2[44,20,32] = 0

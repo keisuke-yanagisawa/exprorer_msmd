@@ -1,26 +1,26 @@
 #!/usr/bin/env python
 
+import argparse
 import tempfile
 from typing import List
-from script.utilities.logger import logger
-from script.profile import create_residue_interaction_profile
-import argparse
 
-from joblib import Parallel, delayed
-from script.utilities.Bio import PDB as uPDB
-from script.alignresenv import align_res_env
-from script.resenv import resenv
-from script import maxpmap
-from Bio.PDB.Structure import Structure
-
-from script.utilities import util
 import gridData
+from Bio.PDB.Structure import Structure
+from joblib import Parallel, delayed
+
+from script import maxpmap
+from script.alignresenv import align_res_env
+from script.profile import create_residue_interaction_profile
+from script.resenv import resenv
+from script.utilities import util
+from script.utilities.Bio import PDB as uPDB
+from script.utilities.logger import logger
+
 VERSION = "0.1.0"
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Calculate residue interaction profile around probe")
+    parser = argparse.ArgumentParser(description="Calculate residue interaction profile around probe")
     parser.add_argument("setting_yaml")
     parser.add_argument("-v,--verbose", dest="verbose", action="store_true")
     parser.add_argument("--debug", action="store_true")
@@ -55,14 +55,15 @@ if __name__ == "__main__":
     trajectory_files = [f"{WORKING_DIR}/system{idx}/{JOB_NAME}_woWAT_10ps.pdb" for idx in indices]
     trajectories = [uPDB.MultiModelPDBReader(path) for path in trajectory_files]
     probe_environment_structs: List[Structure] = Parallel(n_jobs=n_jobs)(  # type: ignore
-        delayed(resenv)(grid=max_pmap,
-                        trajectory=trajectory,
-                        resn=probe_resn,
-                        res_atomnames=[" CB "],
-                        threshold=threshold,
-                        env_distance=env_distance,
-                        verbose=args.verbose
-                        )
+        delayed(resenv)(
+            grid=max_pmap,
+            trajectory=trajectory,
+            resn=probe_resn,
+            res_atomnames=[" CB "],
+            threshold=threshold,
+            env_distance=env_distance,
+            verbose=args.verbose,
+        )
         for trajectory in trajectories
     )
     probe_environment_struct = uPDB.concatenate_structures(probe_environment_structs)
@@ -71,8 +72,10 @@ if __name__ == "__main__":
     target_residue_atoms = set()  # convert from list to tuple
     for profile_type in profile_types:
         target_residue_atoms.update([(*lst,) for lst in profile_type["atoms"]])
-    sele = uPDB.Selector(lambda a: (uPDB.get_atom_attr(a, "resname"), uPDB.get_atom_attr(a, "fullname")) in target_residue_atoms
-                         or uPDB.get_atom_attr(a, "resname") == probe_resn)
+    sele = uPDB.Selector(
+        lambda a: (uPDB.get_atom_attr(a, "resname"), uPDB.get_atom_attr(a, "fullname")) in target_residue_atoms
+        or uPDB.get_atom_attr(a, "resname") == probe_resn
+    )
     probe_environment_struct = uPDB.extract_substructure(probe_environment_struct, sele)
 
     # align structures in accordance with the probe structures

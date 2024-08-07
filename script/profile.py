@@ -1,9 +1,10 @@
 from typing import List, Tuple
-import numpy as np
+
 import gridData
+import numpy as np
+from Bio.PDB.Structure import Structure
 
 from script.utilities.Bio import PDB as uPDB
-from Bio.PDB.Structure import Structure
 
 
 def __calc_minimum_bounding_box(coords) -> Tuple[np.ndarray, np.ndarray]:
@@ -17,9 +18,7 @@ def __calc_minimum_bounding_box(coords) -> Tuple[np.ndarray, np.ndarray]:
     return min_xyz, max_xyz
 
 
-def create_residue_interaction_profile(struct: Structure,
-                                       target_residue_atoms: List[Tuple[str, str]]
-                                       ) -> gridData.Grid:
+def create_residue_interaction_profile(struct: Structure, target_residue_atoms: List[Tuple[str, str]]) -> gridData.Grid:
     """
     struct: Bio.PDB.Structure
         A structure containing multiple models of aligned environments
@@ -28,8 +27,9 @@ def create_residue_interaction_profile(struct: Structure,
         ex: [("ALA", " CA "), ("ALA", " CB "), ("ARG", " CB ")]
     """
 
-    sele = uPDB.Selector(lambda a: (uPDB.get_atom_attr(a, "resname"),
-                                    uPDB.get_atom_attr(a, "fullname")) in target_residue_atoms)
+    sele = uPDB.Selector(
+        lambda a: (uPDB.get_atom_attr(a, "resname"), uPDB.get_atom_attr(a, "fullname")) in target_residue_atoms
+    )
     struct = uPDB.extract_substructure(struct, sele)
     if len(struct) == 0:
         raise ValueError("No atom found in the structure under the specified atom names")

@@ -1,9 +1,10 @@
-import tempfile
 import os
-from .execute import Command
+import tempfile
+
 from .. import const
 from ..logger import logger
 from ..util import expandpath
+from .execute import Command
 
 
 class Parmchk(object):

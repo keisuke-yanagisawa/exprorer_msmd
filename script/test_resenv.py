@@ -1,8 +1,10 @@
 from unittest import TestCase
+
+import gridData
+import numpy as np
+
 from script.resenv import resenv
 from script.utilities.Bio import PDB as uPDB
-import numpy as np
-import gridData
 
 
 class TestResenv(TestCase):

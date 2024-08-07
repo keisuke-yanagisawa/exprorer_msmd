@@ -1,10 +1,9 @@
 import math
 import os
-import sys
 import subprocess
+import sys
 
 import GPUtil
-
 
 from .logger import logger
 
@@ -31,10 +30,13 @@ def get_gpuids(ignore_cuda_visible_devices=False):
 
     return list(gpuids)
 
+
 def is_mps_control_running() -> bool:
     # check if nvidia-cuda-mps-control process is running
     try:
-        output = subprocess.check_output("echo get_default_active_thread_percentage | nvidia-cuda-mps-control", shell=True, text=True)
+        output = subprocess.check_output(
+            "echo get_default_active_thread_percentage | nvidia-cuda-mps-control", shell=True, text=True
+        )
         if "Cannot find MPS control daemon process" in output:
             return False
         else:

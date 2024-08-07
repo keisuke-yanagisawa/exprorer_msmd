@@ -2,9 +2,10 @@
 
 from typing import List
 
-from script.utilities.logger import logger
-from gridData import Grid
 import numpy as np
+from gridData import Grid
+
+from script.utilities.logger import logger
 
 VERSION = "1.0.0"
 
@@ -24,8 +25,7 @@ def grid_max(gs: List[Grid]):
     return ret
 
 
-def gen_max_pmap(inpaths: List[str],
-                 outpath: str):
+def gen_max_pmap(inpaths: List[str], outpath: str):
     """
     Generate max pmap file from multiple pmap files
     Note that input/output is dx FILEs not grid objects

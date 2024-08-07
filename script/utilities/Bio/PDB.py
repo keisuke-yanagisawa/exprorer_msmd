@@ -9,19 +9,21 @@ Authors: Keisuke Yanagisawa
 """
 import collections
 import gzip
+import io
 import os
-from typing import Any, Callable, List, Literal, Optional, Union
+import tempfile
 import warnings
+from collections.abc import Iterable
+from typing import Any, Callable, List, Literal, Optional, Union
+
 import numpy as np
+import numpy.typing as npt
 from Bio import PDB
 from Bio.PDB import PDBExceptions
-from collections.abc import Iterable
-import tempfile
-import io
 from Bio.PDB.Atom import Atom
 from Bio.PDB.Model import Model
 from Bio.PDB.Structure import Structure
-import numpy.typing as npt
+
 from ..scipy.spatial_func import estimate_volume
 from ..util import expandpath
 
@@ -54,9 +56,7 @@ class MultiModelPDBReader(object):
         while True:
             line = self.file.readline()
             if line.startswith(self.header):
-                self.model_positions.append(
-                    self.file.tell() - len(line.encode())
-                )
+                self.model_positions.append(self.file.tell() - len(line.encode()))
                 break
 
     def __init__(self, file: str, header: str = "MODEL"):
@@ -82,15 +82,14 @@ class MultiModelPDBReader(object):
         if idx < 0:
             raise IndexError(f"{self.header} index out of range")
 
-        while (len(self.model_positions) <= idx + 1):
+        while len(self.model_positions) <= idx + 1:
             if self.fileend:
                 raise IndexError(f"{self.header} index out of range")
             self.model_positions.append(self._next())
         self.file.seek(self.model_positions[idx])
 
         with tempfile.NamedTemporaryFile("w") as f:
-            n_bytes_to_be_read \
-                = self.model_positions[idx + 1] - self.model_positions[idx]
+            n_bytes_to_be_read = self.model_positions[idx + 1] - self.model_positions[idx]
             self.file.seek(self.model_positions[idx])
             f.write(self.file.read(n_bytes_to_be_read))
             f.flush()
@@ -101,7 +100,7 @@ class MultiModelPDBReader(object):
         get next STARTING point
         """
 
-        if (self.fileend):
+        if self.fileend:
             return None
 
         self.file.seek(self.model_positions[-1])
@@ -130,7 +129,7 @@ class MultiModelPDBReader(object):
             raise StopIteration
 
 
-class PDBIOhelper():
+class PDBIOhelper:
     """
     多数のmodelを単一のPDBに登録する時のヘルパクラスです。
     PDBIOクラスは全てのモデルを一旦メモリ上に載せる設計ですが、
@@ -209,9 +208,9 @@ def get_structure(filepath: str, structname="") -> Structure:
         return PDB.PDBParser(QUIET=True).get_structure(structname, fileobj)
 
 
-def get_atom_attr(atom: Atom,
-                  attr: Literal["resid", "resname", "coord", "element", "fullname"]
-                  ) -> Union[int, str, npt.NDArray[np.float_], tuple]:
+def get_atom_attr(
+    atom: Atom, attr: Literal["resid", "resname", "coord", "element", "fullname"]
+) -> Union[int, str, npt.NDArray[np.float_], tuple]:
     """
     Get attribute from Bio.PDB.Atom object.
     {"resid", "resname", "coord", "element", "fullname"}
@@ -250,13 +249,14 @@ def get_atom_attr(atom: Atom,
         raise NotImplementedError(f"Attribute {attr} is not supported yet.")
 
 
-def get_attr(model: Union[Structure, Model],
-             attr: Literal["resid", "resname", "coord", "element", "fullname"],
-             sele: Optional[Callable[[Atom], bool]] = None
-             ) -> npt.NDArray[Any]:
+def get_attr(
+    model: Union[Structure, Model],
+    attr: Literal["resid", "resname", "coord", "element", "fullname"],
+    sele: Optional[Callable[[Atom], bool]] = None,
+) -> npt.NDArray[Any]:
     """
     Get attribute from Bio.PDB.Model object.
-    {"resid", "resname", "coord", "element", "fullname"} 
+    {"resid", "resname", "coord", "element", "fullname"}
     are only acceptable as ``attr`` so far.
     Other attributes raises NotImplementedError.
 

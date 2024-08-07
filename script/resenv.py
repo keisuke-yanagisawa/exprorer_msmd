@@ -1,11 +1,13 @@
 from typing import List, Optional, Set, Union
-import numpy as np
-from scipy.interpolate import RegularGridInterpolator
+
 import gridData
-from scipy.spatial import distance
-from tqdm import tqdm
+import numpy as np
 from Bio.PDB.Model import Model
 from Bio.PDB.Structure import Structure
+from scipy.interpolate import RegularGridInterpolator
+from scipy.spatial import distance
+from tqdm import tqdm
+
 from script.utilities.Bio import PDB as uPDB
 
 VERSION = "0.3.0"
@@ -16,11 +18,9 @@ Output: residue environments
 """
 
 
-def compute_SR_probe_resis(model: Union[Structure, Model],
-                           dx: gridData.Grid,
-                           resn: str,
-                           threshold: float,
-                           lt: bool = False):
+def compute_SR_probe_resis(
+    model: Union[Structure, Model], dx: gridData.Grid, resn: str, threshold: float, lt: bool = False
+):
     """
     This function enumerates the residue numbers `resis` of probe molecules
     located in regions that exceed the `threshold` value.
@@ -41,10 +41,8 @@ def compute_SR_probe_resis(model: Union[Structure, Model],
         resis: set
             A set of residue numbers of probe molecules
     """
-    resis = uPDB.get_attr(model, "resid",
-                          sele=lambda a: uPDB.get_resname(a) == resn and not uPDB.is_hydrogen(a))
-    coords = uPDB.get_attr(model, "coord",
-                           sele=lambda a: uPDB.get_resname(a) == resn and not uPDB.is_hydrogen(a))
+    resis = uPDB.get_attr(model, "resid", sele=lambda a: uPDB.get_resname(a) == resn and not uPDB.is_hydrogen(a))
+    coords = uPDB.get_attr(model, "coord", sele=lambda a: uPDB.get_resname(a) == resn and not uPDB.is_hydrogen(a))
     interp = RegularGridInterpolator(dx.midpoints, dx.grid, method="nearest", fill_value=-1, bounds_error=False)
     values = interp(np.array(coords))
 
@@ -56,12 +54,10 @@ def compute_SR_probe_resis(model: Union[Structure, Model],
     return set(resis)
 
 
-def __get_surrounded_resis_around_a_residue(model: Union[Structure, Model],
-                                            focused_resi: int,
-                                            env_distance: float
-                                            ) -> Set[int]:
-    focused_residue_coords = uPDB.get_attr(model, "coord",
-                                           sele=lambda a: uPDB.get_resi(a) == focused_resi)
+def __get_surrounded_resis_around_a_residue(
+    model: Union[Structure, Model], focused_resi: int, env_distance: float
+) -> Set[int]:
+    focused_residue_coords = uPDB.get_attr(model, "coord", sele=lambda a: uPDB.get_resi(a) == focused_resi)
 
     all_resis = uPDB.get_attr(model, "resid")
     all_coords = uPDB.get_attr(model, "coord")
@@ -70,13 +66,15 @@ def __get_surrounded_resis_around_a_residue(model: Union[Structure, Model],
     return set(environment_resis)
 
 
-def __wrapper(model_wo_water: Union[Structure, Model],
-              dx: gridData.Grid,
-              focused_resname: str,
-              res_atomnames: List[str] = [" CB "],
-              threshold: float = 0.2,
-              lt: bool = False,
-              env_distance: float = 4.0) -> Optional[Structure]:
+def __wrapper(
+    model_wo_water: Union[Structure, Model],
+    dx: gridData.Grid,
+    focused_resname: str,
+    res_atomnames: List[str] = [" CB "],
+    threshold: float = 0.2,
+    lt: bool = False,
+    env_distance: float = 4.0,
+) -> Optional[Structure]:
     focused_residue_resis = set(
         uPDB.get_attr(model_wo_water, "resid", sele=lambda a: uPDB.get_resname(a) == focused_resname)
     )
@@ -103,24 +101,28 @@ def __wrapper(model_wo_water: Union[Structure, Model],
     return ret
 
 
-def resenv(grid: gridData.Grid,
-           trajectory: uPDB.MultiModelPDBReader,
-           resn: str,
-           res_atomnames: List[str],
-           threshold: float = 0.2,
-           lt: bool = False,
-           env_distance: float = 4,
-           verbose: bool = False) -> Structure:
+def resenv(
+    grid: gridData.Grid,
+    trajectory: uPDB.MultiModelPDBReader,
+    resn: str,
+    res_atomnames: List[str],
+    threshold: float = 0.2,
+    lt: bool = False,
+    env_distance: float = 4,
+    verbose: bool = False,
+) -> Structure:
     """
     Extract probe which is on high-probability region with its environment (protein residues)
     """
 
     ret = []
-    environments = [__wrapper(model, grid, resn, res_atomnames, threshold, lt, env_distance)
-                    for model in tqdm(trajectory, desc="[extract res. env.]", disable=not verbose)]
+    environments = [
+        __wrapper(model, grid, resn, res_atomnames, threshold, lt, env_distance)
+        for model in tqdm(trajectory, desc="[extract res. env.]", disable=not verbose)
+    ]
     environments = [e for e in environments if e is not None]
     ret.extend(environments)
 
-    if (len(ret) == 0):
+    if len(ret) == 0:
         raise ValueError("No structures were extracted.")
     return uPDB.concatenate_structures(ret)

@@ -1,5 +1,6 @@
 import tempfile
 from unittest import TestCase
+
 from script.utilities import pmd
 
 
@@ -17,18 +18,15 @@ class TestConversion(TestCase):
         pmd.convert(self.topfile, out_top, self.xyzfile, out_gro)
 
         # Ignore the first 15 lines including the timestamp and command to run test
-        self.assertEqual(open(out_top).readlines()[15:],
-                         open(self.expected_topfile).readlines()[15:])
-        self.assertEqual(open(out_gro).read(),
-                         open(self.expected_grofile).read())
+        self.assertEqual(open(out_top).readlines()[15:], open(self.expected_topfile).readlines()[15:])
+        self.assertEqual(open(out_gro).read(), open(self.expected_grofile).read())
 
     def test_run_convert_top_only(self):
         _, out_top = tempfile.mkstemp(suffix=".top")
         pmd.convert(self.topfile, out_top)
 
         # Ignore the first 15 lines including the timestamp and command to run test
-        self.assertEqual(open(out_top).readlines()[15:],
-                         open(self.expected_topfile).readlines()[15:])
+        self.assertEqual(open(out_top).readlines()[15:], open(self.expected_topfile).readlines()[15:])
 
     def __del__(self):
         pass

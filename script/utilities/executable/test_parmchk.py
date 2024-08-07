@@ -1,5 +1,6 @@
 import tempfile
 from unittest import TestCase
+
 from script.utilities.executable.parmchk import Parmchk
 
 
@@ -22,13 +23,11 @@ class TestParmchk(TestCase):
     def test_file_does_not_exist(self):
         parmchk = Parmchk()
         with self.assertRaises(FileNotFoundError):
-            parmchk.set(mol2="NOTHING.mol2",
-                        at="gaff2")
+            parmchk.set(mol2="NOTHING.mol2", at="gaff2")
             parmchk.run()
 
     def test_at_is_not_supported(self):
         parmchk = Parmchk()
         with self.assertRaises(ValueError):
-            parmchk.set(mol2=self.probe_mol2,
-                        at="NOT_SUPPORTED_ID")
+            parmchk.set(mol2=self.probe_mol2, at="NOT_SUPPORTED_ID")
             parmchk.run()

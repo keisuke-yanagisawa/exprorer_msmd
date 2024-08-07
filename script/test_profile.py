@@ -1,7 +1,9 @@
 from unittest import TestCase
+
+import numpy as np
+
 from script import profile
 from script.utilities.Bio import PDB as uPDB
-import numpy as np
 
 
 class TestCreateResidueInteractionProfile(TestCase):
