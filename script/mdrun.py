@@ -2,6 +2,7 @@
 
 
 import os
+from pathlib import Path
 from typing import List
 
 import jinja2
@@ -11,7 +12,7 @@ from .utilities.logger import logger
 VERSION = "1.0.0"
 
 
-def gen_mdp(protocol_dict: dict, MD_DIR: str):
+def gen_mdp(protocol_dict: dict, MD_DIR: Path):
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
     template = env.get_template(f"./template/{protocol_dict['type']}.mdp")
 
@@ -22,11 +23,13 @@ def gen_mdp(protocol_dict: dict, MD_DIR: str):
             protocol_dict["initial_temp"] = 0
         protocol_dict["duration"] = protocol_dict["nsteps"] * protocol_dict["dt"]
 
-    with open(f"{MD_DIR}/{protocol_dict['name']}.mdp", "w") as fout:
+    with open(MD_DIR / f"{protocol_dict['name']}.mdp", "w") as fout:
         fout.write(template.render(protocol_dict))
 
 
-def gen_mdrun_job(step_names: List[str], name: str, path: str, top: str, gro: str, out_traj: str, post_comm: str = ""):
+def gen_mdrun_job(
+    step_names: List[str], name: str, path: Path, top: Path, gro: Path, out_traj: Path, post_comm: str = ""
+):
     data = {
         "NAME": name,
         "TOP": top,
@@ -55,8 +58,10 @@ def prepare_sequence(sequence, general):
     return ret
 
 
-def prepare_md_files(index: int, sequence: List[dict], targetdir: str, jobname: str, top: str, gro: str, out_traj: str):
+def prepare_md_files(
+    index: int, sequence: List[dict], targetdir: Path, jobname: str, top: Path, gro: Path, out_traj: Path
+):
     for step in sequence:
         step["seed"] = index
         gen_mdp(step, targetdir)
-    gen_mdrun_job([d["name"] for d in sequence], jobname, f"{targetdir}/mdrun.sh", top, gro, out_traj)
+    gen_mdrun_job([d["name"] for d in sequence], jobname, targetdir / "mdrun.sh", top, gro, out_traj)

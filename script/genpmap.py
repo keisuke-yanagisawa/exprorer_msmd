@@ -95,8 +95,8 @@ def gen_pmap(
 
     name: str = setting_general["name"]
 
-    trajectory = Path(util.getabsolutepath(str(traj)))
-    topology = Path(util.getabsolutepath(str(top)))
+    trajectory = util.getabsolutepath(traj)
+    topology = util.getabsolutepath(top)
     ref_struct = Path(setting_input["protein"]["pdb"])
     probe_id: str = setting_input["probe"]["cid"]
     maps: list = setting_pmap["maps"]

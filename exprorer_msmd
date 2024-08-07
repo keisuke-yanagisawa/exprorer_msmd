@@ -2,7 +2,7 @@
 
 import argparse
 import os
-import pathlib
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -25,7 +25,7 @@ from script.utilities.pmd import convert as pmd_convert
 VERSION = "0.2.0"
 
 
-def preprocess(index, setting, debug=False) -> tuple[Path, Path, Path]:
+def preprocess(index: int, setting: dict, debug=False) -> tuple[Path, Path, Path]:
     prepdirpath: Path = Path(f'{setting["general"]["workdir"]}/system{index}/prep')
     prepdirpath.mkdir(parents=True, exist_ok=True)
 
@@ -78,24 +78,29 @@ def preprocess(index, setting, debug=False) -> tuple[Path, Path, Path]:
     return top, gro, pdb
 
 
-def execute_single_simulation(index, setting, gpuid, ncpus, top, gro, pdb, debug=False):
+def execute_single_simulation(
+    index: int, setting: dict, gpuid: int, ncpus: int, top: Path, gro: Path, pdb: Path, debug=False
+) -> Path:
     """
     Execute a single MSMD simulation with preprocessing and postprocessing.
     """
 
-    simdirpath = f'{setting["general"]["workdir"]}/system{index}/simulation'
-    pathlib.Path(simdirpath).mkdir(parents=True, exist_ok=True)
+    simdirpath = Path(f'{setting["general"]["workdir"]}/system{index}/simulation')
+    simdirpath.mkdir(parents=True, exist_ok=True)
 
-    JOB_NAME = setting["general"]["name"]
+    JOB_NAME: str = setting["general"]["name"]
 
-    exe_gromacs = setting["general"]["executables"]["gromacs"]
+    exe_gromacs: Path = Path(setting["general"]["executables"]["gromacs"])
 
-    os.system(f"cp {top} {simdirpath}/input.top")
-    os.system(f"cp {gro} {simdirpath}/input.gro")
-    os.system(f"cp {pdb} {simdirpath}/input.pdb")  # is it needed?
-    top = f"{simdirpath}/input.top"
-    gro = f"{simdirpath}/input.gro"
-    pdb = f"{simdirpath}/input.pdb"
+    new_top = simdirpath / "input.top"
+    new_gro = simdirpath / "input.gro"
+    new_pdb = simdirpath / "input.pdb"
+    shutil.copy(top, new_top)
+    shutil.copy(gro, new_gro)
+    shutil.copy(pdb, new_pdb)
+    top = new_top
+    gro = new_gro
+    pdb = new_pdb
 
     # generate a gromacs index file
     os.system(
@@ -119,7 +124,7 @@ def execute_single_simulation(index, setting, gpuid, ncpus, top, gro, pdb, debug
         JOB_NAME,
         top=top,
         gro=gro,
-        out_traj=f"{simdirpath}/{JOB_NAME}.xtc",
+        out_traj=simdirpath / f"{JOB_NAME}.xtc",
     )
 
     # execute simulation
@@ -132,7 +137,7 @@ def execute_single_simulation(index, setting, gpuid, ncpus, top, gro, pdb, debug
     """
     )
 
-    return f"{simdirpath}/{JOB_NAME}.xtc"
+    return simdirpath / f"{JOB_NAME}.xtc"
 
 
 def postprocess(index: int, setting, top: Path, traj: Path, debug: bool = False):
@@ -162,7 +167,7 @@ if __name__ == "__main__":
         logger.setLevel("info")
 
     logger.info(f"read yaml: {args.setting_yaml}")
-    setting = util.parse_yaml(args.setting_yaml)
+    setting = util.parse_yaml(Path(args.setting_yaml))
     if args.iter_index is not None:
         setting["general"]["iter_index"] = args.iter_index
     indices = set(util.expand_index(setting["general"]["iter_index"]))

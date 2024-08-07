@@ -198,7 +198,7 @@ def get_structure(filepath: Path, structname="") -> Structure:
     Bio.PDB.Structure
         Structure object of the PDB file
     """
-    filepath = Path(expandpath(str(filepath)))
+    filepath = expandpath(filepath)
     if filepath.suffix == ".gz":
         fileobj = gzip.open(filepath, "rt")
     else:

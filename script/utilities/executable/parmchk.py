@@ -16,7 +16,7 @@ class Parmchk(object):
         self.debug = debug
 
     def set(self, mol2: Path, at: Literal["gaff", "gaff2"]) -> "Parmchk":
-        mol2 = Path(expandpath(str(mol2)))
+        mol2 = expandpath(mol2)
         if at not in self.at_indices:
             raise ValueError(f"atomtype {at} is not supported")
         if not mol2.exists():
