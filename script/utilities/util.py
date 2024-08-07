@@ -9,22 +9,22 @@ import yaml
 from .logger import logger
 
 
-def getabsolutepath(path: str) -> str:
+def getabsolutepath(path: Path) -> Path:
     """
     Get absolute path from relative path
     """
     path = expandpath(path)
-    if not path.startswith("/"):  # relative path
-        path = os.getcwd() + "/" + path
+    if not path.is_absolute():  # relative path
+        path = os.getcwd() / path
     return path
 
 
-def expandpath(path: str) -> str:
+def expandpath(path: Path) -> Path:
     """
     Expand ~ and $HOME and other environment variables
     """
-    path = os.path.expanduser(path)
-    return os.path.expandvars(path)
+    path = path.expanduser()
+    return Path(os.path.expandvars(path))
 
 
 def randomname(n: int):
@@ -110,7 +110,7 @@ def ensure_compatibility_v1_1(setting: dict):
 
 
 def parse_yaml(yamlpath: Path) -> dict:
-    YAML_PATH = Path(getabsolutepath(str(yamlpath)))
+    YAML_PATH = getabsolutepath(yamlpath)
     YAML_DIR_PATH = YAML_PATH.parent
     if not YAML_PATH.exists():
         raise FileNotFoundError("YAML file not found: %s" % YAML_PATH)
@@ -129,7 +129,7 @@ def parse_yaml(yamlpath: Path) -> dict:
     if "pdb" not in setting["input"]["probe"] or setting["input"]["probe"]["pdb"] is None:
         setting["input"]["probe"]["pdb"] = setting["input"]["probe"]["cid"] + ".pdb"
 
-    setting["general"]["workdir"] = expandpath(setting["general"]["workdir"])
+    setting["general"]["workdir"] = str(expandpath(Path(setting["general"]["workdir"])))
     setting["general"]["workdir"] = (
         setting["general"]["workdir"]
         if setting["general"]["workdir"].startswith("/")
@@ -137,8 +137,9 @@ def parse_yaml(yamlpath: Path) -> dict:
         or setting["general"]["workdir"].startswith("~")
         else YAML_DIR_PATH / setting["general"]["workdir"]
     )
+    setting["general"]["workdir"] = Path(setting["general"]["workdir"])
 
-    setting["input"]["protein"]["pdb"] = expandpath(setting["input"]["protein"]["pdb"])
+    setting["input"]["protein"]["pdb"] = str(expandpath(Path(setting["input"]["protein"]["pdb"])))
     setting["input"]["protein"]["pdb"] = (
         setting["input"]["protein"]["pdb"]
         if setting["input"]["protein"]["pdb"].startswith("/")
@@ -146,8 +147,9 @@ def parse_yaml(yamlpath: Path) -> dict:
         or setting["input"]["protein"]["pdb"].startswith("~")
         else YAML_DIR_PATH / setting["input"]["protein"]["pdb"]
     )
+    setting["input"]["protein"]["pdb"] = Path(setting["input"]["protein"]["pdb"])
 
-    setting["input"]["probe"]["pdb"] = expandpath(setting["input"]["probe"]["pdb"])
+    setting["input"]["probe"]["pdb"] = str(expandpath(Path(setting["input"]["probe"]["pdb"])))
     setting["input"]["probe"]["pdb"] = (
         setting["input"]["probe"]["pdb"]
         if setting["input"]["probe"]["pdb"].startswith("/")
@@ -155,8 +157,9 @@ def parse_yaml(yamlpath: Path) -> dict:
         or setting["input"]["probe"]["pdb"].startswith("~")
         else YAML_DIR_PATH / setting["input"]["probe"]["pdb"]
     )
+    setting["input"]["probe"]["pdb"] = Path(setting["input"]["probe"]["pdb"])
 
-    setting["input"]["probe"]["mol2"] = expandpath(setting["input"]["probe"]["mol2"])
+    setting["input"]["probe"]["mol2"] = str(expandpath(Path(setting["input"]["probe"]["mol2"])))
     setting["input"]["probe"]["mol2"] = (
         setting["input"]["probe"]["mol2"]
         if setting["input"]["probe"]["mol2"].startswith("/")
@@ -164,6 +167,7 @@ def parse_yaml(yamlpath: Path) -> dict:
         or setting["input"]["probe"]["mol2"].startswith("~")
         else YAML_DIR_PATH / setting["input"]["probe"]["mol2"]
     )
+    setting["input"]["probe"]["mol2"] = Path(setting["input"]["probe"]["mol2"])
 
     if setting["input"]["protein"]["ssbond"] is None:
         setting["input"]["protein"]["ssbond"] = []
