@@ -27,7 +27,6 @@ def mask_generator(ref_struct: Path, reference_grid: gridData.Grid, distance: Op
         mask: gridData.Grid object containing boolean values
     """
     mask = GridUtil.gen_distance_grid(reference_grid, ref_struct)
-    # print(np.max(mask.grid), np.min(mask.grid), distance)
     if distance is not None:
         mask.grid = mask.grid < distance
     else:
@@ -40,7 +39,6 @@ def convert_to_proba(
 ) -> gridData.Grid:
     if mask_grid is not None:
         values = g.grid[np.where(mask_grid)]
-        # print(np.sum(g.grid), np.sum(values), np.where(mask_grid))
         if normalize == "snapshot" or normalize == "GFE":
             values /= frames
         else:

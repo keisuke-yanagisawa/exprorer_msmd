@@ -151,7 +151,6 @@ def convert_to_namedtuple(setting: dict) -> None:
         setting["map"]["aggregation"],
     )
 
-    print(setting["probe_profile"])
     setting["probe_profile"]["profile"]["types"] = [
         ProfileParameter(profile["name"], profile["atoms"])
         for profile in setting["probe_profile"]["profile"]["types"]

@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.typing as npt
 from scipy.spatial import KDTree
+import warnings
 
 
 def estimate_volume(points: npt.NDArray[np.float_], radii: npt.NDArray[np.float_], granularity=10):
@@ -25,18 +26,21 @@ def estimate_volume(points: npt.NDArray[np.float_], radii: npt.NDArray[np.float_
     z_pitch = np.min([(z_max - z_min) / granularity, 1])
 
     if np.min(radii) < np.max([x_pitch, y_pitch, z_pitch]) * 2:  # 2 is a magic number
-        print("Warning: The volumes of small spheres are underestimated.")
-        print("         Consider increasing the granularity")
-
-    # return None
+        warnings.warn(
+            "The granularity is too small compared to the radii of spheres. "
+            "The volumes of small spheres are underestimated. "
+            "Consider increasing the granularity. ", 
+            RuntimeWarning)
 
     # enumerate possible points to be occupied
     xs = np.arange(x_min - np.max(radii), x_max + np.max(radii) + 1, x_pitch)
     ys = np.arange(y_min - np.max(radii), y_max + np.max(radii) + 1, y_pitch)
     zs = np.arange(z_min - np.max(radii), z_max + np.max(radii) + 1, z_pitch)
     if len(xs) * len(ys) * len(zs) > 1e7:
-        print(f"Warning: The number of occupied voxels is too large: {len(xs)*len(ys)*len(zs)}")
-        print("         It will spend a long time to enumerate.")
+        warnings.warn(
+            "The number of occupied voxels is too large. "
+            "It will spend a long time to enumerate. ",
+            RuntimeWarning)
     xx, yy, zz = np.meshgrid(xs, ys, zs)
     grid_points = np.vstack((xx.ravel(), yy.ravel(), zz.ravel())).T
     # create a kdtree for fast nearest neighbor search
