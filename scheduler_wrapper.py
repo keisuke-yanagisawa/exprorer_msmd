@@ -1,5 +1,6 @@
 import argparse
 import os
+from pathlib import Path
 from string import Template
 
 import yaml
@@ -24,7 +25,7 @@ if __name__ == "__main__":
     parser.add_argument("-N,--run-per-job", dest="run_per_job", type=int, default=1)
     args = parser.parse_args()
 
-    environment = read_yaml(os.path.dirname(util.getabsolutepath(__file__)) + "/environment.yaml")
+    environment = read_yaml(os.path.dirname(util.getabsolutepath(Path(__file__))) + "/environment.yaml")
 
     # initial logger level is "warn"
     if args.debug:
@@ -56,11 +57,11 @@ if __name__ == "__main__":
 
     template = ""
     if environment["use_scheduler"] != True:
-        template = open(os.path.dirname(util.getabsolutepath(__file__)) + "/template/pbs", "r").read()
+        template = open(os.path.dirname(util.getabsolutepath(Path(__file__))) + "/template/pbs", "r").read()
     elif environment["scheduler"]["type"] == "PBS":
-        template = open(os.path.dirname(util.getabsolutepath(__file__)) + "/template/pbs", "r").read()
+        template = open(os.path.dirname(util.getabsolutepath(Path(__file__))) + "/template/pbs", "r").read()
     elif environment["scheduler"]["type"] == "Slurm":
-        template = open(os.path.dirname(util.getabsolutepath(__file__)) + "/template/slurm", "r").read()
+        template = open(os.path.dirname(util.getabsolutepath(Path(__file__))) + "/template/slurm", "r").read()
 
     import math
 
@@ -85,7 +86,7 @@ if __name__ == "__main__":
                         "singularity_prerequirement": singularity_prerequirement,
                         "singularity_sifpath": singularity_sifpath,
                         "singularity_bind": singularity_bind,
-                        "PATH_EXPRORER_MSMD": os.path.dirname(util.getabsolutepath(__file__)) + "/exprorer_msmd",
+                        "PATH_EXPRORER_MSMD": os.path.dirname(util.getabsolutepath(Path(__file__))) + "/exprorer_msmd",
                         "ITER_INDEX": ITER_INDEX,
                         "YAML": SETTING_YAML,
                         "NGPUS": len(gr),

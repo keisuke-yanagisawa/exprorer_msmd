@@ -138,7 +138,7 @@ class PDBIOhelper:
     """
 
     def __init__(self, path: str):
-        self.path = expandpath(path)
+        self.path = expandpath(Path(path))
         self.open()
 
     def __enter__(self):

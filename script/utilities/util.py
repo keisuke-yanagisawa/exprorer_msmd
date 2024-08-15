@@ -6,6 +6,7 @@ from typing import Union
 
 import yaml
 
+from ..setting import Executables, GeneralSetting, InputSetting, ProbeSetting, ProteinSetting
 from .logger import logger
 
 
@@ -109,6 +110,36 @@ def ensure_compatibility_v1_1(setting: dict):
         setting["map"]["normalization"] = "total"
 
 
+def convert_to_namedtuple(setting: dict) -> None:
+    setting["general"]["executables"] = Executables(
+        Path(setting["general"]["executables"]["python"]),
+        Path(setting["general"]["executables"]["gromacs"]),
+        Path(setting["general"]["executables"]["packmol"]),
+        Path(setting["general"]["executables"]["tleap"]),
+        Path(setting["general"]["executables"]["cpptraj"]),
+    )
+    setting["general"] = GeneralSetting(
+        setting["general"]["iter_index"],
+        Path(setting["general"]["workdir"]),
+        setting["general"]["name"],
+        setting["general"]["executables"],
+        setting["general"]["multiprocessing"],
+        setting["general"]["num_process_per_gpu"],
+    )
+    setting["input"]["probe"] = ProbeSetting(
+        setting["input"]["probe"]["cid"],
+        Path(setting["input"]["probe"]["mol2"]),
+        Path(setting["input"]["probe"]["pdb"]),
+        setting["input"]["probe"]["atomtype"],
+        setting["input"]["probe"]["molar"],
+    )
+    setting["input"]["protein"] = ProteinSetting(
+        Path(setting["input"]["protein"]["pdb"]),
+        tuple(setting["input"]["protein"]["ssbond"]),
+    )
+    setting["input"] = InputSetting(setting["input"]["protein"], setting["input"]["probe"])
+
+
 def parse_yaml(yamlpath: Path) -> dict:
     YAML_PATH = getabsolutepath(yamlpath)
     YAML_DIR_PATH = YAML_PATH.parent
@@ -172,6 +203,6 @@ def parse_yaml(yamlpath: Path) -> dict:
     if setting["input"]["protein"]["ssbond"] is None:
         setting["input"]["protein"]["ssbond"] = []
 
-    setting["general"]["yaml"] = YAML_PATH
+    convert_to_namedtuple(setting)
 
     return setting

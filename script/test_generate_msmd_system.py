@@ -53,6 +53,7 @@ class TestCreateFrcmod(TestCase):
         self.pdbfile = __testdata_dir / "A11.pdb"
         self.expected_frcmod = __testdata_dir / "A11.frcmod"
         self.atomtype: Literal["gaff", "gaff2"] = "gaff2"
+        self.invalid_path = Path("INVALID")
 
     def test_create_frcmod(self):
         frcmod_path = _create_frcmod(self.mol2file, self.atomtype)
@@ -63,11 +64,11 @@ class TestCreateFrcmod(TestCase):
 
     def test_invalid_atomtype(self):
         with self.assertRaises(ValueError):
-            _create_frcmod(self.mol2file, "INVALID")  # type: ignore
+            _create_frcmod(self.mol2file, self.invalid_path)  # type: ignore
 
     def test_mol2file_does_not_exist(self):
         with self.assertRaises(FileNotFoundError):
-            _create_frcmod("INVALID", self.atomtype)  # type: ignore
+            _create_frcmod(self.invalid_path, self.atomtype)  # type: ignore
 
     def test_invalid_mol2file(self):
         with self.assertRaises(ValueError):

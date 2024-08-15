@@ -9,6 +9,7 @@ import numpy as np
 import numpy.typing as npt
 from scipy import constants
 
+from script.setting import GeneralSetting, InputSetting
 from script.utilities import GridUtil, util
 from script.utilities.Bio import PDB as uPDB
 from script.utilities.executable import Cpptraj
@@ -88,22 +89,28 @@ def parse_snapshot_setting(string: str):
 
 
 def gen_pmap(
-    dirpath: Path, setting_general: dict, setting_input: dict, setting_pmap: dict, traj: Path, top: Path, debug=False
+    dirpath: Path,
+    setting_general: GeneralSetting,
+    setting_input: InputSetting,
+    setting_pmap: dict,
+    traj: Path,
+    top: Path,
+    debug=False,
 ):
 
     traj_start, traj_stop, traj_offset = parse_snapshot_setting(setting_pmap["snapshot"])
 
-    name: str = setting_general["name"]
+    name: str = setting_general.name
 
     trajectory = util.getabsolutepath(traj)
     topology = util.getabsolutepath(top)
-    ref_struct = Path(setting_input["protein"]["pdb"])
-    probe_id: str = setting_input["probe"]["cid"]
+    ref_struct = setting_input.protein.pdb
+    probe_id: str = setting_input.probe.cid
     maps: list = setting_pmap["maps"]
     box_size: int = setting_pmap["map_size"]
-    box_center: npt.NDArray[np.float_] = uPDB.get_attr(
-        uPDB.get_structure(setting_input["protein"]["pdb"]), "coord"
-    ).mean(axis=0)
+    box_center: npt.NDArray[np.float_] = uPDB.get_attr(uPDB.get_structure(setting_input.protein.pdb), "coord").mean(
+        axis=0
+    )
     # structure.center_of_mass() may return "[ nan nan nan ]" due to unspecified atomic weight
 
     cpptraj_obj = Cpptraj(debug=debug)

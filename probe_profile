@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
     indices = util.expand_index(setting["general"]["iter_index"])
     WORKING_DIR = setting["general"]["workdir"]
-    probe_resn = setting["input"]["probe"]["cid"]
+    probe_resn = setting["input"].probe.cid
     JOB_NAME = setting["general"]["name"]
     n_jobs = setting["general"]["multiprocessing"]
     mapname = setting["probe_profile"]["resenv"]["map"]

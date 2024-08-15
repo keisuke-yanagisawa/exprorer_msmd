@@ -6,6 +6,7 @@ from pathlib import Path
 from subprocess import getoutput as gop
 from typing import Literal, Tuple
 
+from script.setting import ProbeSetting, ProteinSetting
 from script.utilities import const
 from script.utilities.executable import Packmol, Parmchk, TLeap
 from script.utilities.logger import logger
@@ -90,19 +91,23 @@ def _create_frcmod(mol2file: Path, atomtype: Literal["gaff", "gaff2"], debug: bo
 
 
 def create_system(
-    setting_protein: dict, setting_probe: dict, probe_frcmod: Path, debug: bool = False, seed: int = -1
+    setting_protein: ProteinSetting,
+    setting_probe: ProbeSetting,
+    probe_frcmod: Path,
+    debug: bool = False,
+    seed: int = -1,
 ) -> Tuple[Path, Path]:
     """
     create system from protein and probe
     """
-    pdbpath = protein_pdb_preparation(Path(setting_protein["pdb"]))
+    pdbpath = protein_pdb_preparation(setting_protein.pdb)
     boxsize = __calculate_boxsize(pdbpath)
-    ssbonds = setting_protein["ssbond"]
-    cmol = Path(setting_probe["mol2"])
-    cpdb = Path(setting_probe["pdb"])
-    cid = setting_probe["cid"]
-    atomtype = setting_probe["atomtype"]
-    probemolar = float(setting_probe["molar"])
+    ssbonds = setting_protein.ssbond
+    cmol = setting_probe.mol2
+    cpdb = setting_probe.pdb
+    cid = setting_probe.cid
+    atomtype = setting_probe.atomtype
+    probemolar = setting_probe.molar
 
     box_pdb = Path(tempfile.mkstemp(suffix=".pdb")[1])
     Packmol(debug=debug).set(pdbpath, cpdb, boxsize, probemolar).run(box_pdb, seed=seed)
@@ -135,8 +140,6 @@ def generate_msmd_system(setting: dict, debug: bool = False, seed: int = -1) -> 
         parm7: path to parm7 file
         rst7: path to rst7 file
     """
-    cfrcmod = _create_frcmod(
-        Path(setting["input"]["probe"]["mol2"]), setting["input"]["probe"]["atomtype"], debug=debug
-    )
-    parm7, rst7 = create_system(setting["input"]["protein"], setting["input"]["probe"], cfrcmod, debug=debug, seed=seed)
+    cfrcmod = _create_frcmod(Path(setting["input"].probe.mol2), setting["input"].probe.atomtype, debug=debug)
+    parm7, rst7 = create_system(setting["input"].protein, setting["input"].probe, cfrcmod, debug=debug, seed=seed)
     return parm7, rst7

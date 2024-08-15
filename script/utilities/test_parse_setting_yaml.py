@@ -17,12 +17,12 @@ class TestParseNormalSettingYaml(TestCase):
     def test_parse_settings(self):
         """check some fields in normal yaml file"""
         setting = parse_yaml(self.yaml_path)
-        self.assertEqual(setting["general"]["name"], "normal_protocol")
+        self.assertEqual(setting["general"].name, "normal_protocol")
         self.assertEqual(len(setting["exprorer_msmd"]["sequence"]), 12)
 
     def test_default_values(self):
         setting = parse_yaml(self.yaml_path)
-        self.assertEqual(setting["general"]["multiprocessing"], -1)
+        self.assertEqual(setting["general"].multiprocessing, -1)
 
 
 class TestParseSettingYamlErrorCases(TestCase):

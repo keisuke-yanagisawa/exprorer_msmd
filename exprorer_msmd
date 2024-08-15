@@ -26,11 +26,11 @@ VERSION = "0.2.0"
 
 
 def preprocess(index: int, setting: dict, debug=False) -> tuple[Path, Path, Path]:
-    prepdirpath: Path = Path(f'{setting["general"]["workdir"]}/system{index}/prep')
+    prepdirpath: Path = setting["general"].workdir / f"system{index}" / "prep"
     prepdirpath.mkdir(parents=True, exist_ok=True)
 
-    PROBE_ID = setting["input"]["probe"]["cid"]
-    JOB_NAME = setting["general"]["name"]
+    PROBE_ID = setting["input"].probe.cid
+    JOB_NAME = setting["general"].name
     top: Path = prepdirpath / f"{JOB_NAME}.top"
     gro: Path = prepdirpath / f"{JOB_NAME}.gro"
     pdb: Path = prepdirpath / f"{JOB_NAME}.pdb"
@@ -38,7 +38,7 @@ def preprocess(index: int, setting: dict, debug=False) -> tuple[Path, Path, Path
     if top.exists() and gro.exists() and pdb.exists():
         return top, gro, pdb
 
-    exe_gromacs: Path = Path(setting["general"]["executables"]["gromacs"])
+    exe_gromacs: Path = setting["general"].executables.gromacs
 
     # create a protein-water-probe system
     tmptop: Path = Path(tempfile.mkstemp(suffix=".top")[1])
@@ -85,12 +85,12 @@ def execute_single_simulation(
     Execute a single MSMD simulation with preprocessing and postprocessing.
     """
 
-    simdirpath = Path(f'{setting["general"]["workdir"]}/system{index}/simulation')
+    simdirpath = setting["general"].workdir / f"system{index}" / "simulation"
     simdirpath.mkdir(parents=True, exist_ok=True)
 
-    JOB_NAME: str = setting["general"]["name"]
+    JOB_NAME: str = setting["general"].name
 
-    exe_gromacs: Path = Path(setting["general"]["executables"]["gromacs"])
+    exe_gromacs: Path = setting["general"].executables.gromacs
 
     new_top = simdirpath / "input.top"
     new_gro = simdirpath / "input.gro"
@@ -141,7 +141,7 @@ def execute_single_simulation(
 
 
 def postprocess(index: int, setting, top: Path, traj: Path, debug: bool = False):
-    workdir = Path(setting["general"]["workdir"])
+    workdir = setting["general"].workdir
     sysdirpath = workdir / f"system{index}"
 
     # generate pmap files
@@ -168,19 +168,20 @@ if __name__ == "__main__":
 
     logger.info(f"read yaml: {args.setting_yaml}")
     setting = util.parse_yaml(Path(args.setting_yaml))
+    print(type(setting["input"].protein))
     if args.iter_index is not None:
-        setting["general"]["iter_index"] = args.iter_index
-    indices = set(util.expand_index(setting["general"]["iter_index"]))
+        setting["general"].iter_index = args.iter_index
+    indices = set(util.expand_index(setting["general"].iter_index))
 
-    jobname = setting["general"]["name"]
-    workdir = Path(setting["general"]["workdir"])
+    jobname = setting["general"].name
+    workdir = setting["general"].workdir
     logger.info(f"job name: {jobname}")
     logger.info(f"workdir: {workdir}")
 
     # Count num. of GPUs and allocate CPU cores to each GPU
     # Raise EnvironmentError if GPU is not available
 
-    num_process_per_gpu = setting["general"]["num_process_per_gpu"]
+    num_process_per_gpu = setting["general"].num_process_per_gpu
     gpuids = get_gpuids() * num_process_per_gpu
     print(gpuids)
     if num_process_per_gpu > 1:
@@ -190,7 +191,7 @@ if __name__ == "__main__":
             logger.info("nvidia-cuda-mps-server is running.")
 
     ngpus = len(gpuids)
-    if not setting["general"]["multiprocessing"]:
+    if not setting["general"].multiprocessing:
         ngpus = 1
     ncpus = len(os.sched_getaffinity(0))
     ncpus = 1 if ncpus is None else ncpus
