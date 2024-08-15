@@ -110,6 +110,28 @@ def ensure_compatibility_v1_1(setting: dict):
 
 
 def parse_yaml(yamlpath: Path) -> dict:
+    setting: dict = {
+        "general": {
+            "workdir": Path(""),
+        },
+        "input": {
+            "protein": {
+                "pdb": Path(""),
+            },
+            "probe": {
+                "cid": "",
+            },
+        },
+        "exprorer_msmd": {
+            "general": {},
+        },
+        "map": {
+            "snapshot": "",
+        },
+        "probe_profile": {
+            "resenv": {},
+        },
+    }
     YAML_PATH = getabsolutepath(yamlpath)
     YAML_DIR_PATH = YAML_PATH.parent
     if not YAML_PATH.exists():
@@ -119,7 +141,9 @@ def parse_yaml(yamlpath: Path) -> dict:
     if not os.path.splitext(YAML_PATH)[1][1:] == "yaml":
         raise ValueError("YAML file must have .yaml extension: %s" % YAML_PATH)
     with YAML_PATH.open() as fin:
-        setting: dict = yaml.safe_load(fin)  # type: ignore
+        yaml_dict: dict = yaml.safe_load(fin) # type: ignore
+        if yaml_dict is not None:
+            setting.update(yaml_dict)
 
     ensure_compatibility_v1_1(setting)
     set_default(setting)
@@ -169,7 +193,7 @@ def parse_yaml(yamlpath: Path) -> dict:
     )
     setting["input"]["probe"]["mol2"] = Path(setting["input"]["probe"]["mol2"])
 
-    if setting["input"]["protein"]["ssbond"] is None:
+    if "ssbond" not in setting["input"]["protein"] or setting["input"]["protein"]["ssbond"] is None:
         setting["input"]["protein"]["ssbond"] = []
 
     setting["general"]["yaml"] = YAML_PATH
