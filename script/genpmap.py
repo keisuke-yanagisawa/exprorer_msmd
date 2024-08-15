@@ -9,7 +9,7 @@ import numpy as np
 import numpy.typing as npt
 from scipy import constants
 
-from script.setting import GeneralSetting, InputSetting
+from script.setting import GeneralSetting, InputSetting, MapCreationSetting
 from script.utilities import GridUtil, util
 from script.utilities.Bio import PDB as uPDB
 from script.utilities.executable import Cpptraj
@@ -92,13 +92,13 @@ def gen_pmap(
     dirpath: Path,
     setting_general: GeneralSetting,
     setting_input: InputSetting,
-    setting_pmap: dict,
+    setting_pmap: MapCreationSetting,
     traj: Path,
     top: Path,
     debug=False,
 ):
 
-    traj_start, traj_stop, traj_offset = parse_snapshot_setting(setting_pmap["snapshot"])
+    traj_start, traj_stop, traj_offset = parse_snapshot_setting(setting_pmap.snapshot)
 
     name: str = setting_general.name
 
@@ -106,8 +106,8 @@ def gen_pmap(
     topology = util.getabsolutepath(top)
     ref_struct = setting_input.protein.pdb
     probe_id: str = setting_input.probe.cid
-    maps: list = setting_pmap["maps"]
-    box_size: int = setting_pmap["map_size"]
+    maps: list = setting_pmap.maps
+    box_size: int = setting_pmap.map_size
     box_center: npt.NDArray[np.float_] = uPDB.get_attr(uPDB.get_structure(setting_input.protein.pdb), "coord").mean(
         axis=0
     )
@@ -131,11 +131,11 @@ def gen_pmap(
         pmap_path = convert_to_pmap(
             map["grid"],
             ref_struct,
-            setting_pmap["valid_dist"],
+            setting_pmap.valid_dist,
             frames=cpptraj_obj.frames,
-            normalize=setting_pmap["normalization"],
+            normalize=setting_pmap.normalization,
         )
-        if setting_pmap["normalization"] == "GFE":
+        if setting_pmap.normalization == "GFE":
             struct_obj = uPDB.get_structure(ref_struct)
             protein_volume = uPDB.estimate_exclute_volume(struct_obj)
             mean_proba = map["num_probe_atoms"] / (cpptraj_obj.last_volume - protein_volume)

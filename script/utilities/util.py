@@ -6,7 +6,7 @@ from typing import Union
 
 import yaml
 
-from ..setting import Executables, GeneralSetting, InputSetting, ProbeSetting, ProteinSetting
+from ..setting import Executables, GeneralSetting, InputSetting, MapCreationSetting, ProbeSetting, ProteinSetting
 from .logger import logger
 
 
@@ -139,6 +139,17 @@ def convert_to_namedtuple(setting: dict) -> None:
     )
     setting["input"] = InputSetting(setting["input"]["protein"], setting["input"]["probe"])
 
+    # TODO: ExporerMSMDSetting
+
+    setting["map"] = MapCreationSetting(
+        setting["map"]["type"],
+        setting["map"]["snapshot"],
+        setting["map"]["maps"],
+        setting["map"]["map_size"],
+        setting["map"]["normalization"],
+        setting["map"]["valid_dist"],
+        setting["map"]["aggregation"],
+    )
 
 def parse_yaml(yamlpath: Path) -> dict:
     YAML_PATH = getabsolutepath(yamlpath)
@@ -147,7 +158,7 @@ def parse_yaml(yamlpath: Path) -> dict:
         raise FileNotFoundError("YAML file not found: %s" % YAML_PATH)
     if YAML_PATH.is_dir():
         raise IsADirectoryError("Given YAML file path %s is a directory" % YAML_PATH)
-    if not os.path.splitext(YAML_PATH)[1][1:] == "yaml":
+    if YAML_PATH.suffix != ".yaml":
         raise ValueError("YAML file must have .yaml extension: %s" % YAML_PATH)
     with YAML_PATH.open() as fin:
         setting: dict = yaml.safe_load(fin)  # type: ignore
@@ -168,7 +179,6 @@ def parse_yaml(yamlpath: Path) -> dict:
         or setting["general"]["workdir"].startswith("~")
         else YAML_DIR_PATH / setting["general"]["workdir"]
     )
-    setting["general"]["workdir"] = Path(setting["general"]["workdir"])
 
     setting["input"]["protein"]["pdb"] = str(expandpath(Path(setting["input"]["protein"]["pdb"])))
     setting["input"]["protein"]["pdb"] = (
@@ -178,7 +188,6 @@ def parse_yaml(yamlpath: Path) -> dict:
         or setting["input"]["protein"]["pdb"].startswith("~")
         else YAML_DIR_PATH / setting["input"]["protein"]["pdb"]
     )
-    setting["input"]["protein"]["pdb"] = Path(setting["input"]["protein"]["pdb"])
 
     setting["input"]["probe"]["pdb"] = str(expandpath(Path(setting["input"]["probe"]["pdb"])))
     setting["input"]["probe"]["pdb"] = (
@@ -188,7 +197,6 @@ def parse_yaml(yamlpath: Path) -> dict:
         or setting["input"]["probe"]["pdb"].startswith("~")
         else YAML_DIR_PATH / setting["input"]["probe"]["pdb"]
     )
-    setting["input"]["probe"]["pdb"] = Path(setting["input"]["probe"]["pdb"])
 
     setting["input"]["probe"]["mol2"] = str(expandpath(Path(setting["input"]["probe"]["mol2"])))
     setting["input"]["probe"]["mol2"] = (
@@ -198,7 +206,6 @@ def parse_yaml(yamlpath: Path) -> dict:
         or setting["input"]["probe"]["mol2"].startswith("~")
         else YAML_DIR_PATH / setting["input"]["probe"]["mol2"]
     )
-    setting["input"]["probe"]["mol2"] = Path(setting["input"]["probe"]["mol2"])
 
     if setting["input"]["protein"]["ssbond"] is None:
         setting["input"]["protein"]["ssbond"] = []

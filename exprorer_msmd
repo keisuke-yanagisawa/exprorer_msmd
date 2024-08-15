@@ -168,7 +168,6 @@ if __name__ == "__main__":
 
     logger.info(f"read yaml: {args.setting_yaml}")
     setting = util.parse_yaml(Path(args.setting_yaml))
-    print(type(setting["input"].protein))
     if args.iter_index is not None:
         setting["general"].iter_index = args.iter_index
     indices = set(util.expand_index(setting["general"].iter_index))
@@ -183,7 +182,6 @@ if __name__ == "__main__":
 
     num_process_per_gpu = setting["general"].num_process_per_gpu
     gpuids = get_gpuids() * num_process_per_gpu
-    print(gpuids)
     if num_process_per_gpu > 1:
         if not is_mps_control_running():
             raise RuntimeError("nvidia-cuda-mps-server is not running. Please start it before using MPS.")
