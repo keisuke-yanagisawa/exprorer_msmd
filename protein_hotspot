@@ -2,6 +2,7 @@
 
 import argparse
 import glob
+from pathlib import Path
 
 from script import maxpmap
 from script.utilities import util
@@ -11,8 +12,8 @@ VERSION = "0.1.0"
 
 
 def protein_hotspot(setting):
-    basedirpath = setting["general"]["workdir"]
-    JOB_NAME = setting["general"]["name"]
+    basedirpath = setting["general"].workdir
+    JOB_NAME = setting["general"].name
 
     logger.info("PMAP aggregation: mapPMAP")
     for map in setting["map"].maps:
@@ -38,6 +39,6 @@ if __name__ == "__main__":
     # else: logger level is "warn"
 
     logger.info(f"read yaml: {args.setting_yaml}")
-    setting = util.parse_yaml(args.setting_yaml)
+    setting = util.parse_yaml(Path(args.setting_yaml))
 
     protein_hotspot(setting)

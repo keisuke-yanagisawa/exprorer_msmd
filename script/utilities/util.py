@@ -6,7 +6,7 @@ from typing import Union
 
 import yaml
 
-from ..setting import Executables, GeneralSetting, InputSetting, MapCreationSetting, ProbeSetting, ProteinSetting
+from ..setting import Executables, GeneralSetting, InputSetting, MapCreationSetting, ProbeProfileSetting, ProbeSetting, ProfileParameter, ProteinSetting
 from .logger import logger
 
 
@@ -149,6 +149,20 @@ def convert_to_namedtuple(setting: dict) -> None:
         setting["map"]["normalization"],
         setting["map"]["valid_dist"],
         setting["map"]["aggregation"],
+    )
+
+    print(setting["probe_profile"])
+    setting["probe_profile"]["profile"]["types"] = [
+        ProfileParameter(profile["name"], profile["atoms"])
+        for profile in setting["probe_profile"]["profile"]["types"]
+    ]
+    setting["probe_profile"] = ProbeProfileSetting(
+        setting["probe_profile"]["resenv"]["map"],
+        setting["probe_profile"]["resenv"]["snapshots"],
+        setting["probe_profile"]["resenv"]["threshold"],
+        setting["probe_profile"]["resenv"]["env_dist"],
+        setting["probe_profile"]["resenv"]["align"],
+        setting["probe_profile"]["profile"]["types"]
     )
 
 def parse_yaml(yamlpath: Path) -> dict:

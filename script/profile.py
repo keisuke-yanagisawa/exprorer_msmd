@@ -18,13 +18,13 @@ def __calc_minimum_bounding_box(coords) -> Tuple[np.ndarray, np.ndarray]:
     return min_xyz, max_xyz
 
 
-def create_residue_interaction_profile(struct: Structure, target_residue_atoms: List[Tuple[str, str]]) -> gridData.Grid:
+def create_residue_interaction_profile(struct: Structure, target_residue_atoms: tuple[tuple[str, str]]) -> gridData.Grid:
     """
     struct: Bio.PDB.Structure
         A structure containing multiple models of aligned environments
-    target_residue_atoms: List[Tuple[str, str]]
+    target_residue_atoms: tuple[tuple[str, str]]
         A list of residue-atom pairs which are to be included in the profile
-        ex: [("ALA", " CA "), ("ALA", " CB "), ("ARG", " CB ")]
+        ex: (("ALA", " CA "), ("ALA", " CB "), ("ARG", " CB "))
     """
 
     sele = uPDB.Selector(
