@@ -7,7 +7,16 @@ from typing import Union
 import yaml
 
 from .logger import logger
+import collections.abc
 
+
+def update_dict(d: dict, u: dict):
+    for k, v in u.items():
+        if isinstance(v, collections.abc.Mapping):
+            d[k] = update_dict(d.get(k, {}), v) # type: ignore
+        else:
+            d[k] = v
+    return d
 
 def getabsolutepath(path: Path) -> Path:
     """
@@ -67,29 +76,6 @@ def expand_index(ind_info: Union[str, int]):
     return ret
 
 
-def set_default(setting: dict) -> None:
-    """
-    Set default values (in place) for some fields in setting
-    """
-    if "multiprocessing" not in setting["general"]:
-        setting["general"]["multiprocessing"] = -1
-    if "valid_dist" not in setting["map"]:
-        setting["map"]["valid_dist"] = 5
-    if "threshold" not in setting["probe_profile"]:
-        setting["probe_profile"]["threshold"] = 0.001
-    if "env_dist" not in setting["probe_profile"]:
-        setting["probe_profile"]["resenv"]["env_dist"] = 4
-
-    if "dt" not in setting["exprorer_msmd"]["general"]:
-        setting["exprorer_msmd"]["general"]["dt"] = 0.002
-    if "temperature" not in setting["exprorer_msmd"]["general"]:
-        setting["exprorer_msmd"]["general"]["temperature"] = 300
-    if "pressure" not in setting["exprorer_msmd"]["general"]:
-        setting["exprorer_msmd"]["general"]["pressure"] = 1.0
-    if "num_process_per_gpu" not in setting["general"]:
-        setting["general"]["num_process_per_gpu"] = 1
-
-
 def ensure_compatibility_v1_1(setting: dict):
     """
     Ensure compatibility with exprorer_msmd v1.1
@@ -110,6 +96,38 @@ def ensure_compatibility_v1_1(setting: dict):
 
 
 def parse_yaml(yamlpath: Path) -> dict:
+    setting: dict = {
+        "general": {
+            "workdir": Path(""),
+            "multiprocessing": -1,
+            "num_process_per_gpu": 1,
+        },
+        "input": {
+            "protein": {
+                "pdb": Path(""),
+            },
+            "probe": {
+                "cid": "",
+            },
+        },
+        "exprorer_msmd": {
+            "general": {
+                "dt": 0.002,
+                "temperature": 300,
+                "pressure": 1.0,
+            },
+        },
+        "map": {
+            "snapshot": "",
+            "valid_dist": 5.0,
+        },
+        "probe_profile": {
+            "threshold": 0.001,
+            "resenv": {
+                "env_dist": 4.0,
+            },
+        },
+    }
     YAML_PATH = getabsolutepath(yamlpath)
     YAML_DIR_PATH = YAML_PATH.parent
     if not YAML_PATH.exists():
@@ -119,10 +137,11 @@ def parse_yaml(yamlpath: Path) -> dict:
     if not os.path.splitext(YAML_PATH)[1][1:] == "yaml":
         raise ValueError("YAML file must have .yaml extension: %s" % YAML_PATH)
     with YAML_PATH.open() as fin:
-        setting: dict = yaml.safe_load(fin)  # type: ignore
+        yaml_dict: dict = yaml.safe_load(fin) # type: ignore
+        if yaml_dict is not None:
+            update_dict(setting, yaml_dict)
 
     ensure_compatibility_v1_1(setting)
-    set_default(setting)
 
     if "mol2" not in setting["input"]["probe"] or setting["input"]["probe"]["mol2"] is None:
         setting["input"]["probe"]["mol2"] = setting["input"]["probe"]["cid"] + ".mol2"
@@ -169,9 +188,8 @@ def parse_yaml(yamlpath: Path) -> dict:
     )
     setting["input"]["probe"]["mol2"] = Path(setting["input"]["probe"]["mol2"])
 
-    if setting["input"]["protein"]["ssbond"] is None:
+    if "ssbond" not in setting["input"]["protein"] or setting["input"]["protein"]["ssbond"] is None:
         setting["input"]["protein"]["ssbond"] = []
 
     setting["general"]["yaml"] = YAML_PATH
-
     return setting

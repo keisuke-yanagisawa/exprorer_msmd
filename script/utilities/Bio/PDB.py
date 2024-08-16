@@ -137,7 +137,7 @@ class PDBIOhelper:
     これは1つずつモデルを保存していきます。
     """
 
-    def __init__(self, path: str):
+    def __init__(self, path: Path):
         self.path = expandpath(path)
         self.open()
 
@@ -449,7 +449,7 @@ def concatenate_structures(structs: List[Structure]) -> Structure:
 
     with tempfile.NamedTemporaryFile("w") as f:
 
-        out_helper = PDBIOhelper(f.name)
+        out_helper = PDBIOhelper(Path(f.name))
         for struct in structs:
             out_helper.save(struct)
         out_helper.close()
