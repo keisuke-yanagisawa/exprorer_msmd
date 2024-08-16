@@ -5,5 +5,8 @@
     "ms-python.python",
     "ms-python.isort",
     "mhutchie.git-graph",
+    "github.copilot",
+    "shd101wyy.markdown-preview-enhanced",
+    "usernamehw.errorlens",
   ]
 }
