@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
-import tempfile
+from pathlib import Path
 from typing import List
 
 import gridData
@@ -12,6 +12,7 @@ from script import maxpmap
 from script.alignresenv import align_res_env
 from script.profile import create_residue_interaction_profile
 from script.resenv import resenv
+from script.setting import parse_yaml
 from script.utilities import util
 from script.utilities.Bio import PDB as uPDB
 from script.utilities.logger import logger
@@ -21,7 +22,7 @@ VERSION = "0.1.0"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Calculate residue interaction profile around probe")
-    parser.add_argument("setting_yaml")
+    parser.add_argument("setting_yaml", type=Path)
     parser.add_argument("-v,--verbose", dest="verbose", action="store_true")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--version", action="version", version=VERSION)
@@ -34,7 +35,7 @@ if __name__ == "__main__":
     # else: logger level is "warn"
 
     logger.info(f"read yaml: {args.setting_yaml}")
-    setting = util.parse_yaml(args.setting_yaml)
+    setting = parse_yaml(args.setting_yaml)
 
     indices = util.expand_index(setting["general"]["iter_index"])
     WORKING_DIR = setting["general"]["workdir"]
