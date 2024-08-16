@@ -11,18 +11,9 @@ def ensure_compatibility_v1_1(setting: dict):
     Ensure compatibility with exprorer_msmd v1.1
     """
 
-    if "map" not in setting:
-        setting["map"] = setting["exprorer_msmd"]["pmap"]
-        setting["map"]["snapshot"] = setting["exprorer_msmd"]["pmap"]["snapshots"]
-    setting["map"]["snapshot"] = setting["map"]["snapshot"].split("|")[-1]
-    if "maps" not in setting["map"]:
-        setting["map"]["maps"] = [{"suffix": "nVH", "selector": "(!@VIS)&(!@H*)"}]
-    if "map_size" not in setting["map"]:
-        setting["map"]["map_size"] = 80
-    if "aggregation" not in setting["map"]:
-        setting["map"]["aggregation"] = "max"
-    if "normalization" not in setting["map"]:
-        setting["map"]["normalization"] = "total"
+    if "pmap" in setting["exprorer_msmd"]:
+        update_dict(setting["map"], setting["exprorer_msmd"]["pmap"])  # because of renaming
+    setting["map"]["snapshot"] = setting["map"]["snapshot"].split("|")[-1]  # use only one snapshot data
 
 
 def parse_yaml(yamlpath: Path) -> dict:
@@ -50,6 +41,15 @@ def parse_yaml(yamlpath: Path) -> dict:
         "map": {
             "snapshot": "",
             "valid_dist": 5.0,
+            "map_size": 80,
+            "normalization": "total",
+            "aggregation": "max",
+            "maps": [
+                {
+                    "suffix": "nVH",
+                    "selector": "(!@VIS)&(!@H*)",
+                }
+            ],
         },
         "probe_profile": {
             "threshold": 0.001,
