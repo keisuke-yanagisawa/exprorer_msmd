@@ -2,41 +2,8 @@
     "runArgs": ["--gpus", "all", "--shm-size", "8gb"],
     "name": "exprorer",
     "dockerFile": "Dockerfile",
-    "extensions": [
-        "github.copilot",
-        "ms-python.python",
-        "ms-python.vscode-pylance",
-        "ms-toolsai.jupyter",
-        "mhutchie.git-graph",
-        "shd101wyy.markdown-preview-enhanced"
-    ],
-    "settings": {
-        "python.analysis.typeCheckingMode": "basic",
-        "python.defaultInterpreterPath": "/miniconda3/bin/python",
-        "python.pythonPath": "/miniconda3/bin/python",
-        "python.analysis.extraPaths": [
-          "/miniconda3/lib/python3.9/site-packages/"
-        ],
-        "[python]": {
-          "editor.defaultFormatter": null
-        },
-        "editor.formatOnSave": true,
-        "python.formatting.provider": "autopep8",
-        "python.linting.enabled": true,
-        "python.linting.pylintEnabled": false,
-        "python.linting.flake8Enabled": true,
-        "python.linting.lintOnSave": true,
-        "python.linting.flake8Args": [
-          "--ignore",
-          "E501"
-        ],
-        "python.formatting.autopep8Args": [
-          "--ignore",
-          "E501"
-        ]
-    },
     "mounts": [
         "source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/root/.ssh_host,type=bind",
-        "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gitconfig,target=/root/.gitconfig,type=bind",
-    ],
+        "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gitconfig,target=/root/.gitconfig,type=bind"
+    ]
 }
