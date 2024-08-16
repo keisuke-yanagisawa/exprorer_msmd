@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest import TestCase
 
 from script.utilities.executable.packmol import Packmol
+from subprocess import CalledProcessError
 
 
 class TestPackmol(TestCase):
@@ -38,7 +39,7 @@ class TestPackmol(TestCase):
             packmol.run(seed=1)
 
     def test_extremely_high_molar(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises((RuntimeError,CalledProcessError)):
             packmol = Packmol()
             with warnings.catch_warnings():
                 # this test case will raise a RuntimeWarning, but we don't care

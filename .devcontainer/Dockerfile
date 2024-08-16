@@ -1,7 +1,8 @@
-FROM kyanagis/exprorer_msmd:2024.02.12
+FROM kyanagis/exprorer_msmd:2024.08.16
 
 RUN mamba install -y pytest
-RUN pip install mypy pytest isort
+RUN pip install mypy pytest isort ipykernel
+RUN apt install -y openssh-client
 
 # ====== settings for git / ssh =======
 RUN echo "mkdir -p /root/.ssh" >> /etc/bash.bashrc
