@@ -63,11 +63,11 @@ class TestCreateFrcmod(TestCase):
 
     def test_invalid_atomtype(self):
         with self.assertRaises(ValueError):
-            _create_frcmod(self.mol2file, "INVALID")  # type: ignore
+            _create_frcmod(self.mol2file, Path("INVALID"))  # type: ignore
 
     def test_mol2file_does_not_exist(self):
         with self.assertRaises(FileNotFoundError):
-            _create_frcmod("INVALID", self.atomtype)  # type: ignore
+            _create_frcmod(Path("INVALID"), self.atomtype)  # type: ignore
 
     def test_invalid_mol2file(self):
         with self.assertRaises(ValueError):
