@@ -16,12 +16,12 @@ from script.addvirtatom2top import addvirtatom2top
 from script.generate_msmd_system import generate_msmd_system
 from script.genpmap import gen_pmap
 from script.mdrun import prepare_md_files, prepare_sequence
-from script.util import parse_yaml
 from script.utilities import util
 from script.utilities.const import IONS
 from script.utilities.GPUtil import get_gpuids, is_mps_control_running
 from script.utilities.logger import logger
 from script.utilities.pmd import convert as pmd_convert
+from script.utilities.util import parse_yaml
 
 VERSION = "0.2.0"
 
