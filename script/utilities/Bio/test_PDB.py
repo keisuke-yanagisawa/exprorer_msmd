@@ -30,7 +30,7 @@ class TestPDB(TestCase):
         reader = PDB.MultiModelPDBReader(str(self.pdbfile))
         models = [model for model in reader]
         tmp_output_pdb = Path(tempfile.mkstemp(suffix=".pdb")[1])
-        writer = PDB.PDBIOhelper(str(tmp_output_pdb))
+        writer = PDB.PDBIOhelper(tmp_output_pdb)
         for model in models:
             writer.save(model)
         writer.close()  # This is important, otherwise the unittest will hang up

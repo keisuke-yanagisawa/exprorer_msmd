@@ -1,3 +1,4 @@
+import collections.abc
 import os
 import random
 import string
@@ -6,8 +7,26 @@ from typing import Union
 
 import yaml
 
-from ..setting import Executables, GeneralSetting, InputSetting, MapCreationSetting, ProbeProfileSetting, ProbeSetting, ProfileParameter, ProteinSetting
+from ..setting import (
+    Executables,
+    GeneralSetting,
+    InputSetting,
+    MapCreationSetting,
+    ProbeProfileSetting,
+    ProbeSetting,
+    ProfileParameter,
+    ProteinSetting,
+)
 from .logger import logger
+
+
+def update_dict(d: dict, u: dict):
+    for k, v in u.items():
+        if isinstance(v, collections.abc.Mapping):
+            d[k] = update_dict(d.get(k, {}), v)  # type: ignore
+        else:
+            d[k] = v
+    return d
 
 
 def getabsolutepath(path: Path) -> Path:
@@ -152,8 +171,7 @@ def convert_to_namedtuple(setting: dict) -> None:
     )
 
     setting["probe_profile"]["profile"]["types"] = [
-        ProfileParameter(profile["name"], profile["atoms"])
-        for profile in setting["probe_profile"]["profile"]["types"]
+        ProfileParameter(profile["name"], profile["atoms"]) for profile in setting["probe_profile"]["profile"]["types"]
     ]
     setting["probe_profile"] = ProbeProfileSetting(
         setting["probe_profile"]["resenv"]["map"],
@@ -161,8 +179,9 @@ def convert_to_namedtuple(setting: dict) -> None:
         setting["probe_profile"]["resenv"]["threshold"],
         setting["probe_profile"]["resenv"]["env_dist"],
         setting["probe_profile"]["resenv"]["align"],
-        setting["probe_profile"]["profile"]["types"]
+        setting["probe_profile"]["profile"]["types"],
     )
+
 
 def parse_yaml(yamlpath: Path) -> dict:
     YAML_PATH = getabsolutepath(yamlpath)

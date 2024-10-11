@@ -2,8 +2,12 @@ from pathlib import Path
 from typing import Literal
 from unittest import TestCase
 
-from script.generate_msmd_system import _create_frcmod, calculate_boxsize, generate_msmd_system
-from script.utilities import util
+from script.generate_msmd_system import (
+    _create_frcmod,
+    calculate_boxsize,
+    generate_msmd_system,
+)
+from script.setting import parse_yaml
 
 
 class TestBoxSizeCalculation(TestCase):
@@ -32,7 +36,7 @@ class TestGenerateMsmdSystem(TestCase):
         self.expected_rst7_file = __testdata_dir / "tripeptide_A11.rst7"
 
     def test_generate_msmd_system(self):
-        settings = util.parse_yaml(self.setting_file)
+        settings = parse_yaml(self.setting_file)
         parm7, rst7 = generate_msmd_system(settings, seed=1)
 
         # first line contains the date and time, so we skip it for comparison

@@ -40,7 +40,7 @@ class InputSetting(NamedTuple):
 class MapCreationSetting(NamedTuple):
     type: Literal["pmap"]  # TODO: pmap以外もあるはず
     snapshot: str
-    maps: list[dict] # TODO: mapの型を準備すべき。ただし、後から情報が付け足されるコードが存在するため要検討
+    maps: list[dict]  # TODO: mapの型を準備すべき。ただし、後から情報が付け足されるコードが存在するため要検討
     map_size: int = 80  # angstrom
     normalization: Literal["total", "snapshot", "GFE"] = "total"
     valid_dist: float = 5  # angstrom
@@ -59,4 +59,3 @@ class ProbeProfileSetting(NamedTuple):
     env_dist: float = 4.0  # angstrom
     align: list[str] = [" C1 ", " C2 ", " C3 ", " O1 "]
     profiles: list[ProfileParameter] = []
-

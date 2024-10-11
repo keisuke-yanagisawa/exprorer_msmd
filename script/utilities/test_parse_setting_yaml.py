@@ -1,7 +1,8 @@
 from pathlib import Path
 from unittest import TestCase
 
-from script.utilities.util import expand_index, parse_yaml
+from script.setting import parse_yaml
+from script.utilities.util import expand_index
 
 
 class TestParseNormalSettingYaml(TestCase):

@@ -55,7 +55,7 @@ def align_res_env(
 
     sup = SuperImposer()
     tmppdb = Path(tempfile.mkstemp(suffix=".pdb")[1])
-    with uPDB.PDBIOhelper(str(tmppdb)) as pdbio:
+    with uPDB.PDBIOhelper(tmppdb) as pdbio:
         for model in tqdm(struct, desc="[align res. env.]", disable=not verbose):
 
             probe_coords = uPDB.get_attr(model, "coord", sele=selector)

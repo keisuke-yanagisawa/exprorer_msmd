@@ -16,6 +16,7 @@ from script.addvirtatom2top import addvirtatom2top
 from script.generate_msmd_system import generate_msmd_system
 from script.genpmap import gen_pmap
 from script.mdrun import prepare_md_files, prepare_sequence
+from script.setting import parse_yaml
 from script.utilities import util
 from script.utilities.const import IONS
 from script.utilities.GPUtil import get_gpuids, is_mps_control_running
@@ -167,7 +168,7 @@ if __name__ == "__main__":
         logger.setLevel("info")
 
     logger.info(f"read yaml: {args.setting_yaml}")
-    setting = util.parse_yaml(Path(args.setting_yaml))
+    setting = parse_yaml(Path(args.setting_yaml))
     if args.iter_index is not None:
         setting["general"].iter_index = args.iter_index
     indices = set(util.expand_index(setting["general"].iter_index))
