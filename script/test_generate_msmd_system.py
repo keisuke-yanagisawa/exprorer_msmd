@@ -7,7 +7,7 @@ from script.generate_msmd_system import (
     calculate_boxsize,
     generate_msmd_system,
 )
-from script.setting import parse_yaml
+from script.utilities.util import parse_yaml
 
 
 class TestBoxSizeCalculation(TestCase):

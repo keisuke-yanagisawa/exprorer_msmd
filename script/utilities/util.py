@@ -242,6 +242,9 @@ def parse_yaml(yamlpath: Path) -> dict:
     if setting["input"]["protein"]["ssbond"] is None:
         setting["input"]["protein"]["ssbond"] = []
 
+    if not "map" in setting["probe_profile"]["resenv"]:
+        setting["probe_profile"]["resenv"]["map"] = "nVH"
+
     convert_to_namedtuple(setting)
 
     return setting

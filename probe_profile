@@ -13,7 +13,7 @@ from script import maxpmap
 from script.alignresenv import align_res_env
 from script.profile import create_residue_interaction_profile
 from script.resenv import resenv
-from script.setting import parse_yaml
+from script.util import parse_yaml
 from script.utilities import util
 from script.utilities.Bio import PDB as uPDB
 from script.utilities.logger import logger

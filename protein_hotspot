@@ -5,7 +5,7 @@ import glob
 from pathlib import Path
 
 from script import maxpmap
-from script.setting import parse_yaml
+from script.util import parse_yaml
 from script.utilities.logger import logger
 
 VERSION = "0.1.0"
