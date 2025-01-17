@@ -1,0 +1,10 @@
+pytest>=7.0.0
+coverage>=7.0.0
+mypy>=1.0.0
+numpy>=1.24.0
+gridData>=1.0.0
+scipy>=1.10.0
+Bio>=1.0.0
+jinja2>=3.0.0
+tqdm>=4.65.0
+pyyaml>=6.0.0

@@ -22,4 +22,8 @@ jobs:
           options: -v ${{ github.workspace }}:/work
           run: |
             cd /work
+            pip install mypy coverage
             python -m pytest .
+            python -m mypy script/
+            coverage run -m pytest
+            coverage report -m
