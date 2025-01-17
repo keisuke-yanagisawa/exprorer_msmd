@@ -31,6 +31,17 @@ class TestResenv(TestCase):
             resenv(self.grid, self.trajectory, "INVALID_RESN", [" CB "])
 
     def test_no_output_structure(self):
-        pass
-        # with self.assertRaises(FileNotFoundError):
-        #     resenv(self.grid, self.trajectories, "INVALID_RESN", None)
+        """Test case where no structures are extracted"""
+        # Create a trajectory with a probe molecule far from any protein residues
+        # This should result in no structures being extracted since there are no
+        # protein residues within the environment distance
+        with self.assertRaises(ValueError) as cm:
+            resenv(
+                self.grid,
+                self.trajectory,
+                self.resn,
+                [" CB "],
+                threshold=1.0,  # High threshold that no probe will meet
+                env_distance=0.1  # Very small environment distance
+            )
+        self.assertEqual(str(cm.exception), "No structures were extracted.")
