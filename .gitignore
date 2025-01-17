@@ -137,7 +137,8 @@ dmypy.json
 **~
 \#**
 
-**test**
+**/test_data/**
+**/test_output/**
 **rmsd.dat
 **.out
 **.err

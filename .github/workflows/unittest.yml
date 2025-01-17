@@ -22,4 +22,6 @@ jobs:
           options: -v ${{ github.workspace }}:/work
           run: |
             cd /work
+            pip install mypy
             python -m pytest .
+            python -m mypy script/
