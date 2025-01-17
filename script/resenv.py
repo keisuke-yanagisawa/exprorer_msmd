@@ -18,6 +18,90 @@ Output: residue environments
 """
 
 
+class ResidueEnvironmentAnalyzer:
+    """Analyzer for residue environments around probe molecules."""
+    
+    def __init__(self, model: Union[Structure, Model]) -> None:
+        """Initialize analyzer with molecular model.
+        
+        Args:
+            model: Structure or Model containing probe molecules
+        """
+        self.model = model
+        
+    def compute_probe_residues(
+        self,
+        grid: gridData.Grid,
+        resname: str,
+        threshold: float,
+        less_than: bool = False
+    ) -> Set[int]:
+        """Find probe residues in high/low probability regions.
+        
+        Args:
+            grid: Grid containing probability values
+            resname: Residue name of probe molecules
+            threshold: Threshold value for selection
+            less_than: If True, select regions below threshold
+            
+        Returns:
+            Set of residue numbers for selected probes
+        """
+        return compute_SR_probe_resis(self.model, grid, resname, threshold, less_than)
+        
+    def get_surrounding_residues(
+        self,
+        focused_residue: int,
+        env_distance: float
+    ) -> Set[int]:
+        """Get residues within distance of focused residue.
+        
+        Args:
+            focused_residue: Residue number to focus on
+            env_distance: Distance cutoff for environment
+            
+        Returns:
+            Set of residue numbers in environment
+        """
+        return __get_surrounded_resis_around_a_residue(
+            self.model,
+            focused_residue,
+            env_distance
+        )
+        
+    def extract_environments(
+        self,
+        grid: gridData.Grid,
+        resname: str,
+        res_atomnames: List[str],
+        threshold: float = 0.2,
+        less_than: bool = False,
+        env_distance: float = 4.0
+    ) -> Optional[Structure]:
+        """Extract probe environments meeting criteria.
+        
+        Args:
+            grid: Grid containing probability values
+            resname: Residue name of probe molecules
+            res_atomnames: List of atom names to consider
+            threshold: Probability threshold
+            less_than: If True, select regions below threshold
+            env_distance: Distance cutoff for environment
+            
+        Returns:
+            Structure containing selected environments or None
+        """
+        return __wrapper(
+            self.model,
+            grid,
+            resname,
+            res_atomnames,
+            threshold,
+            less_than,
+            env_distance
+        )
+
+
 def compute_SR_probe_resis(
     model: Union[Structure, Model], dx: gridData.Grid, resn: str, threshold: float, lt: bool = False
 ):
@@ -111,18 +195,38 @@ def resenv(
     env_distance: float = 4,
     verbose: bool = False,
 ) -> Structure:
+    """Extract probe environments (wrapper for backward compatibility).
+    
+    Args:
+        grid: Grid containing probability values
+        trajectory: Trajectory reader containing models
+        resn: Residue name of probe molecules
+        res_atomnames: List of atom names to consider
+        threshold: Probability threshold
+        lt: If True, select regions below threshold
+        env_distance: Distance cutoff for environment
+        verbose: Enable progress output
+        
+    Returns:
+        Structure containing selected environments
+        
+    Raises:
+        ValueError: If no structures were extracted
     """
-    Extract probe which is on high-probability region with its environment (protein residues)
-    """
-
     ret = []
-    environments = [
-        __wrapper(model, grid, resn, res_atomnames, threshold, lt, env_distance)
-        for model in tqdm(trajectory, desc="[extract res. env.]", disable=not verbose)
-    ]
-    environments = [e for e in environments if e is not None]
-    ret.extend(environments)
-
+    for model in tqdm(trajectory, desc="[extract res. env.]", disable=not verbose):
+        analyzer = ResidueEnvironmentAnalyzer(model)
+        env = analyzer.extract_environments(
+            grid,
+            resn,
+            res_atomnames,
+            threshold,
+            lt,
+            env_distance
+        )
+        if env is not None:
+            ret.append(env)
+            
     if len(ret) == 0:
         raise ValueError("No structures were extracted.")
     return uPDB.concatenate_structures(ret)

@@ -4,9 +4,24 @@ import os
 import tempfile
 from pathlib import Path
 from subprocess import getoutput as gop
-from typing import Literal, Tuple
+from typing import Dict, List, Literal, Optional, Tuple, TypedDict, Union, cast
 
 from script.utilities import const
+
+class ProteinSettings(TypedDict):
+    pdb: Union[str, Path]
+    ssbond: List[str]
+
+class ProbeSettings(TypedDict):
+    mol2: Union[str, Path]
+    pdb: Union[str, Path]
+    cid: str
+    atomtype: Literal["gaff", "gaff2"]
+    molar: float
+
+class InputSettings(TypedDict):
+    protein: ProteinSettings
+    probe: ProbeSettings
 from script.utilities.executable import Packmol, Parmchk, TLeap
 from script.utilities.logger import logger
 
@@ -32,12 +47,16 @@ quit
 
 def protein_pdb_preparation(pdbfile: Path) -> Path:
     """
-    remove OXT and ANISOU from pdbfile to avoid tleap error
-    -----
-    input
-        pdbfile: path to pdb file
-    output
-        tmp1: path to pdb file without OXT and ANISOU
+    Remove OXT and ANISOU from pdbfile to avoid tleap error.
+    
+    Args:
+        pdbfile: Path to PDB file
+        
+    Returns:
+        Path to cleaned PDB file without OXT and ANISOU records
+        
+    Raises:
+        FileNotFoundError: If input PDB file does not exist
     """
     tmp1 = Path(tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)[1])
     gop(f"grep -v OXT {pdbfile} | grep -v ANISOU > {tmp1}")
@@ -74,7 +93,11 @@ def calculate_boxsize(rst7: Path) -> float:
     return box_size
 
 
-def _create_frcmod(mol2file: Path, atomtype: Literal["gaff", "gaff2"], debug: bool = False) -> Path:
+def _create_frcmod(
+    mol2file: Path,
+    atomtype: Literal["gaff", "gaff2"],
+    debug: bool = False
+) -> Path:
     """
     create frcmod file from mol2 file
     -----
@@ -90,7 +113,11 @@ def _create_frcmod(mol2file: Path, atomtype: Literal["gaff", "gaff2"], debug: bo
 
 
 def create_system(
-    setting_protein: dict, setting_probe: dict, probe_frcmod: Path, debug: bool = False, seed: int = -1
+    setting_protein: ProteinSettings,
+    setting_probe: ProbeSettings,
+    probe_frcmod: Path,
+    debug: bool = False,
+    seed: int = -1
 ) -> Tuple[Path, Path]:
     """
     create system from protein and probe
@@ -123,20 +150,94 @@ def create_system(
     return tleap_obj.parm7, tleap_obj.rst7
 
 
-def generate_msmd_system(setting: dict, debug: bool = False, seed: int = -1) -> tuple[Path, Path]:
+class MSMDSystemGenerator:
+    """Generator class for Mixed-Solvent Molecular Dynamics systems."""
+    
+    def __init__(self, setting: Dict[str, InputSettings]) -> None:
+        """Initialize the MSMD system generator.
+        
+        Args:
+            setting: Dictionary containing system configuration
+        """
+        self.setting = setting
+        self._protein_settings = cast(ProteinSettings, setting["input"]["protein"])
+        self._probe_settings = cast(ProbeSettings, setting["input"]["probe"])
+        
+    def _prepare_protein_pdb(self, pdbfile: Path) -> Path:
+        """Prepare protein PDB file by removing OXT and ANISOU records.
+        
+        Args:
+            pdbfile: Path to input PDB file
+            
+        Returns:
+            Path to cleaned PDB file
+        """
+        return protein_pdb_preparation(pdbfile)
+        
+    def _calculate_box_size(self, pdbfile: Path) -> float:
+        """Calculate simulation box size from protein PDB.
+        
+        Args:
+            pdbfile: Path to protein PDB file
+            
+        Returns:
+            Box size in Angstroms
+        """
+        return __calculate_boxsize(pdbfile)
+        
+    def _create_frcmod(self, mol2file: Path, atomtype: Literal["gaff", "gaff2"], debug: bool = False) -> Path:
+        """Create force field modification file.
+        
+        Args:
+            mol2file: Path to mol2 file
+            atomtype: Atom type (GAFF / GAFF2)
+            debug: Enable debug output
+            
+        Returns:
+            Path to generated frcmod file
+        """
+        return _create_frcmod(mol2file, atomtype, debug)
+        
+    def create_system(self, debug: bool = False, seed: int = -1) -> Tuple[Path, Path]:
+        """Create MSMD system from current settings.
+        
+        Args:
+            debug: Enable debug output
+            seed: Random seed for system generation
+            
+        Returns:
+            Tuple containing paths to (parm7, rst7) files
+        """
+        cfrcmod = self._create_frcmod(
+            Path(self._probe_settings["mol2"]),
+            self._probe_settings["atomtype"],
+            debug=debug
+        )
+        return create_system(
+            self._protein_settings,
+            self._probe_settings,
+            cfrcmod,
+            debug=debug,
+            seed=seed
+        )
+
+def generate_msmd_system(
+    setting: Dict[str, InputSettings],
+    debug: bool = False,
+    seed: int = -1
+) -> Tuple[Path, Path]:
+    """Generate MSMD system from settings.
+    
+    This is a backward-compatible wrapper around MSMDSystemGenerator.
+    For new code, prefer using MSMDSystemGenerator directly.
+    
+    Args:
+        setting: Dictionary containing input settings
+        debug: Enable debug output
+        seed: Random seed for system generation
+        
+    Returns:
+        Tuple containing paths to parm7 and rst7 files
     """
-    generate msmd system
-    -----
-    input
-        setting: setting json (dict)
-        debug: debug mode
-        seed: random seed
-    output
-        parm7: path to parm7 file
-        rst7: path to rst7 file
-    """
-    cfrcmod = _create_frcmod(
-        Path(setting["input"]["probe"]["mol2"]), setting["input"]["probe"]["atomtype"], debug=debug
-    )
-    parm7, rst7 = create_system(setting["input"]["protein"], setting["input"]["probe"], cfrcmod, debug=debug, seed=seed)
-    return parm7, rst7
+    generator = MSMDSystemGenerator(setting)
+    return generator.create_system(debug=debug, seed=seed)
