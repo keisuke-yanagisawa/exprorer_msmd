@@ -91,7 +91,7 @@ class ResidueEnvironmentAnalyzer:
         Returns:
             Structure containing selected environments or None
         """
-        return __wrapper(
+        return _wrapper(
             self.model,
             grid,
             resname,
@@ -150,7 +150,7 @@ def __get_surrounded_resis_around_a_residue(
     return set(environment_resis)
 
 
-def __wrapper(
+def _wrapper(
     model_wo_water: Union[Structure, Model],
     dx: gridData.Grid,
     focused_resname: str,
