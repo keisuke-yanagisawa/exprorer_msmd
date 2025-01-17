@@ -2,9 +2,25 @@
 
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Dict, List, Optional, Tuple, TypedDict, Union, cast
 
 import gridData
+import numpy.typing as npt
+from script.generate_msmd_system import InputSettings
+
+class MapSettings(TypedDict):
+    suffix: str
+    selector: str
+
+class PmapSettings(TypedDict):
+    snapshot: str
+    valid_dist: float
+    map_size: int
+    normalization: str
+    maps: List[MapSettings]
+
+class GeneralSettings(TypedDict):
+    name: str
 import numpy as np
 import numpy.typing as npt
 from scipy import constants
@@ -16,7 +32,11 @@ from script.utilities.executable import Cpptraj
 VERSION = "1.0.0"
 
 
-def mask_generator(ref_struct: Path, reference_grid: gridData.Grid, distance: Optional[float] = None) -> gridData.Grid:
+def mask_generator(
+    ref_struct: Path,
+    reference_grid: gridData.Grid,
+    distance: Optional[float] = None
+) -> gridData.Grid:
     """
     input
         ref_struct: path to reference structure
@@ -35,7 +55,10 @@ def mask_generator(ref_struct: Path, reference_grid: gridData.Grid, distance: Op
 
 
 def convert_to_proba(
-    g: gridData.Grid, mask_grid: Optional[npt.NDArray] = None, normalize: str = "snapshot", frames: int = 1
+    g: gridData.Grid,
+    mask_grid: Optional[npt.NDArray[np.float64]] = None,
+    normalize: str = "snapshot",
+    frames: int = 1
 ) -> gridData.Grid:
     if mask_grid is not None:
         values = g.grid[np.where(mask_grid)]
@@ -51,7 +74,11 @@ def convert_to_proba(
     return g
 
 
-def convert_to_gfe(grid_path: str, mean_proba: float, temperature: float = 300) -> str:
+def convert_to_gfe(
+    grid_path: str,
+    mean_proba: float,
+    temperature: float = 300
+) -> str:
     pmap = gridData.Grid(grid_path)
     pmap.grid = np.where(pmap.grid <= 0, 1e-10, pmap.grid)  # avoid log(0)
     pmap.grid = -(constants.R / constants.calorie / constants.kilo) * temperature * np.log(pmap.grid / mean_proba)
@@ -68,8 +95,12 @@ def convert_to_gfe(grid_path: str, mean_proba: float, temperature: float = 300) 
 
 
 def convert_to_pmap(
-    grid_path: Path, ref_struct: Path, valid_distance: float, normalize: str = "snapshot", frames: int = 1
-):
+    grid_path: Path,
+    ref_struct: Path,
+    valid_distance: float,
+    normalize: str = "snapshot",
+    frames: int = 1
+) -> str:
     grid = gridData.Grid(grid_path)
     mask = mask_generator(ref_struct, grid, valid_distance)
     pmap = convert_to_proba(grid, mask.grid, frames=frames, normalize=normalize)
@@ -79,7 +110,7 @@ def convert_to_pmap(
     return pmap_path
 
 
-def parse_snapshot_setting(string: str):
+def parse_snapshot_setting(string: str) -> Tuple[str, str, str]:
     offset = "1"  # default parameter
     if len(string.split(":")) != 1:  # ofset is an option
         string, offset = string.split(":")
@@ -88,8 +119,14 @@ def parse_snapshot_setting(string: str):
 
 
 def gen_pmap(
-    dirpath: Path, setting_general: dict, setting_input: dict, setting_pmap: dict, traj: Path, top: Path, debug=False
-):
+    dirpath: Path,
+    setting_general: GeneralSettings,
+    setting_input: InputSettings,
+    setting_pmap: PmapSettings,
+    traj: Path,
+    top: Path,
+    debug: bool = False
+) -> List[str]:
 
     traj_start, traj_stop, traj_offset = parse_snapshot_setting(setting_pmap["snapshot"])
 
@@ -97,12 +134,13 @@ def gen_pmap(
 
     trajectory = util.getabsolutepath(traj)
     topology = util.getabsolutepath(top)
-    ref_struct = Path(setting_input["protein"]["pdb"])
-    probe_id: str = setting_input["probe"]["cid"]
-    maps: list = setting_pmap["maps"]
-    box_size: int = setting_pmap["map_size"]
-    box_center: npt.NDArray[np.float_] = uPDB.get_attr(
-        uPDB.get_structure(setting_input["protein"]["pdb"]), "coord"
+    ref_struct = Path(str(setting_input["protein"]["pdb"]))
+    probe_id: str = cast(str, setting_input["probe"]["cid"])
+    maps: List[MapSettings] = setting_pmap["maps"]
+    box_size: int = cast(int, setting_pmap["map_size"])
+    pdb_path = Path(str(setting_input["protein"]["pdb"]))
+    box_center: npt.NDArray[np.float64] = uPDB.get_attr(
+        uPDB.get_structure(pdb_path), "coord"
     ).mean(axis=0)
     # structure.center_of_mass() may return "[ nan nan nan ]" due to unspecified atomic weight
 

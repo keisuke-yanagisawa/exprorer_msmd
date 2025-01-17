@@ -1,13 +1,14 @@
-from typing import List, Tuple
+from typing import List, Optional, Tuple, Union
 
 import gridData
 import numpy as np
+import numpy.typing as npt
 from Bio.PDB.Structure import Structure
 
 from script.utilities.Bio import PDB as uPDB
 
 
-def __calc_minimum_bounding_box(coords) -> Tuple[np.ndarray, np.ndarray]:
+def __calc_minimum_bounding_box(coords: npt.NDArray[np.float64]) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """
     Calculate the minimum bounding box of a set of coordinates (3D)
     :param coords: 3D coordinates

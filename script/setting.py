@@ -1,12 +1,13 @@
 import os
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 import yaml
 
 from .utilities.util import expandpath, getabsolutepath, update_dict
 
 
-def ensure_compatibility_v1_1(setting: dict):
+def ensure_compatibility_v1_1(setting: Dict[str, Any]) -> None:
     """
     Ensure compatibility with exprorer_msmd v1.1
     """
@@ -16,7 +17,7 @@ def ensure_compatibility_v1_1(setting: dict):
     setting["map"]["snapshot"] = setting["map"]["snapshot"].split("|")[-1]  # use only one snapshot data
 
 
-def parse_yaml(yamlpath: Path) -> dict:
+def parse_yaml(yamlpath: Path) -> Dict[str, Any]:
     setting: dict = {
         "general": {
             "workdir": Path(""),
