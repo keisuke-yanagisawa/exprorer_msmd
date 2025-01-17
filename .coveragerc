@@ -1,0 +1,14 @@
+[run]
+source = script
+omit = 
+    script/test_*.py
+    script/**/test_*.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    pass
+    raise ImportError
