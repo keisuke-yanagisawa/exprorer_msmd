@@ -137,10 +137,7 @@ dmypy.json
 **~
 \#**
 
-**/test_data/**
-**/test_output/**
-.coverage
-htmlcov/
+**test**
 **rmsd.dat
 **.out
 **.err
