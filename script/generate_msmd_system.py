@@ -150,12 +150,86 @@ def create_system(
     return tleap_obj.parm7, tleap_obj.rst7
 
 
+class MSMDSystemGenerator:
+    """Generator class for Mixed-Solvent Molecular Dynamics systems."""
+    
+    def __init__(self, setting: Dict[str, InputSettings]) -> None:
+        """Initialize the MSMD system generator.
+        
+        Args:
+            setting: Dictionary containing system configuration
+        """
+        self.setting = setting
+        self._protein_settings = cast(ProteinSettings, setting["input"]["protein"])
+        self._probe_settings = cast(ProbeSettings, setting["input"]["probe"])
+        
+    def _prepare_protein_pdb(self, pdbfile: Path) -> Path:
+        """Prepare protein PDB file by removing OXT and ANISOU records.
+        
+        Args:
+            pdbfile: Path to input PDB file
+            
+        Returns:
+            Path to cleaned PDB file
+        """
+        return protein_pdb_preparation(pdbfile)
+        
+    def _calculate_box_size(self, pdbfile: Path) -> float:
+        """Calculate simulation box size from protein PDB.
+        
+        Args:
+            pdbfile: Path to protein PDB file
+            
+        Returns:
+            Box size in Angstroms
+        """
+        return __calculate_boxsize(pdbfile)
+        
+    def _create_frcmod(self, mol2file: Path, atomtype: Literal["gaff", "gaff2"], debug: bool = False) -> Path:
+        """Create force field modification file.
+        
+        Args:
+            mol2file: Path to mol2 file
+            atomtype: Atom type (GAFF / GAFF2)
+            debug: Enable debug output
+            
+        Returns:
+            Path to generated frcmod file
+        """
+        return _create_frcmod(mol2file, atomtype, debug)
+        
+    def create_system(self, debug: bool = False, seed: int = -1) -> Tuple[Path, Path]:
+        """Create MSMD system from current settings.
+        
+        Args:
+            debug: Enable debug output
+            seed: Random seed for system generation
+            
+        Returns:
+            Tuple containing paths to (parm7, rst7) files
+        """
+        cfrcmod = self._create_frcmod(
+            Path(self._probe_settings["mol2"]),
+            self._probe_settings["atomtype"],
+            debug=debug
+        )
+        return create_system(
+            self._protein_settings,
+            self._probe_settings,
+            cfrcmod,
+            debug=debug,
+            seed=seed
+        )
+
 def generate_msmd_system(
     setting: Dict[str, InputSettings],
     debug: bool = False,
     seed: int = -1
 ) -> Tuple[Path, Path]:
     """Generate MSMD system from settings.
+    
+    This is a backward-compatible wrapper around MSMDSystemGenerator.
+    For new code, prefer using MSMDSystemGenerator directly.
     
     Args:
         setting: Dictionary containing input settings
@@ -165,19 +239,5 @@ def generate_msmd_system(
     Returns:
         Tuple containing paths to parm7 and rst7 files
     """
-    """
-    generate msmd system
-    -----
-    input
-        setting: setting json (dict)
-        debug: debug mode
-        seed: random seed
-    output
-        parm7: path to parm7 file
-        rst7: path to rst7 file
-    """
-    cfrcmod = _create_frcmod(
-        Path(setting["input"]["probe"]["mol2"]), setting["input"]["probe"]["atomtype"], debug=debug
-    )
-    parm7, rst7 = create_system(setting["input"]["protein"], setting["input"]["probe"], cfrcmod, debug=debug, seed=seed)
-    return parm7, rst7
+    generator = MSMDSystemGenerator(setting)
+    return generator.create_system(debug=debug, seed=seed)

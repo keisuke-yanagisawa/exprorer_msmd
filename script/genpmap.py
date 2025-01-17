@@ -74,23 +74,99 @@ def convert_to_proba(
     return g
 
 
+class ProbabilityMap:
+    """Class for generating and manipulating probability maps."""
+    
+    def __init__(self, grid: gridData.Grid) -> None:
+        """Initialize probability map with grid data.
+        
+        Args:
+            grid: Grid data object containing probability values
+        """
+        self.grid = grid
+        self._mask: Optional[npt.NDArray[np.float64]] = None
+        
+    @classmethod
+    def from_file(cls, path: Union[str, Path]) -> 'ProbabilityMap':
+        """Create ProbabilityMap from a grid file.
+        
+        Args:
+            path: Path to grid file
+            
+        Returns:
+            New ProbabilityMap instance
+        """
+        return cls(gridData.Grid(str(path)))
+        
+    def generate_mask(self, ref_struct: Path, distance: Optional[float] = None) -> None:
+        """Generate mask from reference structure.
+        
+        Args:
+            ref_struct: Path to reference structure
+            distance: Optional distance threshold for mask
+        """
+        mask_grid = mask_generator(ref_struct, self.grid, distance)
+        self._mask = mask_grid.grid
+        
+    def convert_to_probability(self, frames: int = 1, normalize: str = "snapshot") -> None:
+        """Convert grid values to probabilities.
+        
+        Args:
+            frames: Number of frames used
+            normalize: Normalization method ("snapshot", "GFE", or "total")
+        """
+        converted = convert_to_proba(self.grid, self._mask, normalize=normalize, frames=frames)
+        self.grid = converted
+        
+    def save(self, path: Union[str, Path], type: str = "double") -> None:
+        """Save probability map to file.
+        
+        Args:
+            path: Output file path
+            type: Data type for output
+        """
+        self.grid.export(str(path), type=type)
+        
+    def to_gfe(self, mean_proba: float, temperature: float = 300) -> None:
+        """Convert probability map to Gibbs free energy.
+        
+        Args:
+            mean_proba: Mean probability for normalization
+            temperature: Temperature in Kelvin
+        """
+        self.grid.grid = np.where(self.grid.grid <= 0, 1e-10, self.grid.grid)
+        self.grid.grid = -(constants.R / constants.calorie / constants.kilo) * temperature * np.log(self.grid.grid / mean_proba)
+        self.grid.grid = np.where(self.grid.grid > 3, 3, self.grid.grid)
+        
+    def to_inverse_gfe(self) -> None:
+        """Convert grid to inverse Gibbs free energy."""
+        self.grid.grid = -self.grid.grid
+
 def convert_to_gfe(
     grid_path: str,
     mean_proba: float,
     temperature: float = 300
 ) -> str:
-    pmap = gridData.Grid(grid_path)
-    pmap.grid = np.where(pmap.grid <= 0, 1e-10, pmap.grid)  # avoid log(0)
-    pmap.grid = -(constants.R / constants.calorie / constants.kilo) * temperature * np.log(pmap.grid / mean_proba)
-    pmap.grid = np.where(pmap.grid > 3, 3, pmap.grid)  # Definition of GFE in the paper Raman et al., JCIM, 2013
-
+    """Convert probability map to GFE (wrapper for backward compatibility).
+    
+    Args:
+        grid_path: Path to probability map file
+        mean_proba: Mean probability for normalization
+        temperature: Temperature in Kelvin
+        
+    Returns:
+        Path to generated GFE file
+    """
+    pmap = ProbabilityMap.from_file(grid_path)
+    pmap.to_gfe(mean_proba, temperature)
+    
     gfe_path = os.path.dirname(grid_path) + "/" + "GFE" + "_" + os.path.basename(grid_path)
-    pmap.export(gfe_path, type="double")
-
-    pmap.grid = -pmap.grid
+    pmap.save(gfe_path)
+    
+    pmap.to_inverse_gfe()
     invgfe_path = os.path.dirname(grid_path) + "/" + "InvGFE" + "_" + os.path.basename(grid_path)
-    pmap.export(invgfe_path, type="double")
-
+    pmap.save(invgfe_path)
+    
     return gfe_path
 
 
@@ -101,12 +177,24 @@ def convert_to_pmap(
     normalize: str = "snapshot",
     frames: int = 1
 ) -> str:
-    grid = gridData.Grid(grid_path)
-    mask = mask_generator(ref_struct, grid, valid_distance)
-    pmap = convert_to_proba(grid, mask.grid, frames=frames, normalize=normalize)
-
+    """Convert grid to probability map (wrapper for backward compatibility).
+    
+    Args:
+        grid_path: Path to input grid file
+        ref_struct: Path to reference structure
+        valid_distance: Distance threshold for mask
+        normalize: Normalization method
+        frames: Number of frames used
+        
+    Returns:
+        Path to generated probability map file
+    """
+    pmap = ProbabilityMap.from_file(grid_path)
+    pmap.generate_mask(ref_struct, valid_distance)
+    pmap.convert_to_probability(frames=frames, normalize=normalize)
+    
     pmap_path = os.path.dirname(grid_path) + "/" + "PMAP" + "_" + os.path.basename(grid_path)
-    pmap.export(pmap_path, type="double")
+    pmap.save(pmap_path)
     return pmap_path
 
 
