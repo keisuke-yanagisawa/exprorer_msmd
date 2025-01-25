@@ -13,39 +13,65 @@ VIS   VIS    1  {sigma:1.6e}   {epsilon:1.6e}
 
 
 def addvirtatom2top(top_string: str, probe_names: List[str], sigma: float = 2, epsilon: float = 4.184e-6) -> str:
-    """
-    Add definition of a virtual atom to a top file
-    Pseudo repulsion term (VIS-VIS nonbond LJ parameter) is added to the top file.
-    """
+    """TOPファイルに仮想原子の定義を追加する
 
-    ret = []
-    curr_section = None
-    now_mol = None
-    natoms = 0
+    Args:
+        top_string: 入力TOPファイルの内容
+        probe_names: 仮想原子を追加する分子名のリスト
+        sigma: VIS-VIS相互作用のシグマパラメータ
+        epsilon: VIS-VIS相互作用のイプシロンパラメータ
+
+    Returns:
+        str: 仮想原子が追加されたTOPファイルの内容
+    """
+    if not top_string:
+        return ""
+
+    output_lines = []
+    current_section = None
+    current_molecule = None
+    atom_count = 0
+
     for line in top_string.split("\n"):
-        line = line.split(";")[0].strip()
-        if line.startswith("["):
-            prev_section = curr_section
+        # コメントを保持しながら処理
+        if ";" in line:
+            content, comment = line.split(";", 1)
+            content = content.strip()
+            comment = ";" + comment
+        else:
+            content = line.strip()
+            comment = ""
+
+        # セクション開始の処理
+        if content.startswith("["):
+            prev_section = current_section
             if prev_section == "atomtypes":
-                ret.append(VIS_INFO.format(sigma=sigma, epsilon=epsilon))
+                output_lines.append(VIS_INFO.format(sigma=sigma, epsilon=epsilon))
             elif prev_section == "atoms":
-                if now_mol in probe_names:  # TODO
-                    ret.append(
+                if current_molecule in probe_names:
+                    output_lines.append(
                         f"""
-                    {natoms+1: 5d}        VIS      1    {now_mol}    VIS  {natoms+1: 5d} 0.00000000   0.000000
+                    {atom_count+1: 5d}        VIS      1    {current_molecule}    VIS  {atom_count+1: 5d} 0.00000000   0.000000
                     [ virtual_sitesn ]
-                    {natoms+1: 5d}   2  {' '.join([str(x) for x in range(1, natoms+1)])}
+                    {atom_count+1: 5d}   2  {' '.join([str(x) for x in range(1, atom_count+1)])}
                     """
                     )
-                natoms = 0
-            curr_section = line[line.find("[") + 1 : line.find("]")].strip()
-            if curr_section == "moleculetype":
-                now_mol = None
-        elif curr_section == "atoms" and line != "":
-            natoms += 1
-        elif curr_section == "moleculetype" and now_mol is None and line != "":
-            now_mol = line.split()[0].strip()
+                atom_count = 0
 
-        ret.append(line)
-    ret = "\n".join(ret)
-    return ret
+            current_section = content[content.find("[") + 1 : content.find("]")].strip()
+            if current_section == "moleculetype":
+                current_molecule = None
+
+        # セクション内容の処理
+        elif current_section == "atoms" and content:
+            atom_count += 1
+        elif current_section == "moleculetype" and current_molecule is None and content:
+            current_molecule = content.split()[0].strip()
+
+        # 元の行を保持（空行も含む）
+        if content or comment:
+            output_lines.append(line)
+        else:
+            output_lines.append("")
+
+    return "\n".join(output_lines)
