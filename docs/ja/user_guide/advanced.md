@@ -1,23 +1,37 @@
 # 高度な使用方法
 
+このドキュメントでは、EXPRORER_MSMDのより詳細な設定オプションについて説明します。
+[基本的な使い方](basic.md)を理解した上で、シミュレーションや解析をより細かく制御したい場合に参照してください。
+
 ## シミュレーション設定のカスタマイズ
+
+シミュレーションの挙動を詳細に制御するためのオプションを提供しています。
 
 ### シミュレーションステップの制御
 
-特定のフェーズをスキップするオプションが用意されています。
+各処理フェーズを個別に実行するためのオプションが用意されています。
+例えば、解析パラメータを変更して再解析を行う場合や、異なる条件で解析を試す場合に便利です。
 
 ```bash
 # 前処理をスキップ
+# - 既存の系を使用する場合
+# - 系の構築は完了しているが、シミュレーションを再実行する場合
 ./exprorer_msmd protocol.yaml --skip-preprocess
 
 # シミュレーションをスキップ
+# - 既存のトラジェクトリに対して異なる解析を行う場合
+# - 解析パラメータを変更して再解析する場合
 ./exprorer_msmd protocol.yaml --skip-simulation
 
 # 後処理をスキップ
+# - シミュレーションのみを実行する場合
+# - 解析を別途実行する場合
 ./exprorer_msmd protocol.yaml --skip-postprocess
 ```
 
 ### 独立試行の設定
+
+信頼性を高めるために、複数の独立したシミュレーションを実行することができます。
 
 ```yaml
 general:
@@ -30,6 +44,8 @@ general:
 
 ### シミュレーション条件の調整
 
+シミュレーションの物理的条件を制御するパラメータを設定できます。
+
 ```yaml
 exprorer_msmd:
   general:
@@ -41,38 +57,46 @@ exprorer_msmd:
   sequence:
     - name: pr        # プロダクションラン
       type: production
-      nsteps: 20000000  # ステップ数（40 ns）
-      nstxtcout: 5000   # 出力頻度（10 ps）
+      nsteps: 20000000  # ステップ数（この例では40 ns）
+      nstxtcout: 5000   # 出力頻度（この例では10 ps毎）
 ```
 
 ## 解析設定のカスタマイズ
 
+シミュレーション結果の解析方法を制御するオプションを提供しています。
+
 ### PMAPの計算設定
+
+Probability MAP (PMAP)の計算方法を詳細に制御できます。
 
 ```yaml
 map:
   type: pmap
-  snapshot: 2001-4001:1  # 使用するスナップショット範囲
+  snapshot: 2001-4001:1  # 使用するスナップショット範囲：平衡化後のデータを使用
   maps:
-    - suffix: nVH        # 重原子のみ
+    - suffix: nVH        # 重原子のみを使用したマップ
       selector: (!@VIS)&(!@H*)
-    - suffix: nV         # 全原子
+    - suffix: nV         # 全原子を使用したマップ
       selector: (!@VIS)
-  map_size: 80           # マップサイズ（Å）
-  normalization: total   # 正規化方法, snapshotおよびGFEが指定可能
+  map_size: 80           # マップサイズ（Å）：系全体を含む十分な大きさを指定
+  normalization: total   # 正規化方法：total, snapshot, GFEが指定可能
 ```
 
 ### Inverse MSMD 関連の設定
 
+プローブ分子の環境解析のための設定を行えます。
+
 ```yaml
 probe_profile:
   resenv:
-    map: nVH            # 使用するマップ
-    threshold: 0.001    # 確率閾値
+    map: nVH            # 使用するマップ：通常は重原子のみのマップを使用
+    threshold: 0.001    # 確率閾値：小さいほど広い範囲の相互作用を検出
   profile:
     types:
-      - name: anion # マップの名称
-        atoms:
+      - name: anion     # アニオン性残基との相互作用
+        atoms:          # 相互作用を評価する原子の指定
           - ["ASP", " CB "]
           - ["GLU", " CB "]
 ```
+
+各設定の詳細な説明や推奨値については、`example/example_protocol.yaml`も参照してください。
