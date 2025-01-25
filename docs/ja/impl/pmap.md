@@ -73,3 +73,59 @@ $$\mathrm{GFE}(r) = -RT \ln(P(r)/P_{\mathrm{bulk}})$$
 - $T$：温度
 - $P_{\mathrm{bulk}}$：バルクの確率（全体の平均確率）
 
+## 実装の詳細（`gen_pmap()` 関数）
+
+### cpptrajによる頻度グリッド計算
+
+cpptrajを使用したグリッド計算は以下の手順で実行されます。
+以下の実行を起こすテンプレートは　`script/utilities/executables/template/cpptraj_pmap.in` に存在しますので、合わせて参照してください。
+
+1. トラジェクトリの前処理
+   トラジェクトリを読み込み、主鎖炭素原子を使ってシミュレーション前の初期構造との重ね合わせを実施します。
+   ```
+   trajin [プロジェクト名].xtc [開始フレーム] [終了フレーム]
+   reference [プロジェクト名].pdb
+   rms reference @CA
+   ```
+
+2. 頻度グリッドの作成
+   cpptrajのgridコマンドを用いて、指定された原子セレクタに基づいてグリッドを作成します。
+
+   ```
+   grid [保存するマップファイルパス].dx 
+     [X方向サイズ(Å)] [X方向間隔(Å)] [Y方向サイズ(Å)] [Y方向間隔(Å)] [Z方向サイズ(Å)] [Z方向間隔(Å)] 
+     gridcenter 0.0 0.0 0.0 [原子セレクタ]
+   ```
+   - デフォルトサイズ：80×80×80 Å
+   - デフォルト間隔：1×1×1 Å
+
+### PMAPファイルの生成
+
+cpptrajで作成した頻度グリッドを読み込み、PMAPを生成します。
+
+
+2. 確率への変換
+   - total正規化の場合：
+     ```python
+     total_count = np.sum(frequency_map)
+     probability_map = frequency_map / total_count
+     ```
+   - snapshot正規化の場合：
+     ```python
+     probability_map = frequency_map / n_frames
+     ```
+
+3. GFEの計算（オプション） `convert_to_gfe()`
+   ```python
+   R = 0.001987  # kcal/mol/K
+   T = 300       # K
+   bulk_prob = np.mean(probability_map)
+   gfe_map = -R * T * np.log(probability_map / bulk_prob)
+   ```
+
+   このとき、 `gfe_map` は無限大の値を持つ可能性がある（probability_mapの値が0であるような座標はそうなる）ので、
+   `gfe_map` の各値が 3.0 kcal/mol 以上であれば、3.0 kcal/mol にクリップします。
+
+### 出力ファイル形式
+
+すべてのマップはOpenDX形式で出力されます。
