@@ -76,7 +76,15 @@ EXPRORER[^1] はこの結果を用いて、ボクセル間の類似度を計算�
 
 [^2]:**Keisuke Yanagisawa**, Ryunosuke Yoshino, Genki Kudo, Takatsugu Hirokawa. "Inverse Mixed-Solvent Molecular Dynamics for Visualization of the Residue Interaction Profile of Molecular Probes", *International Journal of Molecular Sciences*, **23**: 4749, 2022/04. DOI: [10.3390/ijms23094749](https://doi.org/10.3390/ijms23094749)
 
-## yamlファイルの書き換え
+## 詳細なドキュメント
 
-すべての設定は yaml ファイルに記述されている。
-（工事中）
+より詳細な情報は以下のドキュメントを参照せよ。
+
+### ユーザーガイド
+- [基本的な使い方](docs/ja/user_guide/basic.md)
+- [高度な使用方法](docs/ja/user_guide/advanced.md)
+- [プローブ分子の準備](docs/ja/user_guide/probe_preparation.md)
+
+### 実装の詳細
+- [MSMDの実装](docs/ja/impl/msmd.md)
+- [PMAPの詳細](docs/ja/impl/pmap.md)

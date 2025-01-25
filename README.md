@@ -6,7 +6,7 @@ Repository that combines the Mixed-Solvent Molecular Dynamics (MSMD) simulation 
 
 A system for performing MSMD using GROMACS automatically.
 
-## Usage Guide
+## Quick Start
 
 ### Environment Setup
 
@@ -28,8 +28,7 @@ Prepare a YAML file that defines the protein, mixed-solvent (probe) molecules, a
 ./exprorer_msmd example/example_protocol.yaml
 ```
 
-
-It should be noted that the simulation procedure consists of three parts:
+The simulation procedure consists of three parts:
 
 - Preprocessing to create the MSMD system (**preprocess**)
 - Simulation using GROMACS (**simulation**)
@@ -76,7 +75,15 @@ The resulting visualization may resemble the following image:
 
 [^2]: **Keisuke Yanagisawa**, Ryunosuke Yoshino, Genki Kudo, Takatsugu Hirokawa. "Inverse Mixed-Solvent Molecular Dynamics for Visualization of the Residue Interaction Profile of Molecular Probes", *International Journal of Molecular Sciences*, **23**: 4749, 2022/04. DOI: [10.3390/ijms23094749](https://doi.org/10.3390/ijms23094749)
 
-## Editing the YAML File
+## Detailed Documentation
 
-All configurations are specified in the YAML file.
-(Under construction)
+For more detailed information, please refer to the following documents:
+
+### User Guide
+- [Basic Usage](docs/en/user_guide/basic.md)
+- [Advanced Usage](docs/en/user_guide/advanced.md)
+- [Probe Preparation](docs/en/user_guide/probe_preparation.md)
+
+### Implementation Details
+- [MSMD Implementation](docs/en/impl/msmd.md)
+- [PMAP Details](docs/en/impl/pmap.md)
