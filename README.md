@@ -75,16 +75,15 @@ The resulting visualization may resemble the following image:
 
 [^2]: **Keisuke Yanagisawa**, Ryunosuke Yoshino, Genki Kudo, Takatsugu Hirokawa. "Inverse Mixed-Solvent Molecular Dynamics for Visualization of the Residue Interaction Profile of Molecular Probes", *International Journal of Molecular Sciences*, **23**: 4749, 2022/04. DOI: [10.3390/ijms23094749](https://doi.org/10.3390/ijms23094749)
 
-## Documentation
+## Detailed Documentation
 
-Detailed documentation is available in both English and Japanese:
+For more detailed information, please refer to the following documents:
 
-### English Documentation
-- User Guide
-  - [Basic Usage](docs/en/user_guide/basic.md)
-  - [Advanced Usage](docs/en/user_guide/advanced.md)
-- Theory
-  - [MSMD Theory](docs/en/theory/msmd.md)
-  - [PMAP Calculation](docs/en/theory/pmap.md)
-- Developer Guide
-  - [API Specification](docs/en/dev/api.md)
+### User Guide
+- [Basic Usage](docs/en/user_guide/basic.md)
+- [Advanced Usage](docs/en/user_guide/advanced.md)
+- [Probe Preparation](docs/en/user_guide/probe_preparation.md)
+
+### Implementation Details
+- [MSMD Implementation](docs/en/impl/msmd.md)
+- [PMAP Details](docs/en/impl/pmap.md)
