@@ -81,12 +81,10 @@ EXPRORER[^1] はこの結果を用いて、ボクセル間の類似度を計算�
 より詳細な情報は以下のドキュメントを参照せよ。
 
 ### ユーザーガイド
-- [基本的な使い方](docs/user_guide/basic.md)
-- [高度な使用方法](docs/user_guide/advanced.md)
+- [基本的な使い方](docs/ja/user_guide/basic.md)
+- [高度な使用方法](docs/ja/user_guide/advanced.md)
+- [プローブ分子の準備](docs/ja/user_guide/probe_preparation.md)
 
-### 理論的背景
-- [MSMDの理論](docs/theory/msmd.md)
-- [PMAPの計算方法](docs/theory/pmap.md)
-
-### 開発者向け情報
-- [API仕様](docs/dev/api.md)
+### 実装の詳細
+- [MSMDの実装](docs/ja/impl/msmd.md)
+- [PMAPの詳細](docs/ja/impl/pmap.md)
