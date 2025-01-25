@@ -1,4 +1,4 @@
-FROM kyanagis/exprorer_msmd:2024.08.16
+FROM kyanagis/exprorer_msmd:2025.01.25
 
 RUN mamba install -y pytest
 RUN pip install mypy pytest isort ipykernel

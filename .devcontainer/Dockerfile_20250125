@@ -1,0 +1,17 @@
+FROM kyanagis/gromacs:2024.2-cuda12.0.0-avx2_256
+
+ENV CONDA_DIR=/miniforge3
+ENV PATH=$CONDA_DIR/bin:$PATH
+RUN wget https://github.com/conda-forge/miniforge/releases/download/24.9.2-0/Miniforge3-24.9.2-0-Linux-x86_64.sh \
+    && bash  Miniforge3-24.9.2-0-Linux-x86_64.sh -b -p $CONDA_DIR \
+    && rm -f Miniforge3-24.9.2-0-Linux-x86_64.sh
+
+RUN conda install -y mamba
+RUN mamba update conda
+RUN mamba install -y \
+    python=3.9 numpy=1.22.4 \
+    ambertools=21.0 biopython \
+    jinja2 griddataformats \
+    parmed git pyyaml \
+    tqdm scikit-learn gputil joblib
+RUN mamba install -y netcdf4=1.7.2 # to remove tleap error
