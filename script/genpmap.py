@@ -35,15 +35,17 @@ def mask_generator(ref_struct: Path, reference_grid: gridData.Grid, distance: Op
 
 
 def convert_to_proba(
-    g: gridData.Grid, mask_grid: Optional[npt.NDArray] = None, normalize: str = "snapshot", frames: int = 1
+    g: gridData.Grid, mask_grid: Optional[npt.NDArray] = None, normalize: Literal["total", "snapshot"] = "snapshot", frames: int = 1
 ) -> gridData.Grid:
     if mask_grid is not None:
         values = g.grid[np.where(mask_grid)]
         # print(np.sum(g.grid), np.sum(values), np.where(mask_grid))
-        if normalize == "snapshot" or normalize == "GFE":
+        if normalize == "snapshot":
             values /= frames
-        else:
+        elif normalize == "total":
             values /= np.sum(values)
+        else:
+            raise ValueError("Invalid normalization method")
         g.grid = np.full_like(g.grid, np.min([np.min(values), -1]))  # assign -1 for outside of mask
         g.grid[np.where(mask_grid)] = values
     else:
@@ -68,7 +70,7 @@ def convert_to_gfe(grid_path: str, mean_proba: float, temperature: float = 300) 
 
 
 def convert_to_pmap(
-    grid_path: Path, ref_struct: Path, valid_distance: float, normalize: str = "snapshot", frames: int = 1
+    grid_path: Path, ref_struct: Path, valid_distance: float, normalize: Literal["total", "snapshot"] = "snapshot", frames: int = 1
 ):
     grid = gridData.Grid(grid_path)
     mask = mask_generator(ref_struct, grid, valid_distance)

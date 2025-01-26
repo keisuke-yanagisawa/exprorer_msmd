@@ -163,13 +163,6 @@ def test_convert_to_proba_without_mask(count_grid_fixture):
     # 全体の値が合計で1になることを確認
     assert 1.0 == pytest.approx(np.sum(result.grid), abs=1e-6)
 
-def test_convert_to_proba_with_mask_gfe(count_grid_fixture, mask_fixture):
-    """マスクありでGFEモードのテスト、result自体はsnapshotと同じ結果が出力される。"""
-    result = convert_to_proba(count_grid_fixture, mask_fixture, normalize="GFE", frames=2)
-    # マスクされた領域の値がフレーム数 (=2) で割られることを確認（snapshotと同じ動作）
-    masked_values = result.grid[mask_fixture]
-    assert np.array([1, 3, 6, 8]) / 2 == pytest.approx(masked_values, abs=1e-6)
-
 def test_convert_to_proba_with_zero_values(count_grid_fixture, mask_fixture):
     """ゼロ値を含むデータの変換テスト"""
     count_grid_fixture.grid[0, 0, 0] = 0.0
@@ -187,13 +180,13 @@ def test_convert_to_gfe(tmp_path):
     grid_path = tmp_path / "test_grid.dx"
     
     # テスト用のグリッドファイルを作成
-    grid = gridData.Grid()
-    grid.grid = np.array([[[0.1, 0.2], [0.3, 0.4]], [[0.5, 0.6], [0.7, 0.8]]], dtype=np.float64)
-    grid.origin = np.array([0.0, 0.0, 0.0])
-    grid.delta = np.array([1.0, 1.0, 1.0])
-    grid.export(str(grid_path))
+    pmap_grid = gridData.Grid()
+    pmap_grid.grid = np.array([[[0.1, 0.2], [0.3, 0.4]], [[0.5, 0.6], [0.7, 0.8]]], dtype=np.float64)
+    pmap_grid.origin = np.array([0.0, 0.0, 0.0])
+    pmap_grid.delta = np.array([1.0, 1.0, 1.0])
+    pmap_grid.export(str(grid_path))
 
-    mean_proba = 0.5
+    mean_proba = np.mean(pmap_grid.grid)
     temperature = 300
     
     # GFE変換を実行
