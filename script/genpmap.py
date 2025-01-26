@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Literal
 
 import gridData
 import numpy as np
@@ -35,15 +35,17 @@ def mask_generator(ref_struct: Path, reference_grid: gridData.Grid, distance: Op
 
 
 def convert_to_proba(
-    g: gridData.Grid, mask_grid: Optional[npt.NDArray] = None, normalize: str = "snapshot", frames: int = 1
+    g: gridData.Grid, mask_grid: Optional[npt.NDArray] = None, normalize: Literal["total", "snapshot"] = "snapshot", frames: int = 1
 ) -> gridData.Grid:
     if mask_grid is not None:
         values = g.grid[np.where(mask_grid)]
         # print(np.sum(g.grid), np.sum(values), np.where(mask_grid))
-        if normalize == "snapshot" or normalize == "GFE":
+        if normalize == "snapshot":
             values /= frames
-        else:
+        elif normalize == "total":
             values /= np.sum(values)
+        else:
+            raise ValueError("Invalid normalization method")
         g.grid = np.full_like(g.grid, np.min([np.min(values), -1]))  # assign -1 for outside of mask
         g.grid[np.where(mask_grid)] = values
     else:
@@ -68,7 +70,7 @@ def convert_to_gfe(grid_path: str, mean_proba: float, temperature: float = 300) 
 
 
 def convert_to_pmap(
-    grid_path: Path, ref_struct: Path, valid_distance: float, normalize: str = "snapshot", frames: int = 1
+    grid_path: Path, ref_struct: Path, valid_distance: float, normalize: Literal["total", "snapshot"] = "snapshot", frames: int = 1
 ):
     grid = gridData.Grid(grid_path)
     mask = mask_generator(ref_struct, grid, valid_distance)
@@ -80,10 +82,36 @@ def convert_to_pmap(
 
 
 def parse_snapshot_setting(string: str):
+    if not string or ":" not in string and "-" not in string:
+        raise ValueError("Invalid format. Expected 'start-stop' or 'start-stop:offset'")
+
     offset = "1"  # default parameter
-    if len(string.split(":")) != 1:  # ofset is an option
+    if ":" in string:  # offset is an option
+        if string.count(":") > 1:
+            raise ValueError("Too many ':' characters")
         string, offset = string.split(":")
-    start, stop = string.split("-")  # start and end is mandatory
+        if not offset.isdigit():
+            raise ValueError("Offset must be a positive integer")
+
+    if "-" not in string:
+        raise ValueError("Missing '-' separator")
+    if string.count("-") > 1:
+        raise ValueError("Too many '-' characters")
+    
+    try:
+        start, stop = string.split("-")
+    except ValueError:
+        raise ValueError("Invalid format. Expected 'start-stop'")
+
+    if not start or not stop:
+        raise ValueError("Start and stop values must not be empty")
+    if not start.isdigit() or not stop.isdigit():
+        raise ValueError("Start and stop must be positive integers")
+    if int(start) > int(stop):
+        raise ValueError("Start frame must be less than or equal to stop frame")
+    if int(offset) < 1:
+        raise ValueError("Offset must be greater than 0")
+
     return start, stop, offset
 
 
@@ -126,7 +154,7 @@ def gen_pmap(
             ref_struct,
             setting_pmap["valid_dist"],
             frames=cpptraj_obj.frames,
-            normalize=setting_pmap["normalization"],
+            normalize=setting_pmap["normalization"] if setting_pmap["normalization"] != "GFE" else "snapshot"
         )
         if setting_pmap["normalization"] == "GFE":
             struct_obj = uPDB.get_structure(ref_struct)
