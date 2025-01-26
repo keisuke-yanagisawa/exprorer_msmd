@@ -46,15 +46,18 @@ class GroAtom:
         self.resn = ""
         self.atomtype = ""
         self.atom_id = -1
-        self.point = np.array([])
-        self.velocity = np.array([])
+        self.point = np.zeros((3,))
+        self.velocity = np.zeros((3,))
         self.comment = ""
         self.atomic_mass = 0.0
 
-        if string != "":
+        if string:  # 空文字列でない場合のみparseを呼び出す
             self.parse(string)
 
     def parse(self, string):
+        if len(string) < 20:  # Minimum length for valid GRO format
+            raise RuntimeError("the dimension of atom coordinates/velocities are wrong: []")
+
         if len(string.split(";")) > 1:  # there is a comment
             info = string.split(";")
             string = info[0].rstrip()
