@@ -15,7 +15,7 @@ from script.addvirtatom2gro import addvirtatom2gro
 from script.addvirtatom2top import addvirtatom2top
 from script.generate_msmd_system import generate_msmd_system
 from script.genpmap import gen_pmap
-from script.mdrun import prepare_md_files, prepare_sequence
+from script.mdrun import prepare_md_files, prepare_sequence, run_md_sequence
 from script.setting import parse_yaml
 from script.utilities import util
 from script.utilities.const import IONS
@@ -128,17 +128,9 @@ def execute_single_simulation(
         out_traj=simdirpath / f"{JOB_NAME}.xtc",
     )
 
-    # execute simulation
-    os.system(
-        f"""
-    unset OMP_NUM_THREADS ; \
-    export CUDA_VISIBLE_DEVICES="{gpuid}" ; \
-    cd {simdirpath} && \
-    GMX={exe_gromacs} bash mdrun.sh {ncpus}
-    """
-    )
+    return run_md_sequence(gpuid, simdirpath, exe_gromacs, ncpus, JOB_NAME)
 
-    return simdirpath / f"{JOB_NAME}.xtc"
+
 
 
 def postprocess(index: int, setting, top: Path, traj: Path, debug: bool = False):
