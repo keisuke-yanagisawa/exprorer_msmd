@@ -39,25 +39,30 @@ class Logger:
         self.logger.critical(msg)
 
     def setLevel(self, level):
-        if level.lower() == "debug":
-            self.logger.setLevel(DEBUG)
-            self.handler.setLevel(DEBUG)
+        if not isinstance(level, str):
+            raise TypeError(f"ログレベルは文字列で指定してください: {level}")
+
+        level_lower = level.lower().strip()
+        valid_levels = {
+            "debug": DEBUG,
+            "info": INFO,
+            "warn": WARN,
+            "warning": WARN,
+            "error": ERROR,
+            "critical": CRITICAL
+        }
+
+        if level_lower not in valid_levels:
+            raise ValueError(
+                f"無効なログレベルです: {level}\n"
+                f"有効なログレベル: {', '.join(sorted(set(valid_levels.keys())))}"
+            )
+
+        log_level = valid_levels[level_lower]
+        self.logger.setLevel(log_level)
+        self.handler.setLevel(log_level)
+        if log_level == DEBUG:
             self.debug("logging level: DEBUG")
-        elif level.lower() == "info":
-            self.logger.setLevel(INFO)
-            self.handler.setLevel(INFO)
-        elif level.lower() == "warn" or level.lower() == "warning":
-            self.logger.setLevel(WARN)
-            self.handler.setLevel(WARN)
-        elif level.lower() == "error":
-            self.logger.setLevel(ERROR)
-            self.handler.setLevel(ERROR)
-        elif level.lower() == "critical":
-            self.logger.setLevel(CRITICAL)
-            self.handler.setLevel(CRITICAL)
-        else:
-            self.warn(f"level '{level}' is invalid.")
-            self.warn("logger level has not been changed.")
 
 
 logger = Logger()
