@@ -1,78 +1,123 @@
 import warnings
 from pathlib import Path
-from unittest import TestCase
 
+import pytest
 from script.utilities.executable.packmol import Packmol
 from subprocess import CalledProcessError
 
+@pytest.fixture
+def test_data_dir():
+    """テストデータディレクトリのパスを提供するfixture"""
+    return Path("script/utilities/executable/test_data")
 
-class TestPackmol(TestCase):
-    def __init__(self, *args, **kwargs):
-        super(TestPackmol, self).__init__(*args, **kwargs)
-        __testdata_dir = Path("script/utilities/executable/test_data")
-        self.protein_pdb = __testdata_dir / "tripeptide.pdb"
-        self.cosolv_pdb = __testdata_dir / "A11.pdb"
-        self.cosolv_mol2 = __testdata_dir / "A11.mol2"
+@pytest.fixture
+def test_files(test_data_dir):
+    """テストに必要なファイルパスを提供するfixture"""
+    return {
+        'protein_pdb': test_data_dir / "tripeptide.pdb",
+        'cosolv_pdb': test_data_dir / "A11.pdb",
+        'cosolv_mol2': test_data_dir / "A11.mol2"
+    }
 
-    def test_run_packmol(self):
-        packmol = Packmol()
-        packmol.set(protein_pdb=self.protein_pdb, cosolv_pdb=self.cosolv_pdb, box_size=20, molar=0.5)
+def test_run_packmol(test_files):
+    """通常のパッキング処理のテスト"""
+    packmol = Packmol()
+    packmol.set(
+        protein_pdb=test_files['protein_pdb'],
+        cosolv_pdb=test_files['cosolv_pdb'],
+        box_size=20,
+        molar=0.5
+    )
+    packmol.run(seed=1)
+
+@pytest.mark.parametrize("molar,expected_warning", [
+    (0, RuntimeWarning),
+    (1e-10, RuntimeWarning),
+    (10, RuntimeWarning)
+])
+def test_warning_cases(test_files, molar, expected_warning):
+    """異常なモル濃度に対する警告のテスト"""
+    packmol = Packmol()
+    with pytest.warns(expected_warning):
+        packmol.set(
+            protein_pdb=test_files['protein_pdb'],
+            cosolv_pdb=test_files['cosolv_pdb'],
+            box_size=20,
+            molar=molar
+        )
         packmol.run(seed=1)
 
-    def test_zero_molar(self):
-        with self.assertWarns(RuntimeWarning):
-            packmol = Packmol()
-            packmol.set(protein_pdb=self.protein_pdb, cosolv_pdb=self.cosolv_pdb, box_size=20, molar=0)
-            packmol.run(seed=1)
+def test_extremely_high_molar(test_files):
+    """極端に高いモル濃度に対するエラーのテスト"""
+    packmol = Packmol()
+    with pytest.raises((RuntimeError, CalledProcessError)):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            packmol.set(
+                protein_pdb=test_files['protein_pdb'],
+                cosolv_pdb=test_files['cosolv_pdb'],
+                box_size=20,
+                molar=1e10
+            )
+        packmol.run(seed=1)
 
-    def test_extremely_low_molar(self):
-        packmol = Packmol()
-        with self.assertWarns(RuntimeWarning):
-            # the concentration is too low to add even single probe molecule
-            packmol.set(protein_pdb=self.protein_pdb, cosolv_pdb=self.cosolv_pdb, box_size=20, molar=1e-10)
-            packmol.run(seed=1)
+@pytest.mark.parametrize("test_case", [
+    {
+        'desc': "存在しないタンパク質ファイル",
+        'protein_pdb': Path("NOTHING.pdb"),
+        'cosolv_pdb': 'cosolv_pdb',
+        'expected_error': FileNotFoundError
+    },
+    {
+        'desc': "存在しないコソルベントファイル",
+        'protein_pdb': 'protein_pdb',
+        'cosolv_pdb': Path("NOTHING.pdb"),
+        'expected_error': FileNotFoundError
+    }
+])
+def test_missing_files(test_files, test_case):
+    """ファイル不在のケースのテスト"""
+    packmol = Packmol()
+    cosolv_pdb = test_files[test_case['cosolv_pdb']] if isinstance(test_case['cosolv_pdb'], str) else test_case['cosolv_pdb']
+    protein_pdb = test_files[test_case['protein_pdb']] if isinstance(test_case['protein_pdb'], str) else test_case['protein_pdb']
+    
+    with pytest.raises(test_case['expected_error']):
+        packmol.set(
+            protein_pdb=protein_pdb,
+            cosolv_pdb=cosolv_pdb,
+            box_size=20,
+            molar=0.1
+        )
+        packmol.run(seed=1)
 
-    def test_high_molar(self):
-        with self.assertWarns(RuntimeWarning):
-            packmol = Packmol()
-            packmol.set(protein_pdb=self.protein_pdb, cosolv_pdb=self.cosolv_pdb, box_size=20, molar=10)
-            packmol.run(seed=1)
-
-    def test_extremely_high_molar(self):
-        with self.assertRaises((RuntimeError,CalledProcessError)):
-            packmol = Packmol()
-            with warnings.catch_warnings():
-                # this test case will raise a RuntimeWarning, but we don't care
-                warnings.simplefilter("ignore", RuntimeWarning)
-                packmol.set(protein_pdb=self.protein_pdb, cosolv_pdb=self.cosolv_pdb, box_size=20, molar=1e10)
-            packmol.run(seed=1)
-
-    def test_no_protein(self):
-        with self.assertRaises(FileNotFoundError):
-            packmol = Packmol()
-            packmol.set(protein_pdb=Path("NOTHING.pdb"), cosolv_pdb=self.cosolv_pdb, box_size=20, molar=0.1)
-            packmol.run(seed=1)
-
-    def test_no_cosolvent(self):
-        with self.assertRaises(FileNotFoundError):
-            packmol = Packmol()
-            packmol.set(protein_pdb=self.protein_pdb, cosolv_pdb=Path("NOTHING.pdb"), box_size=20, molar=0.1)
-            packmol.run(seed=1)
-
-    def test_cosolvent_is_not_pdb(self):
-        with self.assertRaises(ValueError):
-            packmol = Packmol()
-            packmol.set(protein_pdb=self.protein_pdb, cosolv_pdb=self.cosolv_mol2, box_size=20, molar=0.1)
-            packmol.run(seed=1)
-
-    def test_cosolvent_file_contains_non_cosolvent(self):
-        with self.assertRaises(RuntimeError):
-            packmol = Packmol()
-            packmol.set(protein_pdb=self.protein_pdb, cosolv_pdb=self.protein_pdb, box_size=20, molar=0.1)
-            packmol.run(seed=1)
-
-    def test_protein_file_contains_non_protein(self):
-        with self.assertRaises(RuntimeError):
-            packmol = Packmol()
-            packmol.set(protein_pdb=self.cosolv_pdb, cosolv_pdb=self.cosolv_pdb, box_size=20, molar=0.1)
-            packmol.run(seed=1)
+@pytest.mark.parametrize("test_case", [
+    {
+        'desc': "不正なコソルベントファイル形式",
+        'protein_pdb': 'protein_pdb',
+        'cosolv_pdb': 'cosolv_mol2',
+        'expected_error': ValueError
+    },
+    {
+        'desc': "コソルベントファイルにタンパク質が含まれる",
+        'protein_pdb': 'protein_pdb',
+        'cosolv_pdb': 'protein_pdb',
+        'expected_error': RuntimeError
+    },
+    {
+        'desc': "タンパク質ファイルにコソルベントが含まれる",
+        'protein_pdb': 'cosolv_pdb',
+        'cosolv_pdb': 'cosolv_pdb',
+        'expected_error': RuntimeError
+    }
+])
+def test_invalid_file_contents(test_files, test_case):
+    """ファイル内容の異常系テスト"""
+    packmol = Packmol()
+    with pytest.raises(test_case['expected_error']):
+        packmol.set(
+            protein_pdb=test_files[test_case['protein_pdb']],
+            cosolv_pdb=test_files[test_case['cosolv_pdb']],
+            box_size=20,
+            molar=0.1
+        )
+        packmol.run(seed=1)
