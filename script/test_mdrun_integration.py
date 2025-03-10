@@ -7,7 +7,7 @@ import subprocess
 class TestMDRunIntegration:
     @pytest.fixture(scope="class")
     def check_dependencies(self):
-        """外部依存ソフトウェアのチェック"""
+        """Check external software dependencies"""
         dependencies = {
             "gmx": "gromacs",
             "packmol": "packmol",
@@ -23,7 +23,7 @@ class TestMDRunIntegration:
 
     @pytest.fixture
     def minimal_msmd_yaml(self, tmp_path):
-        """最小構成のMSMD設定（MDシミュレーションのみ）"""
+        """Minimal MSMD configuration (MD simulation only)"""
         yaml_content = """
 general:
   iter_index: 0
@@ -66,7 +66,7 @@ exprorer_msmd:
         yaml_path = tmp_path / "test_msmd.yaml"
         yaml_path.write_text(yaml_content)
 
-        # テストデータのコピー
+        # Copy test data
         test_data_dir = Path("script/test_data")
         for file in ["tripeptide.pdb", "A11.mol2", "A11.pdb"]:
             shutil.copy2(test_data_dir / file, tmp_path)
@@ -74,25 +74,25 @@ exprorer_msmd:
         return yaml_path
 
     def test_msmd_minimal_run(self, check_dependencies, minimal_msmd_yaml, tmp_path):
-        """最小構成でのMDシミュレーション実行テスト"""
-        # コマンド実行
+        """Test MD simulation execution with minimal configuration"""
+        # Execute command
         cmd = f"timeout 2m ./exprorer_msmd {minimal_msmd_yaml} --skip-postprocess"
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
         
-        # return_codeの確認
+        # Check return code
         assert result.returncode == 0, f"Command failed with:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
         
-        # シミュレーションディレクトリのパス
+        # Simulation directory path
         sim_dir = tmp_path / "system0" / "simulation"
         
-        # 各ステージの出力確認
+        # Check output for each stage
         for stage in ["min", "heat", "pr"]:
             assert (sim_dir / f"{stage}.mdp").exists(), f"{stage}.mdp was not created"
             assert (sim_dir / f"{stage}.tpr").exists(), f"{stage}.tpr was not created"
             assert (sim_dir / f"{stage}.log").exists(), f"{stage}.log was not created"
 
     def test_msmd_missing_files(self, check_dependencies, tmp_path):
-        """必要なファイルが存在しない場合のテスト"""
+        """Test for when required files do not exist"""
         yaml_content = """
 general:
   iter_index: 0
@@ -127,9 +127,9 @@ exprorer_msmd:
         yaml_path = tmp_path / "test_msmd.yaml"
         yaml_path.write_text(yaml_content)
 
-        # コマンド実行
+        # Execute command
         cmd = f"timeout 2m ./exprorer_msmd {yaml_path} --skip-postprocess"
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
         
-        # エラーが発生することを確認
+        # Verify error occurs
         assert result.returncode != 0, "Command should fail with missing files"

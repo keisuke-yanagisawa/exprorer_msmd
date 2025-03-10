@@ -4,7 +4,7 @@ from script.addvirtatom2top import addvirtatom2top, VIS_INFO
 
 @pytest.fixture
 def basic_top():
-    """基本的なTOPファイルの内容を準備"""
+    """Prepare basic TOP file content"""
     return """
 [ defaults ]
 1   1   no
@@ -29,27 +29,27 @@ MOL      3
 
 @pytest.fixture
 def expected_vis_info():
-    """期待されるVIS_INFO文字列を準備"""
+    """Prepare expected VIS_INFO string"""
     return VIS_INFO.format(sigma=2, epsilon=4.184e-6)
 
 
 def test_basic_conversion(basic_top, expected_vis_info):
-    """基本的な変換のテスト"""
+    """Test for basic conversion"""
     result = addvirtatom2top(basic_top, ["MOL"])
     
-    # VIS_INFOが追加されていることを確認
+    # Verify VIS_INFO is added
     assert expected_vis_info in result
     
-    # 仮想原子が追加されていることを確認
+    # Verify virtual atom is added
     assert "3        VIS      1    MOL    VIS" in result
     
-    # 仮想サイトの定義が追加されていることを確認
+    # Verify virtual site definition is added
     assert "[ virtual_sitesn ]" in result
     assert "3   2  1 2" in result
 
 
 def test_multiple_molecules():
-    """複数の分子タイプを含むTOPファイルのテスト"""
+    """Test for TOP file containing multiple molecule types"""
     top_with_multiple = """
 [ defaults ]
 1   1   no
@@ -71,13 +71,13 @@ MOL2     3
 """
     result = addvirtatom2top(top_with_multiple, ["MOL1"])
     
-    # MOL1にのみ仮想原子が追加されていることを確認
+    # Verify virtual atom is added only to MOL1
     assert "2        VIS      1    MOL1    VIS" in result
     assert "VIS      1    MOL2    VIS" not in result
 
 
 def test_custom_parameters(basic_top):
-    """カスタムパラメータでの変換テスト"""
+    """Test conversion with custom parameters"""
     custom_sigma = 3.0
     custom_epsilon = 1.0e-5
     
@@ -88,45 +88,45 @@ def test_custom_parameters(basic_top):
 
 
 def test_no_probe_names(basic_top, expected_vis_info):
-    """プローブ名が空リストの場合のテスト"""
+    """Test for empty probe name list"""
     result = addvirtatom2top(basic_top, [])
     
-    # VIS_INFOは追加されるが、仮想原子は追加されないことを確認
+    # Verify VIS_INFO is added but no virtual atoms
     assert expected_vis_info in result
     assert "VIS      1    MOL    VIS" not in result
     assert "[ virtual_sitesn ]" not in result
 
 
 def test_probe_name_not_in_top(basic_top, expected_vis_info):
-    """存在しない分子名を指定した場合のテスト"""
+    """Test for non-existent molecule name"""
     result = addvirtatom2top(basic_top, ["NONEXISTENT"])
     
-    # VIS_INFOは追加されるが、仮想原子は追加されないことを確認
+    # Verify VIS_INFO is added but no virtual atoms
     assert expected_vis_info in result
     assert "VIS      1    NONEXISTENT    VIS" not in result
 
 
 def test_empty_input():
-    """空の入力文字列のテスト"""
+    """Test for empty input string"""
     result = addvirtatom2top("", ["MOL"])
     assert result == ""
 
 
 def test_malformed_input():
-    """不正な形式の入力のテスト"""
+    """Test for malformed input"""
     malformed_top = """
 [ invalid_section
 missing_bracket
 """
     result = addvirtatom2top(malformed_top, ["MOL"])
     
-    # エラーを発生させずに処理できることを確認
+    # Verify it can process without raising errors
     assert "[ invalid_section" in result
     assert "missing_bracket" in result
 
 
 def test_preserve_comments():
-    """コメントが保持されることを確認するテスト"""
+    """Test for comment preservation"""
     top_with_comments = """
 ; This is a comment
 [ atomtypes ] ; Section comment
@@ -135,7 +135,7 @@ C1    12.01   0.0000  A   3.50000e-01  2.76144e-01 ; Atom comment
 """
     result = addvirtatom2top(top_with_comments, ["MOL"])
     
-    # コメントが保持されていることを確認
+    # Verify comments are preserved
     assert "; This is a comment" in result
     assert "[ atomtypes ] ; Section comment" in result
     assert "; name mass charge ptype sigma epsilon" in result

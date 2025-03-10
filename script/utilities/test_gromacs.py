@@ -9,19 +9,19 @@ from scipy import constants
 class TestGroAtom:
     @pytest.fixture
     def empty_atom(self):
-        """空のGroAtomインスタンスを提供するフィクスチャ"""
+        """Fixture providing an empty GroAtom instance"""
         return GroAtom()
 
     @pytest.fixture
     def normal_atom(self):
-        """通常の原子情報を持つGroAtomインスタンスを提供するフィクスチャ"""
+        """Fixture providing a GroAtom instance with normal atom information"""
         return GroAtom("    1WAT     OW    1   0.000   0.000   0.000")
 
     def test_empty_initialization(self, empty_atom):
-        """空のGroAtomインスタンスの作成テスト
-        
-        期待される動作:
-        - 全ての属性が適切なデフォルト値で初期化されること
+        """Test for creating an empty GroAtom instance
+
+        Expected behavior:
+        - All attributes should be initialized with appropriate default values
         """
         assert empty_atom.resi == -1
         assert empty_atom.resn == ""
@@ -74,14 +74,14 @@ class TestGroAtom:
         )
     ])
     def test_parse_atom_variations(self, atom_str, expected):
-        """様々な形式の原子情報の解析テスト
-        
-        パラメータ:
-        - atom_str: 解析する原子情報文字列
-        - expected: 期待される属性値の辞書
-        
-        期待される動作:
-        - 全ての属性が期待される値で正しく設定されること
+        """Test for parsing various formats of atom information
+
+        Parameters:
+        - atom_str: Atom information string to parse
+        - expected: Dictionary of expected attribute values
+
+        Expected behavior:
+        - All attributes should be correctly set to their expected values
         """
         atom = GroAtom(atom_str)
         assert atom.resi == expected["resi"]
@@ -94,27 +94,27 @@ class TestGroAtom:
         assert atom.atomic_mass == pytest.approx(expected["atomic_mass"])
 
     @pytest.mark.parametrize("invalid_str", [
-        "    1WAT     OW    1   0.000   0.000",  # 座標不足
-        "    1WAT     OW    1",  # 座標なし
+        "    1WAT     OW    1   0.000   0.000",  # Missing coordinates
+        "    1WAT     OW    1",  # No coordinates
     ])
     def test_parse_invalid_coordinates(self, invalid_str):
-        """無効な座標情報の解析テスト
-        
-        パラメータ:
-        - invalid_str: 無効な原子情報文字列
-        
-        期待される動作:
-        - RuntimeErrorが発生すること
+        """Test for parsing invalid coordinate information
+
+        Parameters:
+        - invalid_str: Invalid atom information string
+
+        Expected behavior:
+        - Should raise RuntimeError
         """
         with pytest.raises(RuntimeError, match="the dimension of atom coordinates/velocities are wrong"):
             GroAtom(invalid_str)
 
     def test_unknown_atomtype(self):
-        """未知の原子タイプの処理テスト
-        
-        期待される動作:
-        - RuntimeWarningが発生すること
-        - atomic_massがデフォルト値に設定されること
+        """Test for handling unknown atom types
+
+        Expected behavior:
+        - Should raise RuntimeWarning
+        - atomic_mass should be set to default value
         """
         warning_message = "atomtype XX is not matched to any atom names"
         with pytest.warns(RuntimeWarning, match=warning_message):
@@ -122,10 +122,10 @@ class TestGroAtom:
             assert atom.atomic_mass == pytest.approx(ATOMIC_WEIGHT[-1])
 
     def test_string_representation(self, normal_atom):
-        """文字列表現の生成テスト
-        
-        期待される動作:
-        - 正しいフォーマットの文字列が生成されること
+        """Test for string representation generation
+
+        Expected behavior:
+        - Should generate correctly formatted string
         """
         expected = "    1  WAT   OW    1   0.000   0.000   0.000"
         assert str(normal_atom) == expected
@@ -133,7 +133,7 @@ class TestGroAtom:
 class TestGro:
     @pytest.fixture
     def gro_content(self):
-        """テスト用のGROファイル内容を提供するフィクスチャ"""
+        """Fixture providing GRO file content for testing"""
         return """Simple water system
 3
     1WAT     OW    1   0.000   0.000   0.000
@@ -144,13 +144,13 @@ class TestGro:
 
     @pytest.fixture
     def mock_gro_file(self, gro_content, tmp_path):
-        """一時的なGROファイルを作成するフィクスチャ"""
+        """Fixture creating a temporary GRO file"""
         gro_file = tmp_path / "test.gro"
         gro_file.write_text(gro_content)
         return gro_file
 
     def test_empty_initialization(self):
-        """空のGroインスタンスの作成テスト"""
+        """Test for empty Gro instance creation"""
         gro = Gro()
         assert gro.description == ""
         assert gro.natoms == 0
@@ -158,7 +158,7 @@ class TestGro:
         assert len(gro.atoms) == 0
 
     def test_file_parsing(self, mock_gro_file):
-        """GROファイルの解析テスト"""
+        """Test for GRO file parsing"""
         gro = Gro(str(mock_gro_file))
         assert gro.description == "Simple water system"
         assert gro.natoms == 3
@@ -174,13 +174,13 @@ class TestGro:
         ({"resi": 1, "atomtype": "OW"}, 1),
     ])
     def test_get_atoms(self, mock_gro_file, search_params, expected_count):
-        """原子検索機能のテスト"""
+        """Test for atom search functionality"""
         gro = Gro(str(mock_gro_file))
         atoms = gro.get_atoms(**search_params)
         assert len(atoms) == expected_count
 
     def test_add_atom(self, mock_gro_file):
-        """原子追加機能のテスト"""
+        """Test for atom addition functionality"""
         gro = Gro(str(mock_gro_file))
         new_atom = GroAtom("    2  WAT   OW    4   1.000   1.000   1.000")
         gro.add_atom(new_atom)
@@ -190,21 +190,21 @@ class TestGro:
         assert gro.atoms[-1].atom_id == 4
 
     def test_add_invalid_atom(self):
-        """無効な原子追加のテスト"""
+        """Test for invalid atom addition"""
         gro = Gro()
         with pytest.raises(TypeError, match="the input is NON-GRO_ATOM"):
             gro.add_atom("not a GroAtom")
 
     def test_molar_concentration(self, mock_gro_file):
-        """モル濃度計算のテスト"""
+        """Test for molar concentration calculation"""
         gro = Gro(str(mock_gro_file))
         molar = gro.molar("WAT")
-        # ボックスサイズ 5.0 nm × 5.0 nm × 5.0 nm = 125 nm3
+        # Box size 5.0 nm × 5.0 nm × 5.0 nm = 125 nm3
         expected_molar = (1 / constants.N_A) / ((5*constants.nano)**3 * 10**3)  # nm3 -> cm3 * 10^3 = L
         assert molar == pytest.approx(expected_molar, rel=1e-5)
 
     def test_string_representation(self, mock_gro_file):
-        """文字列表現の生成テスト"""
+        """Test for string representation generation"""
         gro = Gro(str(mock_gro_file))
         expected = """Simple water system
      3

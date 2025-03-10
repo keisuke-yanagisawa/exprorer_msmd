@@ -7,12 +7,12 @@ from subprocess import CalledProcessError
 
 @pytest.fixture
 def test_data_dir():
-    """テストデータディレクトリのパスを提供するfixture"""
+    """Fixture providing the path to test data directory"""
     return Path("script/utilities/executable/test_data")
 
 @pytest.fixture
 def test_files(test_data_dir):
-    """テストに必要なファイルパスを提供するfixture"""
+    """Fixture providing file paths required for testing"""
     return {
         'protein_pdb': test_data_dir / "tripeptide.pdb",
         'cosolv_pdb': test_data_dir / "A11.pdb",
@@ -20,7 +20,7 @@ def test_files(test_data_dir):
     }
 
 def test_run_packmol(test_files):
-    """通常のパッキング処理のテスト"""
+    """Test for normal packing process"""
     packmol = Packmol()
     packmol.set(
         protein_pdb=test_files['protein_pdb'],
@@ -36,7 +36,7 @@ def test_run_packmol(test_files):
     (10, RuntimeWarning)
 ])
 def test_warning_cases(test_files, molar, expected_warning):
-    """異常なモル濃度に対する警告のテスト"""
+    """Test for warnings with abnormal molar concentrations"""
     packmol = Packmol()
     with pytest.warns(expected_warning):
         packmol.set(
@@ -48,7 +48,7 @@ def test_warning_cases(test_files, molar, expected_warning):
         packmol.run(seed=1)
 
 def test_extremely_high_molar(test_files):
-    """極端に高いモル濃度に対するエラーのテスト"""
+    """Test for error with extremely high molar concentration"""
     packmol = Packmol()
     with pytest.raises((RuntimeError, CalledProcessError)):
         with warnings.catch_warnings():
@@ -63,20 +63,20 @@ def test_extremely_high_molar(test_files):
 
 @pytest.mark.parametrize("test_case", [
     {
-        'desc': "存在しないタンパク質ファイル",
+        'desc': "Non-existent protein file",
         'protein_pdb': Path("NOTHING.pdb"),
         'cosolv_pdb': 'cosolv_pdb',
         'expected_error': FileNotFoundError
     },
     {
-        'desc': "存在しないコソルベントファイル",
+        'desc': "Non-existent cosolvent file",
         'protein_pdb': 'protein_pdb',
         'cosolv_pdb': Path("NOTHING.pdb"),
         'expected_error': FileNotFoundError
     }
 ])
 def test_missing_files(test_files, test_case):
-    """ファイル不在のケースのテスト"""
+    """Test for missing file cases"""
     packmol = Packmol()
     cosolv_pdb = test_files[test_case['cosolv_pdb']] if isinstance(test_case['cosolv_pdb'], str) else test_case['cosolv_pdb']
     protein_pdb = test_files[test_case['protein_pdb']] if isinstance(test_case['protein_pdb'], str) else test_case['protein_pdb']
@@ -92,26 +92,26 @@ def test_missing_files(test_files, test_case):
 
 @pytest.mark.parametrize("test_case", [
     {
-        'desc': "不正なコソルベントファイル形式",
+        'desc': "Invalid cosolvent file format",
         'protein_pdb': 'protein_pdb',
         'cosolv_pdb': 'cosolv_mol2',
         'expected_error': ValueError
     },
     {
-        'desc': "コソルベントファイルにタンパク質が含まれる",
+        'desc': "Cosolvent file contains protein",
         'protein_pdb': 'protein_pdb',
         'cosolv_pdb': 'protein_pdb',
         'expected_error': RuntimeError
     },
     {
-        'desc': "タンパク質ファイルにコソルベントが含まれる",
+        'desc': "Protein file contains cosolvent",
         'protein_pdb': 'cosolv_pdb',
         'cosolv_pdb': 'cosolv_pdb',
         'expected_error': RuntimeError
     }
 ])
 def test_invalid_file_contents(test_files, test_case):
-    """ファイル内容の異常系テスト"""
+    """Test for invalid file content cases"""
     packmol = Packmol()
     with pytest.raises(test_case['expected_error']):
         packmol.set(

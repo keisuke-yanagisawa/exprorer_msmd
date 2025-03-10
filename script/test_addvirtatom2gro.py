@@ -8,55 +8,55 @@ from script.addvirtatom2gro import center_of_mass, addvirtatom2gro
 
 @pytest.fixture
 def single_carbon_atom():
-    """単一の炭素原子のテストデータ"""
+    """Test data for a single carbon atom"""
     atom = gromacs.GroAtom()
     atom.point = np.array([1.0, 1.0, 1.0])
-    atom.atomic_mass = 12.0  # 炭素原子
+    atom.atomic_mass = 12.0  # Carbon atom
     return atom
 
 
 @pytest.fixture
 def water_molecule():
-    """水分子（O + 2H）のテストデータ"""
+    """Test data for a water molecule (O + 2H)"""
     oxygen = gromacs.GroAtom()
     oxygen.point = np.array([0.0, 0.0, 0.0])
-    oxygen.atomic_mass = 16.0  # 酸素原子
+    oxygen.atomic_mass = 16.0  # Oxygen atom
 
     hydrogen1 = gromacs.GroAtom()
     hydrogen1.point = np.array([0.1, 0.0, 0.0])
-    hydrogen1.atomic_mass = 1.0  # 水素原子
+    hydrogen1.atomic_mass = 1.0  # Hydrogen atom
 
     hydrogen2 = gromacs.GroAtom()
     hydrogen2.point = np.array([0.0, 0.1, 0.0])
-    hydrogen2.atomic_mass = 1.0  # 水素原子
+    hydrogen2.atomic_mass = 1.0  # Hydrogen atom
 
     return [oxygen, hydrogen1, hydrogen2]
 
 
 @pytest.fixture
 def co_molecule():
-    """一酸化炭素分子（C + O）のテストデータ"""
+    """Test data for a carbon monoxide molecule (C + O)"""
     carbon = gromacs.GroAtom()
     carbon.point = np.array([0.0, 0.0, 0.0])
-    carbon.atomic_mass = 12.0  # 炭素原子
+    carbon.atomic_mass = 12.0  # Carbon atom
 
     oxygen = gromacs.GroAtom()
     oxygen.point = np.array([1.0, 0.0, 0.0])
-    oxygen.atomic_mass = 16.0  # 酸素原子
+    oxygen.atomic_mass = 16.0  # Oxygen atom
 
     return [carbon, oxygen]
 
 
 def test_single_atom(single_carbon_atom):
-    """単一原子の質量中心計算テスト"""
+    """Test for center of mass calculation of a single atom"""
     result = center_of_mass([single_carbon_atom])
     np.testing.assert_array_almost_equal(result, single_carbon_atom.point)
 
 
 def test_multiple_atoms(water_molecule):
-    """複数原子（水分子）の質量中心計算テスト"""
+    """Test for center of mass calculation of multiple atoms (water molecule)"""
     result = center_of_mass(water_molecule)
-    # 水分子の質量中心を手動で計算
+    # Manual calculation of water molecule's center of mass
     expected = (16.0 * water_molecule[0].point +
                1.0 * water_molecule[1].point +
                1.0 * water_molecule[2].point) / 18.0
@@ -64,16 +64,16 @@ def test_multiple_atoms(water_molecule):
 
 
 def test_different_masses(co_molecule):
-    """異なる質量を持つ原子の質量中心計算テスト"""
+    """Test for center of mass calculation of atoms with different masses"""
     result = center_of_mass(co_molecule)
-    # 質量中心は重い方（酸素）に寄る
+    # Center of mass is closer to the heavier atom (oxygen)
     expected = np.array([16.0 / (12.0 + 16.0), 0.0, 0.0])
     np.testing.assert_array_almost_equal(result, expected)
 
 
 @pytest.fixture
 def basic_gro():
-    """単一の水分子を含むGROファイル"""
+    """GRO file containing a single water molecule"""
     return """Simple water system
 3
     1WAT     OW    1   0.000   0.000   0.000
@@ -85,7 +85,7 @@ def basic_gro():
 
 @pytest.fixture
 def multi_probe_gro():
-    """複数の水分子を含むGROファイル"""
+    """GRO file containing multiple water molecules"""
     return """System with multiple probes
 6
     1WAT     OW    1   0.000   0.000   0.000
@@ -100,7 +100,7 @@ def multi_probe_gro():
 
 @pytest.fixture
 def empty_gro():
-    """空のGROファイル"""
+    """Empty GRO file"""
     return """Empty system
 0
 5.00000     5.00000     5.00000
@@ -108,48 +108,48 @@ def empty_gro():
 
 
 def test_basic_conversion(basic_gro):
-    """基本的なGROファイルの変換テスト"""
+    """Test for basic GRO file conversion"""
     result = addvirtatom2gro(basic_gro, "WAT")
     
-    # 仮想原子が追加されていることを確認
+    # Verify virtual atom is added
     assert "VIS" in result
-    # 仮想原子の座標が質量中心に近いことを確認
-    assert "0.006   0.006   0.000" in result  # 水分子の質量中心
+    # Verify virtual atom coordinates are near center of mass
+    assert "0.006   0.006   0.000" in result  # Water molecule's center of mass
 
 
 def test_multiple_probes(multi_probe_gro):
-    """複数のプローブ分子を含むGROファイルの変換テスト"""
+    """Test for GRO file conversion with multiple probe molecules"""
     result = addvirtatom2gro(multi_probe_gro, "WAT")
     
-    # 2つの仮想原子が追加されていることを確認
+    # Verify two virtual atoms are added
     vis_count = result.count("VIS")
     assert vis_count == 2
     
-    # 両方の水分子の質量中心に仮想原子が配置されていることを確認
-    assert "0.006   0.006   0.000" in result  # 1番目の水分子
-    assert "1.006   1.006   1.000" in result  # 2番目の水分子
+    # Verify virtual atoms are placed at center of mass of both water molecules
+    assert "0.006   0.006   0.000" in result  # First water molecule
+    assert "1.006   1.006   1.000" in result  # Second water molecule
 
 
 def test_no_probe(basic_gro):
-    """プローブが存在しない場合のテスト"""
-    result = addvirtatom2gro(basic_gro, "ETH")  # 存在しないプローブID
+    """Test for when probe does not exist"""
+    result = addvirtatom2gro(basic_gro, "ETH")  # Non-existent probe ID
     
-    # 仮想原子が追加されていないことを確認
+    # Verify no virtual atoms are added
     assert "VIS" not in result
-    # 元のGROファイルの内容が保持されていることを確認
+    # Verify original GRO file content is preserved
     assert len(result.split("\n")) == len(basic_gro.split("\n"))
 
 
 def test_empty_gro(empty_gro):
-    """空のGROファイルの処理テスト"""
+    """Test for processing empty GRO file"""
     result = addvirtatom2gro(empty_gro, "WAT")
     
-    # 期待値と実際の出力を正規化して比較
+    # Compare normalized expected and actual output
     def normalize_gro(gro_str):
         lines = gro_str.strip().split("\n")
         return "\n".join([
-            lines[0],  # システム名
-            lines[1].strip(),  # 原子数
-            lines[2].strip()  # ボックスサイズ
+            lines[0],  # System name
+            lines[1].strip(),  # Number of atoms
+            lines[2].strip()  # Box size
         ])
     assert normalize_gro(result) == normalize_gro(empty_gro)

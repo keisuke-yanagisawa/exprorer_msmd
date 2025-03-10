@@ -11,7 +11,7 @@ from script.mdrun import (
 
 @pytest.fixture
 def general_settings():
-    """一般的なMD設定を提供するフィクスチャ"""
+    """Fixture providing general MD settings"""
     return {
         "temperature": 300,
         "pressure": 1.0,
@@ -21,17 +21,16 @@ def general_settings():
 
 @pytest.fixture
 def mock_jinja():
-    """Jinja2環境のモックを提供するフィクスチャ"""
+    """Fixture providing mock for Jinja2 environment"""
     with patch('jinja2.Environment') as mock_env:
         mock_template = MagicMock()
         mock_template.render.return_value = "rendered template content"
         mock_env.return_value.get_template.return_value = mock_template
         yield mock_env, mock_template
 
-# gen_mdpのテスト
+# Test only representative protocols
 class TestGenMdp:
     @pytest.mark.parametrize("protocol", [
-        # 代表的なプロトコルのみをテスト
         {
             "type": "minimization",
             "name": "min",
@@ -70,20 +69,20 @@ class TestGenMdp:
         }
     ])
     def test_gen_mdp_protocols(self, tmp_path, mock_jinja, protocol):
-        """代表的なプロトコルに基づくMDPファイル生成テスト"""
+        """Test MDP file generation based on representative protocols"""
         mock_env, mock_template = mock_jinja
         
         gen_mdp(protocol, tmp_path)
         
-        # テンプレートの選択を確認
+        # Verify template selection
         mock_env.return_value.get_template.assert_called_once_with(
             f"./template/{protocol['type']}.mdp"
         )
         
-        # プロトコルパラメータが正しく渡されることを確認
+        # Verify protocol parameters are passed correctly
         mock_template.render.assert_called_once_with(protocol)
         
-        # heatingタイプの場合、追加パラメータを確認
+        # For heating type, verify additional parameters
         if protocol["type"] == "heating":
             expected_target_temp = protocol.get("target_temp", protocol["temperature"])
             expected_initial_temp = protocol.get("initial_temp", 0)
@@ -95,7 +94,7 @@ class TestGenMdp:
 
     @pytest.mark.parametrize("invalid_type", ["invalid", None, ""])
     def test_gen_mdp_invalid_types(self, tmp_path, invalid_type):
-        """無効なシミュレーションタイプでのエラー処理テスト"""
+        """Test error handling for invalid simulation types"""
         protocol = {
             "type": invalid_type,
             "name": "test"
@@ -104,15 +103,15 @@ class TestGenMdp:
         with pytest.raises(ValueError, match=f"Invalid simulation type: {invalid_type}"):
             gen_mdp(protocol, tmp_path)
 
-# gen_mdrun_jobのテスト
+# Test gen_mdrun_job
 class TestGenMdrunJob:
     @pytest.fixture
     def job_script(self, tmp_path):
-        """ジョブスクリプトのパスを提供するフィクスチャ"""
+        """Fixture providing job script path"""
         return tmp_path / "mdrun.sh"
 
     def test_gen_mdrun_job_sequence(self, job_script, mock_jinja):
-        """標準的なシミュレーションシーケンスでのジョブスクリプト生成テスト"""
+        """Test job script generation for standard simulation sequence"""
         mock_env, mock_template = mock_jinja
         
         sequence = ["min", "heat", "pr"]
@@ -132,10 +131,10 @@ class TestGenMdrunJob:
         assert render_data["POST_COMMAND"] == post_comm
         assert render_data["STEP_NAMES"] == " ".join(sequence)
 
-# prepare_sequenceのテスト
+# Test prepare_sequence
 class TestPrepareSequence:
     def test_prepare_sequence_protocol(self, general_settings):
-        """標準的なMDシーケンスの準備テスト"""
+        """Test preparation of standard MD sequence"""
         sequence = [
             {
                 "type": "minimization",
@@ -148,24 +147,24 @@ class TestPrepareSequence:
                 "name": "pr",
                 "define": "",
                 "nsteps": 20000000,
-                "temperature": 310  # 一般設定をオーバーライド
+                "temperature": 310  # Override general settings
             }
         ]
         
         result = prepare_sequence(sequence, general_settings)
         
         assert len(result) == len(sequence)
-        # 最初のステップで一般設定が適用されていることを確認
+        # Verify general settings are applied in first step
         assert result[0]["temperature"] == general_settings["temperature"]
         assert result[0]["pressure"] == general_settings["pressure"]
-        # 2番目のステップで設定がオーバーライドされていることを確認
+        # Verify settings are overridden in second step
         assert result[1]["temperature"] == 310
         assert result[1]["pressure"] == general_settings["pressure"]
 
-# prepare_md_filesのテスト
+# Test prepare_md_files
 class TestPrepareMdFiles:
     def test_prepare_md_files_protocol(self, tmp_path, mock_jinja):
-        """標準的なMDプロトコルでのファイル準備テスト"""
+        """Test file preparation for standard MD protocol"""
         sequence = [
             {
                 "type": "minimization",
@@ -187,10 +186,10 @@ class TestPrepareMdFiles:
         
         prepare_md_files(index, sequence, tmp_path, jobname, top, gro, out_traj)
         
-        # シード値の設定を確認
+        # Verify seed value settings
         for step in sequence:
             assert step["seed"] == index
         
-        # gen_mdpの呼び出し回数を確認
+        # Verify number of gen_mdp calls
         mock_env, _ = mock_jinja
         assert mock_env.return_value.get_template.call_count == len(sequence) + 1  # +1 for mdrun.sh template

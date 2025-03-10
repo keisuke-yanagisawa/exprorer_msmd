@@ -9,7 +9,7 @@ from script.utilities.GPUtil import get_gpuids, is_mps_control_running
 
 @pytest.fixture
 def mock_gpu_env():
-    """GPUテスト用の基本的なモックフィクスチャ"""
+    """Basic mock fixture for GPU testing"""
     with patch('GPUtil.getAvailable') as mock_available, \
          patch('os.getenv') as mock_getenv, \
          patch('script.utilities.GPUtil.logger') as mock_logger:
@@ -22,8 +22,8 @@ def mock_gpu_env():
 
 def test_get_gpuids_no_gpu(mock_gpu_env):
     """
-    GPUが存在しない場合のテスト
-    期待値: CPU onlyモード（[-1]）を返す
+    Test for when no GPU exists
+    Expected: Returns CPU only mode ([-1])
     """
     mock_gpu_env['available'].return_value = []
     mock_gpu_env['getenv'].return_value = None
@@ -37,8 +37,8 @@ def test_get_gpuids_no_gpu(mock_gpu_env):
 
 def test_get_gpuids_single_gpu(mock_gpu_env):
     """
-    1基のGPUが利用可能な場合のテスト（実環境に近い状況）
-    期待値: [0]を返す
+    Test for when one GPU is available (close to real environment)
+    Expected: Returns [0]
     """
     mock_gpu_env['available'].return_value = [0]
     mock_gpu_env['getenv'].return_value = None
@@ -52,11 +52,11 @@ def test_get_gpuids_single_gpu(mock_gpu_env):
 
 def test_get_gpuids_multiple_gpus(mock_gpu_env):
     """
-    複数のGPUが利用可能な場合のテスト
-    期待値: 利用可能なすべてのGPU IDのリストを返す
+    Test for when multiple GPUs are available
+    Expected: Returns a list of all available GPU IDs
     """
     mock_gpu_env['available'].return_value = [0, 1, 2]
-    mock_gpu_env['getenv'].return_value = None  # CUDA_VISIBLE_DEVICESが未定義
+    mock_gpu_env['getenv'].return_value = None  # CUDA_VISIBLE_DEVICES is undefined
     
     gpuids = get_gpuids()
     
@@ -66,8 +66,8 @@ def test_get_gpuids_multiple_gpus(mock_gpu_env):
 
 def test_get_gpuids_with_cuda_visible_devices(mock_gpu_env):
     """
-    CUDA_VISIBLE_DEVICESが設定されている場合のテスト
-    期待値: CUDA_VISIBLE_DEVICESで指定されたGPU IDのみを返す
+    Test for when CUDA_VISIBLE_DEVICES is set
+    Expected: Returns only GPU IDs specified in CUDA_VISIBLE_DEVICES
     """
     mock_gpu_env['available'].return_value = [0, 1, 2, 3]
     mock_gpu_env['getenv'].side_effect = lambda x, default=None: "1,2" if x == "CUDA_VISIBLE_DEVICES" else default
@@ -80,8 +80,8 @@ def test_get_gpuids_with_cuda_visible_devices(mock_gpu_env):
 
 def test_get_gpuids_ignore_cuda_visible_devices(mock_gpu_env):
     """
-    CUDA_VISIBLE_DEVICESを無視する場合のテスト
-    期待値: CUDA_VISIBLE_DEVICESの設定を無視し、すべての利用可能なGPU IDを返す
+    Test for when ignoring CUDA_VISIBLE_DEVICES
+    Expected: Ignores CUDA_VISIBLE_DEVICES setting and returns all available GPU IDs
     """
     mock_gpu_env['available'].return_value = [0, 1, 2]
     mock_gpu_env['getenv'].side_effect = lambda x, default=None: "1" if x == "CUDA_VISIBLE_DEVICES" else default
@@ -89,30 +89,30 @@ def test_get_gpuids_ignore_cuda_visible_devices(mock_gpu_env):
     gpuids = get_gpuids(ignore_cuda_visible_devices=True)
     
     assert gpuids == [0, 1, 2]
-    # CUDA_VISIBLE_DEVICESのログが出力されていないことを確認
+    # Verify that CUDA_VISIBLE_DEVICES log is not output
     assert not any("CUDA_VISIBLE_DEVICES detected" in str(call) 
                   for call in mock_gpu_env['logger'].info.call_args_list)
 
 
 def test_get_gpuids_empty_cuda_visible_devices(mock_gpu_env):
     """
-    CUDA_VISIBLE_DEVICESが空文字列の場合のテスト
-    期待値: CPU onlyモード（[-1]）を返す
+    Test for when CUDA_VISIBLE_DEVICES is an empty string
+    Expected: Returns CPU only mode ([-1])
     """
     mock_gpu_env['available'].return_value = [0, 1, 2]
     mock_gpu_env['getenv'].side_effect = lambda x, default=None: "" if x == "CUDA_VISIBLE_DEVICES" else default
     
     gpuids = get_gpuids()
     
-    assert gpuids == [-1]  # GPUを利用しない
+    assert gpuids == [-1]  # Do not use GPU
     mock_gpu_env['logger'].info.assert_any_call("CUDA_VISIBLE_DEVICES detected")
     mock_gpu_env['logger'].warn.assert_any_call("No GPU is allowed/existed to use")
 
 
 def test_get_gpuids_maxload_maxmemory(mock_gpu_env):
     """
-    GPUtil.getAvailableの呼び出しパラメータのテスト
-    期待値: 正しいパラメータでGPUtil.getAvailableが呼び出される
+    Test for GPUtil.getAvailable call parameters
+    Expected: GPUtil.getAvailable is called with correct parameters
     """
     mock_gpu_env['available'].return_value = [0, 1]
     mock_gpu_env['getenv'].return_value = None
@@ -128,15 +128,15 @@ def test_get_gpuids_maxload_maxmemory(mock_gpu_env):
 
 
 @pytest.mark.parametrize("output,expected,error", [
-    ("100", True, None),  # 正常に動作している場合
-    ("Cannot find MPS control daemon process", False, None),  # デーモンが見つからない場合
-    ("Unexpected output", True, None),  # 予期しない出力の場合
-    (None, False, subprocess.CalledProcessError(1, 'cmd')),  # エラーが発生した場合
+    ("100", True, None),  # When operating normally
+    ("Cannot find MPS control daemon process", False, None),  # When daemon is not found
+    ("Unexpected output", True, None),  # When output is unexpected
+    (None, False, subprocess.CalledProcessError(1, 'cmd')),  # When error occurs
 ])
 def test_is_mps_control_running(output, expected, error):
     """
-    MPSコントロールの状態チェックのテスト
-    様々なケースをパラメータ化してテスト
+    Test for MPS control state check
+    Parameterized test for various cases
     """
     with patch('subprocess.check_output') as mock_check_output:
         if error:

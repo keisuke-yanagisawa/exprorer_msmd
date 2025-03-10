@@ -13,7 +13,7 @@ from Bio.PDB.Structure import Structure
 
 @pytest.fixture
 def pdb_files():
-    """PDBファイルのパスを提供するフィクスチャ"""
+    """Fixture providing paths to PDB files"""
     return {
         'pdb': Path("script/utilities/Bio/test_data/PDB/7m67.pdb"),
         'gzipped': Path("script/utilities/Bio/test_data/PDB/7m67.pdb.gz")
@@ -22,7 +22,7 @@ def pdb_files():
 
 @pytest.fixture
 def basic_atom():
-    """基本的な原子オブジェクトを提供するフィクスチャ"""
+    """Fixture providing a basic atom object"""
     return Atom(
         name="CA",
         coord=np.array([1.0, 2.0, 3.0], dtype=np.float64),
@@ -37,7 +37,7 @@ def basic_atom():
 
 @pytest.fixture
 def basic_structure(basic_atom):
-    """基本的な構造オブジェクトを提供するフィクスチャ"""
+    """Fixture providing a basic structure object"""
     structure = Structure("test")
     model = Model(0)
     chain = Chain("A")
@@ -151,7 +151,7 @@ class TestAtomClassification:
 
     @pytest.fixture
     def water_atom(self):
-        """水分子の原子オブジェクトを提供するフィクスチャ"""
+        """Fixture providing an atom object for water molecule"""
         return Atom(
             name="O",
             coord=np.array([0, 0, 0], dtype=np.float64),
@@ -165,7 +165,7 @@ class TestAtomClassification:
 
     @pytest.fixture
     def water_structure(self, water_atom):
-        """水分子を含む構造オブジェクトを提供するフィクスチャ"""
+        """Fixture providing a structure object containing water molecule"""
         structure = Structure("test")
         model = Model(0)
         chain = Chain("A")
@@ -186,7 +186,7 @@ class TestAtomClassification:
 
     @pytest.fixture
     def hetero_structure(self):
-        """ヘテロ原子を含む構造オブジェクトを提供するフィクスチャ"""
+        """Fixture providing a structure object containing hetero atoms"""
         structure = Structure("test")
         model = Model(0)
         chain = Chain("A")

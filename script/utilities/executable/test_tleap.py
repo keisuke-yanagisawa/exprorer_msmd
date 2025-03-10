@@ -5,7 +5,7 @@ from typing import Optional, List
 from script.utilities.executable.tleap import TLeap
 import subprocess
 
-# テストデータの定義
+# Test data definitions
 A11_MOL2_CONTENT = """@<TRIPOS>MOLECULE
 A11
    12    11     1     0     0
@@ -89,7 +89,7 @@ ENDMDL"""
 
 @pytest.fixture
 def test_files(tmp_path: Path) -> dict:
-    """テストに必要なファイルを一時ディレクトリに作成するフィクスチャ"""
+    """Fixture that creates necessary test files in a temporary directory"""
     probe_path = tmp_path / "A11.mol2"
     frcmod_path = tmp_path / "A11.frcmod"
     box_path = tmp_path / "tripeptide.pdb"
@@ -106,12 +106,12 @@ def test_files(tmp_path: Path) -> dict:
 
 @pytest.fixture
 def tleap() -> TLeap:
-    """TLeapインスタンスを提供するフィクスチャ"""
+    """Fixture providing a TLeap instance"""
     return TLeap(debug=True)
 
 @pytest.fixture
 def tleap_with_params(tleap: TLeap, test_files: dict) -> TLeap:
-    """基本パラメータが設定されたTLeapインスタンスを提供するフィクスチャ"""
+    """Fixture providing a TLeap instance with basic parameters set"""
     return tleap.set(
         cid="A11",
         probe_path=test_files["probe_path"],
@@ -125,11 +125,11 @@ def tleap_with_params(tleap: TLeap, test_files: dict) -> TLeap:
 def test_tleap_initialization():
     """TLeapクラスの初期化テスト"""
     tleap = TLeap()
-    assert tleap.exe == os.getenv("TLEAP", "tleap"), "実行ファイルパスが正しくありません"
-    assert not tleap.debug, "デバッグモードが正しく設定されていません"
+    assert tleap.exe == os.getenv("TLEAP", "tleap"), "Executable file path is incorrect"
+    assert not tleap.debug, "Debug mode is not set correctly"
 
     tleap_debug = TLeap(debug=True)
-    assert tleap_debug.debug, "デバッグモードが有効化されていません"
+    assert tleap_debug.debug, "Debug mode is not enabled"
 
 def test_tleap_set_parameters(tleap: TLeap, test_files: dict):
     """パラメータ設定のテスト"""
@@ -143,13 +143,13 @@ def test_tleap_set_parameters(tleap: TLeap, test_files: dict):
         at="gaff"
     )
 
-    assert tleap_instance.cid == "A11", "CIDが正しく設定されていません"
-    assert tleap_instance.probe_path == test_files["probe_path"], "プローブパスが正しく設定されていません"
-    assert tleap_instance.frcmod == test_files["frcmod_path"], "FRCMODパスが正しく設定されていません"
-    assert tleap_instance.box_path == test_files["box_path"], "ボックスパスが正しく設定されていません"
-    assert tleap_instance.size == 10.0, "サイズが正しく設定されていません"
-    assert tleap_instance.ssbonds == [], "SSボンドが正しく設定されていません"
-    assert tleap_instance.at == "gaff", "力場タイプが正しく設定されていません"
+    assert tleap_instance.cid == "A11", "CID is not set correctly"
+    assert tleap_instance.probe_path == test_files["probe_path"], "Probe path is not set correctly"
+    assert tleap_instance.frcmod == test_files["frcmod_path"], "FRCMOD path is not set correctly"
+    assert tleap_instance.box_path == test_files["box_path"], "Box path is not set correctly"
+    assert tleap_instance.size == 10.0, "Size is not set correctly"
+    assert tleap_instance.ssbonds == [], "SS bonds are not set correctly"
+    assert tleap_instance.at == "gaff", "Force field type is not set correctly"
 
 def test_tleap_run_normal(tleap_with_params: TLeap, tmp_path: Path):
     """正常系の実行テスト"""
@@ -157,11 +157,11 @@ def test_tleap_run_normal(tleap_with_params: TLeap, tmp_path: Path):
     
     try:
         result = tleap_with_params.run(output_prefix)
-        assert result is not None, "実行結果がNoneです"
-        assert hasattr(result, '_final_charge_value'), "final_charge_valueが存在しません"
-        assert isinstance(result._final_charge_value, int), "final_charge_valueが整数ではありません"
+        assert result is not None, "Execution result is None"
+        assert hasattr(result, '_final_charge_value'), "final_charge_value does not exist"
+        assert isinstance(result._final_charge_value, int), "final_charge_value is not an integer"
     except Exception as e:
-        pytest.fail(f"tleapの実行に失敗しました: {str(e)}")
+        pytest.fail(f"tleap execution failed: {str(e)}")
 
 def test_tleap_run_with_invalid_box(tleap_with_params: TLeap, tmp_path: Path):
     """異常系の実行テスト（無効なボックスファイル）"""
@@ -171,7 +171,7 @@ def test_tleap_run_with_invalid_box(tleap_with_params: TLeap, tmp_path: Path):
     with pytest.raises(subprocess.CalledProcessError) as exc_info:
         tleap_with_params.run(output_prefix)
     
-    assert exc_info.value.returncode == 31, f"予期しないエラーコード: {exc_info.value.returncode}"
+    assert exc_info.value.returncode == 31, f"Unexpected error code: {exc_info.value.returncode}"
 
 def test_tleap_run_with_ssbonds(tleap: TLeap, test_files: dict, tmp_path: Path):
     """SSボンド設定ありの実行テスト"""
@@ -187,11 +187,11 @@ def test_tleap_run_with_ssbonds(tleap: TLeap, test_files: dict, tmp_path: Path):
         at="gaff"
     )
     
-    assert tleap_instance.ssbonds == ssbonds, "SSボンドが正しく設定されていません"
+    assert tleap_instance.ssbonds == ssbonds, "SS bonds are not set correctly"
     
     output_prefix = str(tmp_path / "test_output")
     try:
         result = tleap_instance.run(output_prefix)
-        assert result is not None, "実行結果がNoneです"
+        assert result is not None, "Execution result is None"
     except Exception as e:
-        pytest.fail(f"SSボンド設定なしのtleap実行に失敗しました: {str(e)}")
+        pytest.fail(f"tleap execution with SS bonds failed: {str(e)}")

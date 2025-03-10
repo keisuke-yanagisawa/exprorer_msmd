@@ -11,7 +11,7 @@ from script.generate_msmd_system import (
 )
 from script.setting import parse_yaml
 
-# テストデータのパスを設定
+# Set test data path
 TEST_DATA_DIR = Path("script/test_data")
 
 @pytest.fixture
@@ -27,12 +27,12 @@ def test_files():
     }
 
 def compare_file_contents(file1: Path, file2: Path, skip_first_line: bool = False) -> None:
-    """2つのファイルの内容を比較する
+    """Compare contents of two files
 
     Args:
-        file1: 比較対象ファイル1
-        file2: 比較対象ファイル2
-        skip_first_line: 最初の行をスキップするかどうか
+        file1: First file to compare
+        file2: Second file to compare
+        skip_first_line: Whether to skip the first line
     """
     try:
         with open(file1) as f1, open(file2) as f2:
@@ -56,25 +56,25 @@ class TestBoxSizeCalculation:
         assert box_size == pytest.approx(expected, rel=1e-6)
 
     def test_calculate_boxsize_error(self, test_files):
-        """PDBファイルはrst7形式ではないため、ボックスサイズの計算に失敗することを確認"""
+        """Verify box size calculation fails because PDB file is not in rst7 format"""
         with pytest.raises(ValueError):
             calculate_boxsize(test_files['pdb'])
 
 class TestGenerateMsmdSystem:
     def test_generate_msmd_system_parm7(self, test_files):
-        """生成されたparm7ファイルが期待通りであることを確認"""
+        """Verify generated parm7 file matches expected output"""
         settings = parse_yaml(test_files['setting'])
         parm7, _ = generate_msmd_system(settings, seed=1)
         compare_file_contents(parm7, test_files['expected_parm7'], skip_first_line=True)
 
     def test_generate_msmd_system_rst7(self, test_files):
-        """生成されたrst7ファイルが期待通りであることを確認"""
+        """Verify generated rst7 file matches expected output"""
         settings = parse_yaml(test_files['setting'])
         _, rst7 = generate_msmd_system(settings, seed=1)
         compare_file_contents(rst7, test_files['expected_rst7'])
 
     def test_protein_pdb_preparation(self, test_files, tmp_path):
-        # テスト用の一時的なPDBファイルを作成
+        # Create temporary PDB file for testing
         test_pdb = tmp_path / "test.pdb"
         with open(test_pdb, "w") as f:
             f.write("ATOM      1  N   ALA A   1      27.409  24.354   9.020  1.00  0.00           N  \n")
@@ -83,7 +83,7 @@ class TestGenerateMsmdSystem:
 
         result_path = protein_pdb_preparation(test_pdb)
         
-        # 結果の検証
+        # Verify results
         with open(result_path) as f:
             lines = f.readlines()
         
@@ -93,7 +93,7 @@ class TestGenerateMsmdSystem:
 
 class TestCreateFrcmod:
     def test_create_frcmod(self, test_files):
-        """frcmodファイルが正しく生成されることを確認"""
+        """Verify frcmod file is generated correctly"""
         atomtype: Literal["gaff", "gaff2"] = "gaff2"
         frcmod_path = _create_frcmod(test_files['mol2'], atomtype)
         compare_file_contents(frcmod_path, test_files['expected_frcmod'])
