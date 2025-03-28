@@ -46,6 +46,26 @@ def design_probe(non_common_part, probe_library_dir):
         
         return default_probe
     
+    # 非共通部分の分子を正規化
+    # 非共通部分の分子を正規化（SMILESに変換して再度分子に戻す）
+    try:
+        smiles = Chem.MolToSmiles(non_common_mol)
+        normalized_mol = Chem.MolFromSmiles(smiles)
+        if normalized_mol is None:
+            raise ValueError("分子をSMILESに変換できませんでした")
+        non_common_mol = normalized_mol
+    except Exception as e:
+        print(f"警告: 非共通部分の分子を正規化できませんでした。エラー: {e}")
+        # 正規化できない場合は、デフォルトのプローブを返す
+        probe_files = glob.glob(os.path.join(probe_library_dir, "*.sdf"))
+        if not probe_files:
+            raise ValueError(f"プローブライブラリディレクトリ {probe_library_dir} にSDFファイルが見つかりません")
+        
+        default_probe = Chem.SDMolSupplier(probe_files[0])[0]
+        if default_probe is None:
+            raise ValueError(f"デフォルトプローブ {probe_files[0]} を読み込めませんでした")
+        
+        return default_probe
     # 非共通部分のフィンガープリントを計算
     fp = AllChem.GetMorganFingerprintAsBitVect(non_common_mol, 2, nBits=1024)
     
