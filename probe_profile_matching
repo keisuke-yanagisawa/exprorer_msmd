@@ -1,0 +1,135 @@
+#!/usr/bin/env python
+
+import argparse
+import glob
+
+import gridData
+from joblib import Parallel, delayed
+
+from script import maxpmap
+from script.alignresenv import align_res_env
+from script.profile import create_residue_interaction_profile
+from script.resenv import resenv
+from script.util import parse_yaml
+from script.utilities import util
+from script.utilities.Bio import PDB as uPDB
+from script.utilities.const import VERSION
+from script.utilities.logger import logger
+
+
+def extract_residue_environment(index, setting):
+    """ """
+    # TODO: extract_residue_environmentを行う前の時点で（正確には、alignを行う前の時点で）、周辺残基はCAだけとか、CBだけとか、その後のprofileをつくる予定のものだけに絞った方が計算量削減になる。というか、env_distanceを無限遠にする都合からおそらく必須になる。
+    basedirpath = setting["general"]["workdir"]
+    sysdirpath = f"{basedirpath}/system{index}"
+    PROBE_ID = setting["input"].probe.cid
+    JOB_NAME = setting["general"]["name"]
+    map = setting["probe_profile"].map
+
+    # TODO: threshold should be configured
+    grid = gridData.Grid(f"{basedirpath}/maxPMAP_{JOB_NAME}_{map}.dx")
+    resenv(
+        grid=grid,
+        ipdb=[f"{sysdirpath}/{JOB_NAME}_woWAT_10ps.pdb"],
+        resn=PROBE_ID,
+        res_atomnames=[" CB "],
+        opdb=f"{sysdirpath}/resenv_{JOB_NAME}.pdb",
+        threshold=0,  # 全てのprobeについてprofileを取りたい。0って大丈夫かな？
+        env_distance=1e5,  # 全てのprotein residuesについてprofileを取りたい。
+    )
+
+
+def extract_residue_environment_parallel(indices, setting):
+    """
+    extract_residue_environmentを並列実行する
+    """
+    n_jobs = -1
+    if not setting["general"]["multiprocessing"]:
+        n_jobs = 1
+    Parallel(n_jobs=n_jobs)(delayed(extract_residue_environment)(idx, setting) for idx in indices)
+
+
+def align_residue_environment(setting):
+    basedirpath = setting["general"]["workdir"]
+    PROBE_ID = setting["input"].probe.cid
+    JOB_NAME = setting["general"]["name"]
+
+    # logger.debug("alignresenv start")
+
+    pdbfiles = glob.glob(f"{basedirpath}/system*/resenv_{JOB_NAME}.pdb")
+    ref_struct = uPDB.get_structure(pdbfiles[0])[0].copy()  # all structures are superimposed to this
+    structures = [uPDB.get_structure(src) for src in pdbfiles]
+
+    # TODO: align_res_envは並列実行可能
+    # TODO: flexible probeの場合のalignをどのように行うか？
+    aligned = align_res_env(structures, ref_struct, PROBE_ID)
+    with uPDB.PDBIOhelper(f"{basedirpath}/alignedresenv_{JOB_NAME}.pdb") as pdbio:
+        for model in aligned:
+            pdbio.save(model)
+
+
+def gen_residue_interaction_profile(setting):
+    basedirpath = setting["general"]["workdir"]
+    PROBE_ID = setting["input"].probe.cid
+    JOB_NAME = setting["general"]["name"]
+    profile_list: list[ProfileParameter] = setting["probe_profile"].profiles
+
+    for profile_type in profile_list:
+        residue_type = profile_type.name
+        target_residue_atoms = profile_type.atoms  # convert from list to tuple
+        try:
+            struct = uPDB.get_structure(basedirpath / f"alignedresenv_{JOB_NAME}.pdb")
+            g = create_residue_interaction_profile(struct, target_residue_atoms)  # type: ignore
+            g.export(basedirpath / f"{JOB_NAME}_{PROBE_ID}_mesh_{residue_type}.dx", type="short")
+        except Exception as e:
+            # glysine must be in here because it does not have CB atom
+            logger.error(f"Error: {e} - skip this residue_type / target_residue_atoms pair")
+            logger.error(f"residue_type: {residue_type}")
+            logger.error(f"target_residue_atoms: {target_residue_atoms}")
+
+
+def probe_profile_matching(setting):
+    indices = util.expand_index(setting["general"]["iter_index"])
+    basedirpath = setting["general"]["workdir"]
+    JOB_NAME = setting["general"]["name"]
+    map = setting["probe_profile"].map
+
+    maxpmap.gen_max_pmap(
+        glob.glob(f"{basedirpath}/system*/PMAP_{JOB_NAME}_{map}.dx"), f"{basedirpath}/maxPMAP_{JOB_NAME}_{map}.dx"
+    )
+
+    extract_residue_environment_parallel(indices, setting)
+    align_residue_environment(setting)
+    gen_residue_interaction_profile(setting)
+
+    # 各residueの存在数から、全空間の体積を割り算して、バルク状態における平均存在確率を算出
+    probabilities = calc_residue_probability_on_bulk(setting)
+
+    # odds 比の形で計算。
+    # 全空間で（タンパク質に接していないprobeさえ）residue interaction profileを取っているので、極端な値にはなりにくいはず。実際に計算してみて、どのようになるか観測する。
+    odds_res_int_profile = residue_interaction_profile / probabilities
+
+    # 得られたodds_res_int_profile に基づいて
+    # 与えられたprobe位置についての評価を行う
+    align_residue_interaction_profile_to_probe_placement()
+    calc_odds_score()  # 範囲内のタンパク質残基が存在する場所のオッズ比を全て持ってきて、積を取る。特に影響のない残基については、オッズ比は1になるはずなので、積を取っても影響はないだろう。
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Calculate residue interaction profile around probe")
+    parser.add_argument("setting_yaml")
+    parser.add_argument("-v,--verbose", dest="verbose", action="store_true")
+    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--version", action="version", version=VERSION)
+    args = parser.parse_args()
+
+    if args.debug:
+        logger.setLevel("debug")
+    elif args.verbose:
+        logger.setLevel("info")
+    # else: logger level is "warn"
+
+    logger.info(f"read yaml: {args.setting_yaml}")
+    setting = parse_yaml(args.setting_yaml)
+
+    probe_profile_matching(setting)
