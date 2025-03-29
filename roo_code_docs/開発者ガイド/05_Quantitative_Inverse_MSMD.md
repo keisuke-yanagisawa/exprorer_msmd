@@ -2,118 +2,249 @@
 
 Quantitative Inverse MSMDモジュールは、分子の特定の原子を置換した場合の結合親和性の変化を見積もるための機能を提供します。このモジュールは、創薬研究において重要な構造活性相関（SAR）の理解や、リード最適化に役立ちます。
 
-## クラス構造と責任
+## モジュール構造と責任
 
-Quantitative Inverse MSMDモジュールは、以下の主要なクラスから構成されています：
+Quantitative Inverse MSMDモジュールは、以下のディレクトリ構造に整理されています：
 
-- **QuantitativeInverseMSMD**：Quantitative Inverse MSMD全体を管理するクラス
+```
+script/
+├── quantitative_inverse_msmd.py  # メインスクリプト
+└── utilities/
+    ├── analysis/                 # 解析関連のモジュール
+    │   ├── __init__.py
+    │   ├── profile.py            # プロファイル関連のクラスと関数
+    │   ├── matching_score.py     # マッチングスコア計算関連の関数
+    │   └── compare_results.py    # 結果比較関連の関数
+    ├── molecular/                # 分子操作関連のモジュール
+    │   ├── mcs_extractor.py      # 非共通部分抽出関連の関数
+    │   ├── molecule_superimposer.py # 分子重ね合わせ関連の関数
+    │   ├── simple_atom_replacer.py  # 原子置換関連の関数
+    │   └── extract_substructure.py  # 部分構造抽出関連の関数
+    └── probe/                    # プローブ関連のモジュール
+        └── probe_designer.py     # プローブ設計関連の関数
+```
+
+主要なモジュールの責任は以下の通りです：
+
+- **quantitative_inverse_msmd.py**：Quantitative Inverse MSMD全体を管理するメインスクリプト
   - 非共通部分の抽出
   - プローブの設計
   - 分子の重ね合わせ
   - MSMDシミュレーションの設定
   - 結合親和性の変化の見積もり
 
-- **BindingAffinityEstimator**：結合親和性の見積もりを担当するクラス
-  - プロファイルとタンパク質構造の合致度を計算
-  - 合致度スコアの差から結合強度の差を推定
+- **utilities/analysis/profile.py**：プロファイル関連のクラスと関数
+  - PreProfileクラス：各残基に対するbulk_probasumとprobasum_gridを持つ
+  - Profileクラス：各残基に対する、bulkとの存在確率比を保持する
+  - プロファイル生成関連の関数
 
-## 主要なメソッドと機能
+- **utilities/analysis/matching_score.py**：マッチングスコア計算関連の関数
+  - preprocessing：トラジェクトリの前処理
+  - calculate_matching_score：マッチングスコアの計算
+
+- **utilities/analysis/compare_results.py**：結果比較関連の関数
+  - parse_msmd_result：MSMDシミュレーション結果の解析
+  - compare_results：2つのMSMDシミュレーション結果の比較
+
+- **utilities/molecular/mcs_extractor.py**：非共通部分抽出関連の関数
+  - extract_non_common_parts：2つの分子の非共通部分を抽出
+
+- **utilities/molecular/molecule_superimposer.py**：分子重ね合わせ関連の関数
+  - generate_atom_mapping：原子対応関係の生成
+  - superimpose_molecules：分子の重ね合わせ
+
+- **utilities/molecular/simple_atom_replacer.py**：原子置換関連の関数
+  - replace_atom_in_molecule：分子の特定の原子を別の原子に置換
+
+- **utilities/molecular/extract_substructure.py**：部分構造抽出関連の関数
+  - extract_substructure_around_atom：指定した原子の周りの部分構造を抽出
+
+- **utilities/probe/probe_designer.py**：プローブ設計関連の関数
+  - design_probe：非共通部分に基づいてプローブを設計
+
+## 主要な関数と機能
 
 ```python
-class QuantitativeInverseMSMD:
-    def __init__(self, config):
-        """
-        Quantitative Inverse MSMDクラスを初期化する
+def semi_automatic_quantitative_inverse_msmd(
+    compound1_file, compound2_file, protein_file, probe_library_dir, output_dir,
+    only_non_common_rings=False, separate_rings=False
+):
+    """
+    半自動Quantitative Inverse MSMDを実行する
 
-        Parameters
-        ----------
-        config : dict
-            設定情報
-        """
-        self.config = config
-        self.mcs_extractor = MCSExtractor()
-        self.probe_designer = ProbeDesigner()
-        self.molecule_superimposer = MoleculeSuperimposer()
-        self.binding_affinity_estimator = BindingAffinityEstimator()
+    Parameters
+    ----------
+    compound1_file : str
+        1つ目の化合物のSDFファイルパス
+    compound2_file : str
+        2つ目の化合物のSDFファイルパス
+    protein_file : str
+        タンパク質構造のPDBファイルパス
+    probe_library_dir : str
+        プローブライブラリのディレクトリパス
+    output_dir : str
+        出力ディレクトリ
+    only_non_common_rings : bool, optional
+        Trueの場合、複合環のうち非共通な環のみをプローブ化する, by default False
+    separate_rings : bool, optional
+        Trueの場合、非共通な環を別々のプローブとして抽出する, by default False
 
-    def run(self, compound1_file, compound2_file, protein_file):
-        """
-        Quantitative Inverse MSMDを実行する
-
-        Parameters
-        ----------
-        compound1_file : str
-            1つ目の化合物のSDFファイルパス
-        compound2_file : str
-            2つ目の化合物のSDFファイルパス
-        protein_file : str
-            タンパク質構造のPDBファイルパス
-
-        Returns
-        -------
-        dict
-            結果情報
-        """
-        # 非共通部分の抽出
-        non_common_parts = self.mcs_extractor.extract_non_common_parts(
-            compound1_file, compound2_file
-        )
+    Returns
+    -------
+    dict
+        結果情報
+    """
+    # 出力ディレクトリを作成
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # 1. 2つの化合物間の非共通部分を抽出
+    print("ステップ1: 非共通部分の抽出")
+    non_common_parts = extract_non_common_parts(
+        compound1_file, compound2_file, only_non_common_rings, separate_rings
+    )
+    
+    # 2. 各非共通部分に対してプローブを設計
+    print("ステップ2: プローブの設計")
+    probe1 = design_probe(non_common_parts['mol1'], probe_library_dir)
+    probe2 = design_probe(non_common_parts['mol2'], probe_library_dir)
+    
+    # 3. プローブをファイルに保存
+    probe1_file = os.path.join(output_dir, "probe1.sdf")
+    probe2_file = os.path.join(output_dir, "probe2.sdf")
+    
+    writer1 = Chem.SDWriter(probe1_file)
+    writer1.write(probe1)
+    writer1.close()
+    
+    writer2 = Chem.SDWriter(probe2_file)
+    writer2.write(probe2)
+    writer2.close()
+    
+    # 4. ユーザーによる量子化学計算（手動ステップ）
+    print("ステップ3: プローブの量子化学計算")
+    print("  プローブ1とプローブ2の量子化学計算を実行してください")
+    print("  計算が完了したら、任意のキーを押して続行してください")
+    input()
+    
+    # 5. 化合物とプローブの重ね合わせ
+    print("ステップ4: 分子の重ね合わせ")
+    
+    # 化合物1とプローブ1の原子対応関係を自動生成
+    print("  化合物1とプローブ1の原子対応関係を自動生成中...")
+    atom_mapping1 = generate_atom_mapping(compound1_file, probe1_file)
+    atom_mapping1 = validate_and_refine_atom_mapping(compound1_file, probe1_file, atom_mapping1)
+    
+    # 化合物1とプローブ1の重ね合わせ
+    transformed_probe1 = superimpose_molecules(compound1_file, probe1_file, atom_mapping1)
+    transformed_probe1_file = os.path.join(output_dir, "transformed_probe1.sdf")
+    
+    writer1 = Chem.SDWriter(transformed_probe1_file)
+    writer1.write(transformed_probe1)
+    writer1.close()
+    
+    # 化合物2とプローブ2の原子対応関係を自動生成
+    print("  化合物2とプローブ2の原子対応関係を自動生成中...")
+    atom_mapping2 = generate_atom_mapping(compound2_file, probe2_file)
+    atom_mapping2 = validate_and_refine_atom_mapping(compound2_file, probe2_file, atom_mapping2)
+    
+    # 化合物2とプローブ2の重ね合わせ
+    transformed_probe2 = superimpose_molecules(compound2_file, probe2_file, atom_mapping2)
+    transformed_probe2_file = os.path.join(output_dir, "transformed_probe2.sdf")
+    
+    writer2 = Chem.SDWriter(transformed_probe2_file)
+    writer2.write(transformed_probe2)
+    writer2.close()
+    
+    # 6. inverse MSMDシミュレーションの実行
+    print("ステップ5: inverse MSMDシミュレーションの実行")
+    
+    # プローブ1のinverse MSMDシミュレーション
+    print("  プローブ1のinverse MSMDシミュレーションを実行中...")
+    probe1_settings = setup_msmd_simulation(transformed_probe1_file, protein_file, output_dir)
+    probe1_simulation_dir = run_msmd_simulation(probe1_settings)
+    
+    # プローブ2のinverse MSMDシミュレーション
+    print("  プローブ2のinverse MSMDシミュレーションを実行中...")
+    probe2_settings = setup_msmd_simulation(transformed_probe2_file, protein_file, output_dir)
+    probe2_simulation_dir = run_msmd_simulation(probe2_settings)
+    
+    # 7. プロファイル作成
+    print("ステップ6: プロファイルの作成")
+    
+    # プローブ1のプロファイル作成
+    probe1_residue_env = extract_residue_environment(probe1_simulation_dir)
+    profile1 = create_odds_ratio_profile(probe1_residue_env)
+    
+    # プローブ2のプロファイル作成
+    probe2_residue_env = extract_residue_environment(probe2_simulation_dir)
+    profile2 = create_odds_ratio_profile(probe2_residue_env)
+    
+    # 8. 合致度計算
+    print("ステップ7: 合致度計算と結合強度推定")
+    
+    # 各プロファイルの合致度を計算
+    score1 = calculate_matching_score(protein_file, profile1)
+    score2 = calculate_matching_score(protein_file, profile2)
+    
+    # 9. 結合強度の推定
+    strength_diff = estimate_binding_strength(score1, score2)
+    
+    # 10. 結果の出力
+    print("ステップ8: 結果出力")
+    print(f"  化合物1の合致度スコア: {score1}")
+    print(f"  化合物2の合致度スコア: {score2}")
+    print(f"  結合強度差: {strength_diff}")
+    
+    if strength_diff > 0:
+        print("  結論: 化合物1の方が強く結合すると予測されます")
+    elif strength_diff < 0:
+        print("  結論: 化合物2の方が強く結合すると予測されます")
+    else:
+        print("  結論: 両化合物の結合強度は同程度と予測されます")
+    
+    # 結果をファイルに保存
+    result_file = os.path.join(output_dir, "quantitative_inverse_msmd_result.txt")
+    with open(result_file, "w") as f:
+        f.write(f"化合物1: {compound1_file}\n")
+        f.write(f"化合物2: {compound2_file}\n")
+        f.write(f"タンパク質: {protein_file}\n")
+        f.write(f"プローブ1: {transformed_probe1_file}\n")
+        f.write(f"プローブ2: {transformed_probe2_file}\n")
+        f.write(f"化合物1の合致度スコア: {score1}\n")
+        f.write(f"化合物2の合致度スコア: {score2}\n")
+        f.write(f"結合強度差: {strength_diff}\n")
         
-        # プローブの設計
-        probe1 = self.probe_designer.design_probe(non_common_parts['mol1'])
-        probe2 = self.probe_designer.design_probe(non_common_parts['mol2'])
-        
-        # 分子の重ね合わせ
-        atom_mapping1 = self.molecule_superimposer.generate_atom_mapping(
-            compound1_file, probe1
-        )
-        transformed_probe1 = self.molecule_superimposer.superimpose_molecules(
-            compound1_file, probe1, atom_mapping1
-        )
-        
-        atom_mapping2 = self.molecule_superimposer.generate_atom_mapping(
-            compound2_file, probe2
-        )
-        transformed_probe2 = self.molecule_superimposer.superimpose_molecules(
-            compound2_file, probe2, atom_mapping2
-        )
-        
-        # MSMDシミュレーションの設定
-        msmd_settings1 = self._setup_msmd_simulation(
-            transformed_probe1, protein_file
-        )
-        msmd_settings2 = self._setup_msmd_simulation(
-            transformed_probe2, protein_file
-        )
-        
-        # 結合親和性の変化の見積もり
-        binding_affinity_change = self.binding_affinity_estimator.estimate(
-            msmd_settings1, msmd_settings2
-        )
-        
-        # 結果の管理
-        result = {
-            'non_common_parts': non_common_parts,
-            'probe1': probe1,
-            'probe2': probe2,
-            'transformed_probe1': transformed_probe1,
-            'transformed_probe2': transformed_probe2,
-            'msmd_settings1': msmd_settings1,
-            'msmd_settings2': msmd_settings2,
-            'binding_affinity_change': binding_affinity_change
-        }
-        
-        return result
+        if strength_diff > 0:
+            f.write("結論: 化合物1の方が強く結合すると予測されます\n")
+        elif strength_diff < 0:
+            f.write("結論: 化合物2の方が強く結合すると予測されます\n")
+        else:
+            f.write("結論: 両化合物の結合強度は同程度と予測されます\n")
+    
+    print(f"結果を {result_file} に保存しました")
+    
+    return {
+        'probe1': probe1,
+        'probe2': probe2,
+        'profile1': profile1,
+        'profile2': profile2,
+        'score1': score1,
+        'score2': score2,
+        'strength_diff': strength_diff
+    }
 ```
 
 ## 他モジュールとの連携ポイント
 
 Quantitative Inverse MSMDモジュールは、以下のモジュールと連携しています：
 
-- **MCS計算と非共通部分抽出モジュール**：非共通部分の抽出に使用します。
-- **プローブ設計モジュール**：プローブの設計に使用します。
-- **分子の重ね合わせ自動化モジュール**：分子の重ね合わせに使用します。
-- **MSMDシミュレーションエンジン**：MSMDシミュレーションの設定に使用します。
+- **MCS計算と非共通部分抽出モジュール**：`script/utilities/molecular/mcs_extractor.py`で実装されています。
+- **プローブ設計モジュール**：`script/utilities/probe/probe_designer.py`で実装されています。
+- **分子の重ね合わせ自動化モジュール**：`script/utilities/molecular/molecule_superimposer.py`で実装されています。
+- **MSMDシミュレーションエンジン**：`script/quantitative_inverse_msmd.py`内の関数で設定されています。
+- **プロファイル解析モジュール**：`script/utilities/analysis/profile.py`で実装されています。
+- **マッチングスコア計算モジュール**：`script/utilities/analysis/matching_score.py`で実装されています。
+- **結果比較モジュール**：`script/utilities/analysis/compare_results.py`で実装されています。
 
 ## Quantitative Inverse MSMDの処理フロー
 
@@ -247,50 +378,25 @@ Quantitative Inverse MSMDモジュールは、以下のような拡張性を持�
 以下は、Quantitative Inverse MSMDモジュールの使用例です：
 
 ```python
-# 設定情報
-config = {
-    'mcs': {
-        'atom_compare': 'elements',  # 原子タイプの一致条件
-        'bond_compare': 'any',  # 結合タイプの一致条件
-        'ring_matches_ring_only': True,  # 環構造の一致条件
-        'complete_rings_only': True  # 環構造の完全一致条件
-    },
-    'probe': {
-        'template': 'methylbenzene',  # プローブテンプレート
-        'optimize': True  # プローブの最適化
-    },
-    'superimpose': {
-        'algorithm': 'kabsch',  # 重ね合わせアルゴリズム
-        'optimize': True  # 重ね合わせの最適化
-    },
-    'binding_affinity': {
-        'model': 'odds_ratio',  # 結合親和性推定モデル
-        'normalize': True  # 結果の正規化
-    }
-}
-
-# Quantitative Inverse MSMDクラスの初期化
-qimsmd = QuantitativeInverseMSMD(config)
-
 # Quantitative Inverse MSMDの実行
-result = qimsmd.run(
+from script.quantitative_inverse_msmd import semi_automatic_quantitative_inverse_msmd
+
+# 実行
+result = semi_automatic_quantitative_inverse_msmd(
     'path/to/compound1.sdf',
     'path/to/compound2.sdf',
-    'path/to/protein.pdb'
+    'path/to/protein.pdb',
+    'path/to/probe_library',
+    'output/qimsmd',
+    only_non_common_rings=True,
+    separate_rings=False
 )
 
 # 結果の表示
-print("非共通部分:")
-print(f"  化合物1: {result['non_common_parts']['mol1']}")
-print(f"  化合物2: {result['non_common_parts']['mol2']}")
-
-print("プローブ:")
-print(f"  プローブ1: {result['probe1']}")
-print(f"  プローブ2: {result['probe2']}")
-
 print("結合親和性の変化:")
-print(f"  ΔΔG: {result['binding_affinity_change']['ddg']} kcal/mol")
-print(f"  信頼度: {result['binding_affinity_change']['confidence']}")
+print(f"  化合物1の合致度スコア: {result['score1']}")
+print(f"  化合物2の合致度スコア: {result['score2']}")
+print(f"  結合強度差: {result['strength_diff']}")
 
 # 結果の可視化
 # （省略）

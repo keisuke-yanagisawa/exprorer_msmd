@@ -203,19 +203,41 @@ isomesh mesh_anion, [プロジェクト名]_[プローブ名]_mesh_anion, 0.5
 
 Quantitative Inverse MSMDは、分子の特定の原子を置換した場合の結合親和性の変化を見積もるための手法です。2つの極めて構造が類似した化合物間の結合自由エネルギーの差を求めることができます。
 
+### モジュール構造
+
+Quantitative Inverse MSMDモジュールは、以下のディレクトリ構造に整理されています：
+
+```
+script/
+├── quantitative_inverse_msmd.py  # メインスクリプト
+└── utilities/
+    ├── analysis/                 # 解析関連のモジュール
+    │   ├── __init__.py
+    │   ├── profile.py            # プロファイル関連のクラスと関数
+    │   ├── matching_score.py     # マッチングスコア計算関連の関数
+    │   └── compare_results.py    # 結果比較関連の関数
+    ├── molecular/                # 分子操作関連のモジュール
+    │   ├── mcs_extractor.py      # 非共通部分抽出関連の関数
+    │   ├── molecule_superimposer.py # 分子重ね合わせ関連の関数
+    │   ├── simple_atom_replacer.py  # 原子置換関連の関数
+    │   └── extract_substructure.py  # 部分構造抽出関連の関数
+    └── probe/                    # プローブ関連のモジュール
+        └── probe_designer.py     # プローブ設計関連の関数
+```
+
 ### 実行手順の詳細
 
 #### 入力ファイルの準備
 
 1. 元の分子のSDFファイルを用意します
-2. 置換後の分子のSDFファイルを用意します（または`simple_atom_replacer.py`を使用して作成）
+2. 置換後の分子のSDFファイルを用意します（または`script/utilities/molecular/simple_atom_replacer.py`を使用して作成）
 3. タンパク質のPDBファイルを用意します
 4. プローブライブラリを用意します
 
 #### simple_atom_replacer.pyを使用した原子置換
 
 ```bash
-python simple_atom_replacer.py --mol example/ZINC000000330081.sdf --atom-idx 3 --new-atom N
+python script/utilities/molecular/simple_atom_replacer.py --mol example/ZINC000000330081.sdf --atom-idx 3 --new-atom N --output-dir output
 ```
 
 このコマンドにより、以下のファイルが生成されます：
@@ -230,11 +252,18 @@ python script/quantitative_inverse_msmd.py \
   --compound2 output/replaced_molecule.sdf \
   --protein example/protein.pdb \
   --probe-library probe_library \
-  --output-dir output/qimsmd
+  --output-dir output/qimsmd \
+  --only-non-common-rings \
+  --separate-rings
 ```
 
 #### オプション
 
+- `--compound1`: 1つ目の化合物のSDFファイルパス（必須）
+- `--compound2`: 2つ目の化合物のSDFファイルパス（必須）
+- `--protein`: タンパク質構造のPDBファイルパス（必須）
+- `--probe-library`: プローブライブラリのディレクトリパス（必須）
+- `--output-dir`: 出力ディレクトリ（デフォルト: "./output"）
 - `--only-non-common-rings`: 複合環のうち非共通な環のみをプローブ化します
 - `--separate-rings`: 非共通な環を別々のプローブとして抽出します
 
@@ -248,6 +277,18 @@ Quantitative Inverse MSMDを実行すると、以下のファイルが生成さ�
   - 結論（どちらの化合物が強く結合するか）
 
 結合強度差が正の場合は化合物1の方が強く結合し、負の場合は化合物2の方が強く結合すると予測されます。
+
+### 処理フロー
+
+Quantitative Inverse MSMDの処理フローは以下の通りです：
+
+1. **非共通部分の抽出**：2つの化合物間の非共通部分を抽出します
+2. **プローブの設計**：非共通部分に基づいてプローブを設計します
+3. **分子の重ね合わせ**：元の化合物とプローブを重ね合わせます
+4. **MSMDシミュレーション**：プローブとタンパク質を使用してMSMDシミュレーションを実行します
+5. **プロファイル作成**：MSMDシミュレーションの結果からプロファイルを作成します
+6. **合致度計算**：プロファイルとタンパク質構造の合致度を計算します
+7. **結合強度の推定**：合致度スコアの差から結合強度の差を推定します
 
 ## 5. 各ユーティリティツールの使用方法と入出力ファイル形式
 
@@ -419,7 +460,11 @@ ls output/example_project/
 
 ```bash
 # 原子置換
-python simple_atom_replacer.py --mol example/ZINC000000330081.sdf --atom-idx 3 --new-atom N
+python script/utilities/molecular/simple_atom_replacer.py \
+  --mol example/ZINC000000330081.sdf \
+  --atom-idx 3 \
+  --new-atom N \
+  --output-dir output
 
 # Quantitative Inverse MSMDの実行
 python script/quantitative_inverse_msmd.py \
@@ -427,7 +472,8 @@ python script/quantitative_inverse_msmd.py \
   --compound2 output/replaced_molecule.sdf \
   --protein example/protein.pdb \
   --probe-library probe_library \
-  --output-dir output/qimsmd
+  --output-dir output/qimsmd \
+  --only-non-common-rings
 
 # 結果の確認
 cat output/qimsmd/quantitative_inverse_msmd_result.txt
@@ -444,9 +490,13 @@ cat output/qimsmd/quantitative_inverse_msmd_result.txt
 
 #### quantitative_inverse_msmd.pyのオプション
 
-- `--compound1`: 1つ目の化合物のSDFファイルパス
-- `--compound2`: 2つ目の化合物のSDFファイルパス
-- `--protein`: タンパク質構造のPDBファイルパス
+- `--compound1`: 1つ目の化合物のSDFファイルパス（必須）
+- `--compound2`: 2つ目の化合物のSDFファイルパス（必須）
+- `--protein`: タンパク質構造のPDBファイルパス（必須）
+- `--probe-library`: プローブライブラリのディレクトリパス（必須）
+- `--output-dir`: 出力ディレクトリ（デフォルト: "./output"）
+- `--only-non-common-rings`: 複合環のうち非共通な環のみをプローブ化する
+- `--separate-rings`: 非共通な環を別々のプローブとして抽出する
 - `--probe-library`: プローブライブラリのディレクトリパス
 - `--output-dir`: 出力ディレクトリ
 - `--only-non-common-rings`: 複合環のうち非共通な環のみをプローブ化する

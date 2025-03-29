@@ -12,14 +12,13 @@ import sys
 import numpy as np
 from rdkit import Chem
 
-# 相対インポートを使用
-from utilities.molecular.mcs_extractor import extract_non_common_parts
-from utilities.molecular.molecule_superimposer import (
+from script.utilities.molecular.mcs_extractor import extract_non_common_parts
+from script.utilities.molecular.molecule_superimposer import (
     generate_atom_mapping,
     superimpose_molecules,
     validate_and_refine_atom_mapping,
 )
-from utilities.probe.probe_designer import design_probe
+from script.utilities.probe.probe_designer import design_probe
 
 
 def setup_msmd_simulation(probe_file, protein_file, output_dir):
@@ -216,7 +215,7 @@ def estimate_binding_strength(score1, score2):
     return strength_diff
 
 
-def semi_automatic_quantitative_inverse_msmd(compound1_file, compound2_file, protein_file, probe_library_dir, output_dir):
+def semi_automatic_quantitative_inverse_msmd(compound1_file, compound2_file, protein_file, probe_library_dir, output_dir, only_non_common_rings=False, separate_rings=False):
     """
     半自動Quantitative Inverse MSMDを実行する
 
@@ -232,6 +231,10 @@ def semi_automatic_quantitative_inverse_msmd(compound1_file, compound2_file, pro
         プローブライブラリのディレクトリパス
     output_dir : str
         出力ディレクトリ
+    only_non_common_rings : bool, optional
+        Trueの場合、複合環のうち非共通な環のみをプローブ化する, by default False
+    separate_rings : bool, optional
+        Trueの場合、非共通な環を別々のプローブとして抽出する, by default False
 
     Returns
     -------
@@ -243,7 +246,7 @@ def semi_automatic_quantitative_inverse_msmd(compound1_file, compound2_file, pro
     
     # 1. 2つの化合物間の非共通部分を抽出
     print("ステップ1: 非共通部分の抽出")
-    non_common_parts = extract_non_common_parts(compound1_file, compound2_file)
+    non_common_parts = extract_non_common_parts(compound1_file, compound2_file, only_non_common_rings, separate_rings)
     
     # 2. 各非共通部分に対してプローブを設計
     print("ステップ2: プローブの設計")
@@ -386,6 +389,10 @@ def main():
     parser.add_argument('--protein', required=True, help='タンパク質構造のPDBファイルパス')
     parser.add_argument('--probe-library', required=True, help='プローブライブラリのディレクトリパス')
     parser.add_argument('--output-dir', default="./output", help='出力ディレクトリ')
+    parser.add_argument('--only-non-common-rings', action='store_true',
+                        help='複合環のうち非共通な環のみをプローブ化する')
+    parser.add_argument('--separate-rings', action='store_true',
+                        help='非共通な環を別々のプローブとして抽出する')
     args = parser.parse_args()
     
     # 半自動Quantitative Inverse MSMDを実行
@@ -394,7 +401,9 @@ def main():
         args.compound2,
         args.protein,
         args.probe_library,
-        args.output_dir
+        args.output_dir,
+        args.only_non_common_rings,
+        args.separate_rings
     )
 
 

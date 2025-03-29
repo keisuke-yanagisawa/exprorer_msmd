@@ -91,13 +91,31 @@ def design_probe(non_common_part, probe_library_dir):
     # 最も類似度の高いプローブを選択
     if best_probe is None or best_similarity < 0.5:
         # 類似度が低い場合は、非共通部分自体をプローブとして使用
-        designed_probe = Chem.Mol(non_common_mol)
-        # 必要に応じて水素を追加
-        designed_probe = Chem.AddHs(designed_probe)
-        
-        # 3D座標を生成
-        AllChem.EmbedMolecule(designed_probe)
-        AllChem.UFFOptimizeMolecule(designed_probe)
+        try:
+            # 非共通部分のSMILES文字列を取得
+            smiles = Chem.MolToSmiles(non_common_mol)
+            
+            # SMILESから新しい分子を作成
+            designed_probe = Chem.MolFromSmiles(smiles)
+            if designed_probe is None:
+                raise ValueError("SMILESから分子を作成できませんでした")
+            
+            # 必要に応じて水素を追加
+            designed_probe = Chem.AddHs(designed_probe)
+            
+            # 3D座標を生成
+            AllChem.EmbedMolecule(designed_probe)
+            AllChem.UFFOptimizeMolecule(designed_probe)
+        except Exception as e:
+            print(f"警告: プローブの生成に失敗しました。エラー: {e}")
+            # プローブの生成に失敗した場合は、デフォルトのプローブを返す
+            probe_files = glob.glob(os.path.join(probe_library_dir, "*.sdf"))
+            if not probe_files:
+                raise ValueError(f"プローブライブラリディレクトリ {probe_library_dir} にSDFファイルが見つかりません")
+            
+            designed_probe = Chem.SDMolSupplier(probe_files[0])[0]
+            if designed_probe is None:
+                raise ValueError(f"デフォルトプローブ {probe_files[0]} を読み込めませんでした")
     else:
         designed_probe = Chem.Mol(best_probe)
     
