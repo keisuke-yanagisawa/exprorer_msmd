@@ -1,5 +1,15 @@
 # https://qiita.com/yopya/items/63155923602bf97dec53
-from logging import CRITICAL, DEBUG, ERROR, INFO, WARN, Formatter, StreamHandler, getLogger, handlers
+from logging import (
+    CRITICAL,
+    DEBUG,
+    ERROR,
+    INFO,
+    WARN,
+    Formatter,
+    StreamHandler,
+    getLogger,
+    handlers,
+)
 
 __DEFAULT_LOG_LEVEL__ = WARN
 
@@ -40,7 +50,7 @@ class Logger:
 
     def setLevel(self, level):
         if not isinstance(level, str):
-            raise TypeError(f"ログレベルは文字列で指定してください: {level}")
+            raise TypeError(f"Log level must be specified as a string: {level}")
 
         level_lower = level.lower().strip()
         valid_levels = {
@@ -49,15 +59,13 @@ class Logger:
             "warn": WARN,
             "warning": WARN,
             "error": ERROR,
-            "critical": CRITICAL
+            "critical": CRITICAL,
         }
 
         if level_lower not in valid_levels:
             raise ValueError(
-                f"無効なログレベルです: {level}\n"
-                f"有効なログレベル: {', '.join(sorted(set(valid_levels.keys())))}"
+                f"Invalid log level: {level}\n" f"Valid log levels: {', '.join(sorted(set(valid_levels.keys())))}"
             )
-
         log_level = valid_levels[level_lower]
         self.logger.setLevel(log_level)
         self.handler.setLevel(log_level)
