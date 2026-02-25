@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -58,9 +59,9 @@ def preprocess(index: int, setting: dict, debug=False) -> tuple[Path, Path, Path
     gro_string: str = addvirtatom2gro(gro_string, PROBE_ID)
 
     # define position restraints of heavy atoms
-    top_string = embed_posre(
-        top_string, atom_ids_protein_nonH, prefix="POSRES", strength=[1000, 500, 200, 100, 50, 20, 10, 0]
-    )
+    _posres = {int(m.group(1)) for s in setting["exprorer_msmd"]["sequence"]
+               for m in [re.match(r"-DPOSRES(\d+)", s.get("define", ""))] if m}
+    top_string = embed_posre(top_string, atom_ids_protein_nonH, prefix="POSRES", strength=sorted(_posres, reverse=True))
 
     top.write_text(top_string)
     gro.write_text(gro_string)
