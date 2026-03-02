@@ -134,6 +134,18 @@ def gen_pmap(
     ).mean(axis=0)
     # structure.center_of_mass() may return "[ nan nan nan ]" due to unspecified atomic weight
 
+    # Pre-check: trajectory file must exist before running cpptraj
+    traj_resolved = Path(util.getabsolutepath(traj))
+    if not traj_resolved.exists():
+        raise FileNotFoundError(
+            f"Trajectory file not found: {traj_resolved}\n"
+            f"  This usually means the MD simulation did not complete for system directory: {dirpath}\n"
+            f"  Please check:\n"
+            f"    1. Did the heating step finish successfully? (check {dirpath}/simulation/ for logs)\n"
+            f"    2. Did the production run complete? (the .xtc file is generated at the end)\n"
+            f"    3. Check GROMACS log files (.log) in the simulation directory for errors."
+        )
+
     cpptraj_obj = Cpptraj(debug=debug)
     cpptraj_obj.set(topology, trajectory, ref_struct, probe_id)
     cpptraj_obj.run(
