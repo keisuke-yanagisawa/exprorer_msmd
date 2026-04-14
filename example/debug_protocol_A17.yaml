@@ -1,0 +1,199 @@
+general:
+  iter_index: 0,1
+  workdir: ../debug_A17 # output directory / absolute path or relative path from THIS YAML FILE
+  name: DEBUG_A17
+  executables:
+    python  : python
+    gromacs : gmx_mpi
+    packmol : packmol
+    tleap   : tleap
+    cpptraj : cpptraj
+
+input:
+  protein:
+    pdb : 1F47B.pdb # relative path from THIS YAML FILE
+    ssbond :
+  probe:
+    cid  : A17
+    atomtype: gaff2
+    molar: 0.25
+    frcmod: A17.frcmod
+
+exprorer_msmd:
+  title    : DEBUG protocol (chlorobenzene A17)
+  general  :
+    pbc         : xyz
+
+  sequence :
+    - name   : min1
+      title  : Energy minimization with position restraints
+      type   : minimization
+      define : -DPOSRES1000
+      nsteps : 200
+      nstlog : 1 # steps
+
+    - name   : min2
+      title  : Energy minimization without position restraints
+      type   : minimization
+      define : ""
+      nsteps : 200
+      nstlog : 1 # steps
+
+    - name          : heat
+      title         : Heating system from 0 K to 300 K
+      type          : heating
+      define        : -DPOSRES1000
+      nsteps        : 10000
+      nstxtcout     : 500 # steps
+      nstlog        : 500 # steps
+      nstenergy     : 500 # steps
+      pcoupl        : "no" # NVT-ensemble
+
+    - name      : equil1
+      title     : Equilibration stage 1 - 10 kcal/mol/A^2 constraints
+      type      : equilibration
+      define    : -DPOSRES1000
+      nsteps    : 5000
+      nstxtcout : 500 # steps
+      nstlog    : 500 # steps
+      nstenergy : 500 # steps
+      pcoupl    : berendsen
+
+    - name      : equil2
+      title     : Equilibration stage 2 - 5.0 kcal/mol/A^2 constraints
+      type      : equilibration
+      define    : -DPOSRES500
+      nsteps    : 5000
+      nstxtcout : 500 # steps
+      nstlog    : 500 # steps
+      nstenergy : 500 # steps
+      pcoupl    : berendsen
+
+    - name      : equil3
+      title     : Equilibration stage 3 - 2.0 kcal/mol/A^2 constraints
+      type      : equilibration
+      define    : -DPOSRES200
+      nsteps    : 5000
+      nstxtcout : 500 # steps
+      nstlog    : 500 # steps
+      nstenergy : 500 # steps
+      pcoupl    : berendsen
+
+    - name      : equil4
+      title     : Equilibration stage 4 - 1.0 kcal/mol/A^2 constraints
+      type      : equilibration
+      define    : -DPOSRES100
+      nsteps    : 5000
+      nstxtcout : 500 # steps
+      nstlog    : 500 # steps
+      nstenergy : 500 # steps
+      pcoupl    : berendsen
+
+    - name      : equil5
+      title     : Equilibration stage 5 - 0.5 kcal/mol/A^2 constraints
+      type      : equilibration
+      define    : -DPOSRES50
+      nsteps    : 5000
+      nstxtcout : 500 # steps
+      nstlog    : 500 # steps
+      nstenergy : 500 # steps
+      pcoupl    : berendsen
+
+    - name      : equil6
+      title     : Equilibration stage 6 - 0.2 kcal/mol/A^2 constraints
+      type      : equilibration
+      define    : -DPOSRES20
+      nsteps    : 5000
+      nstxtcout : 500 # steps
+      nstlog    : 500 # steps
+      nstenergy : 500 # steps
+      pcoupl    : berendsen
+
+    - name      : equil7
+      title     : Equilibration stage 7 - 0.1 kcal/mol/A^2 constraints
+      type      : equilibration
+      define    : -DPOSRES10
+      nsteps    : 5000
+      nstxtcout : 500 # steps
+      nstlog    : 500 # steps
+      nstenergy : 500 # steps
+      pcoupl    : berendsen
+
+    - name      : equil8
+      title     : Equilibration stage 8 - no constraints
+      type      : equilibration
+      define    : ""
+      nsteps    : 5000
+      nstxtcout : 500 # steps
+      nstlog    : 500 # steps
+      nstenergy : 500 # steps
+      pcoupl    : berendsen
+
+    - name      : pr
+      title     : Production Run
+      type      : production
+      define    : ""
+      nsteps    : 10000
+      nstxtcout : 100 # steps
+      nstenergy : 40 # steps
+      nstlog    : 100 # steps
+      pcoupl    : Parrinello-Rahman
+
+map: # MAP generation
+  type: pmap
+  snapshot: 1-101:1 # steps / "NAME" trajectory will be used with "NAME|"
+  maps:
+    - suffix: nVH
+      selector: (!@VIS)&(!@H*)
+    - suffix: nV
+      selector: (!@VIS)
+  map_size: 80 # 80 A * 80 A * 80 A
+  normalization: total # total or snapshot
+
+probe_profile:
+  resenv: # Extract residue environments around probe molecules
+    map: nVH # map suffix
+    threshold: 0.2 # probability threshold of "preferred" residue environment
+    snapshots: 1-101:1 # reduce calculation cost (but less environments)
+    align: ["Cl1 ", " C1 ", " C2 ", " C3 "] # chlorobenzene heavy atoms for alignment
+
+  profile:
+    types:
+      - name: anion
+        atoms:
+          - ["ASP", " CB "]
+          - ["GLU", " CB "]
+      - name: cation
+        atoms:
+          - ["LYS", " CB "]
+          - ["HIE", " CB "]
+          - ["ARG", " CB "]
+      - name: aromatic
+        atoms:
+          - ["TYR", " CB "]
+          - ["TRP", " CB "]
+          - ["PHE", " CB "]
+      - name: hydrophilic
+        atoms:
+          - ["ASN", " CB "]
+          - ["GLN", " CB "]
+          - ["SER", " CB "]
+          - ["THR", " CB "]
+          - ["CYS", " CB "]
+      - name: hydrophobic
+        atoms:
+          - ["ILE", " CB "]
+          - ["LEU", " CB "]
+          - ["VAL", " CB "]
+          - ["ALA", " CB "]
+          - ["PRO", " CB "]
+          - ["MET", " CB "]
+      - name: neutral
+        atoms:
+          - ["GLY", " CB "]
+      - name: gly
+        atoms:
+          - ["GLY", " CB "]
+      - name: met
+        atoms:
+          - ["MET", " CB "]
