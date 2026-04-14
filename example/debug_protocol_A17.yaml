@@ -144,9 +144,9 @@ map: # MAP generation
   snapshot: 1-101:1 # steps / "NAME" trajectory will be used with "NAME|"
   maps:
     - suffix: nVH
-      selector: (!@VIS)&(!@H*)
+      selector: (!@VIS)&(!@EP*)&(!@H*)
     - suffix: nV
-      selector: (!@VIS)
+      selector: (!@VIS)&(!@EP*)
   map_size: 80 # 80 A * 80 A * 80 A
   normalization: total # total or snapshot
 
