@@ -9,6 +9,9 @@ now={{ GRO | replace(".gro", "") }}
 if [ A$GMX = "A" ];then
     GMX=gmx
 fi
+if [ A$THREAD_FLAG = "A" ];then
+    THREAD_FLAG="-nt"
+fi
 
 
 finished_info=finished_step_list
@@ -27,13 +30,13 @@ do
     echo $GMX grompp -maxwarn 1 -f ${now}.mdp -o ${now}.tpr \
       -c ${prev}.gro -p ${top} \
       -r ${prev}.gro -n index.ndx
-    echo $GMX mdrun -nt $ncpus -v -s ${now}.tpr \
+    echo $GMX mdrun $THREAD_FLAG $ncpus -v -s ${now}.tpr \
       -cpo ${now}.cpt -x ${now}.xtc -c ${now}.gro -e ${now}.edr -g ${now}.log
 
     $GMX grompp -maxwarn 1 -f ${now}.mdp -o ${now}.tpr \
       -c ${prev}.gro -p ${top} \
       -r ${prev}.gro -n index.ndx
-    $GMX mdrun -nt $ncpus -v -s ${now}.tpr \
+    $GMX mdrun $THREAD_FLAG $ncpus -v -s ${now}.tpr \
       -cpo ${now}.cpt -x ${now}.xtc -c ${now}.gro -e ${now}.edr -g ${now}.log \
       || exit
 

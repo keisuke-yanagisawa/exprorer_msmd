@@ -1,12 +1,17 @@
+import subprocess
+
 import pytest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 from script.mdrun import (
+    detect_mdrun_thread_flag,
+    _detect_mpi_type,
     gen_mdp,
     gen_mdrun_job,
     prepare_sequence,
-    prepare_md_files
+    prepare_md_files,
+    run_md_sequence,
 )
 
 @pytest.fixture
@@ -193,3 +198,63 @@ class TestPrepareMdFiles:
         # Verify number of gen_mdp calls
         mock_env, _ = mock_jinja
         assert mock_env.return_value.get_template.call_count == len(sequence) + 1  # +1 for mdrun.sh template
+
+
+class TestDetectMdrunThreadFlag:
+    """Tests for GROMACS MPI build type detection"""
+
+    def setup_method(self):
+        _detect_mpi_type.cache_clear()
+
+    def test_thread_mpi_build(self):
+        """thread-MPI build should return -nt"""
+        with patch('shutil.which', return_value='/usr/bin/gmx'), \
+             patch('subprocess.run') as mock_run:
+            mock_run.return_value = MagicMock(
+                stdout="GROMACS version: 2024\nMPI library:      thread_mpi\n",
+                stderr=""
+            )
+            assert detect_mdrun_thread_flag(Path("gmx")) == "-nt"
+
+    def test_real_mpi_build(self):
+        """real MPI build should return -ntomp"""
+        with patch('shutil.which', return_value='/usr/bin/gmx_mpi'), \
+             patch('subprocess.run') as mock_run:
+            mock_run.return_value = MagicMock(
+                stdout="GROMACS version: 2024\nMPI library:         MPI (GPU-aware: CUDA)\n",
+                stderr=""
+            )
+            assert detect_mdrun_thread_flag(Path("gmx_mpi")) == "-ntomp"
+
+    def test_executable_not_found(self):
+        """Missing executable should fall back to -nt"""
+        with patch('shutil.which', return_value=None):
+            assert detect_mdrun_thread_flag(Path("nonexistent_gmx")) == "-nt"
+
+    def test_version_timeout(self):
+        """Timeout on --version should fall back to -nt"""
+        with patch('shutil.which', return_value='/usr/bin/gmx'), \
+             patch('subprocess.run', side_effect=subprocess.TimeoutExpired('gmx', 30)):
+            assert detect_mdrun_thread_flag(Path("gmx_timeout")) == "-nt"
+
+    def test_no_mpi_line_in_output(self):
+        """Missing MPI library line should fall back to -nt"""
+        with patch('shutil.which', return_value='/usr/bin/gmx'), \
+             patch('subprocess.run') as mock_run:
+            mock_run.return_value = MagicMock(
+                stdout="GROMACS version: 2024\nSome other info\n",
+                stderr=""
+            )
+            assert detect_mdrun_thread_flag(Path("gmx_no_mpi_line")) == "-nt"
+
+
+class TestRunMdSequence:
+    """Tests for run_md_sequence THREAD_FLAG passing"""
+
+    def test_thread_flag_passed_to_shell(self):
+        """Verify THREAD_FLAG environment variable is set in os.system command"""
+        with patch('script.mdrun.detect_mdrun_thread_flag', return_value='-ntomp'), \
+             patch('os.system') as mock_system:
+            run_md_sequence(0, Path("/tmp/sim"), Path("gmx_mpi"), 4, "test")
+            call_args = mock_system.call_args[0][0]
+            assert 'THREAD_FLAG=-ntomp' in call_args
