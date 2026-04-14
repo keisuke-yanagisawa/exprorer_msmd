@@ -14,6 +14,7 @@ from joblib import Parallel, delayed
 from script.add_posredefine2top import embed_posre
 from script.addvirtatom2gro import addvirtatom2gro
 from script.addvirtatom2top import addvirtatom2top
+from script.fix_extra_points_top import fix_extra_points_top
 from script.generate_msmd_system import generate_msmd_system
 from script.genpmap import gen_pmap
 from script.mdrun import prepare_md_files, prepare_sequence, run_md_sequence
@@ -55,6 +56,7 @@ def preprocess(index: int, setting: dict, debug=False) -> tuple[Path, Path, Path
     pmd_convert(parm7, tmptop, inxyz=rst7, outxyz=tmpgro)
     top_string: str = tmptop.open().read()
     top_string: str = addvirtatom2top(top_string, PROBE_ID)
+    top_string: str = fix_extra_points_top(top_string)
     gro_string: str = tmpgro.open().read()
     gro_string: str = addvirtatom2gro(gro_string, PROBE_ID)
 
