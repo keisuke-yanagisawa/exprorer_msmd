@@ -316,9 +316,12 @@ def gen_pmap_test_data(tmp_path):
         "valid_dist": 3.0,
         "normalization": "snapshot"
     }
-    traj = Path("test_data/traj.xtc")
-    top = Path("test_data/top.pdb")
-    
+    # Create dummy trajectory and topology files so the existence check passes
+    traj = tmp_path / "traj.xtc"
+    traj.touch()
+    top = tmp_path / "top.pdb"
+    top.touch()
+
     return setting_general, setting_input, setting_pmap, traj, top
 
 @patch('script.genpmap.uPDB.get_structure')
