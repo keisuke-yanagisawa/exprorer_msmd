@@ -1,3 +1,5 @@
+import json
+import glob
 import os
 import pytest
 from pathlib import Path
@@ -14,16 +16,35 @@ from script.setting import parse_yaml
 # Set test data path
 TEST_DATA_DIR = Path("script/test_data")
 
+
+def _get_ambertools_version() -> str:
+    """Get the installed AmberTools version from conda metadata."""
+    conda_prefix = os.environ.get("CONDA_PREFIX", "")
+    meta_files = glob.glob(f"{conda_prefix}/conda-meta/ambertools-*.json")
+    if meta_files:
+        with open(meta_files[0]) as f:
+            return json.load(f).get("version", "unknown")
+    return "unknown"
+
+
+AMBERTOOLS_VERSION = _get_ambertools_version()
+AMBERTOOLS_EXPECTED_DIR = TEST_DATA_DIR / f"ambertools_{AMBERTOOLS_VERSION}"
+
+_skip_no_ambertools_expected = pytest.mark.skipif(
+    not AMBERTOOLS_EXPECTED_DIR.is_dir(),
+    reason=f"No expected data for AmberTools {AMBERTOOLS_VERSION} (missing {AMBERTOOLS_EXPECTED_DIR})"
+)
+
 @pytest.fixture
 def test_files():
     return {
         'rst7': TEST_DATA_DIR / "tripeptide.rst7",
         'pdb': TEST_DATA_DIR / "tripeptide.pdb",
         'setting': TEST_DATA_DIR / "setting.yaml",
-        'expected_parm7': TEST_DATA_DIR / "tripeptide_A11.parm7",
-        'expected_rst7': TEST_DATA_DIR / "tripeptide_A11.rst7",
+        'expected_parm7': AMBERTOOLS_EXPECTED_DIR / "tripeptide_A11.parm7",
+        'expected_rst7': AMBERTOOLS_EXPECTED_DIR / "tripeptide_A11.rst7",
         'mol2': TEST_DATA_DIR / "A11.mol2",
-        'expected_frcmod': TEST_DATA_DIR / "A11.frcmod"
+        'expected_frcmod': AMBERTOOLS_EXPECTED_DIR / "A11.frcmod"
     }
 
 def compare_file_contents(file1: Path, file2: Path, skip_first_line: bool = False) -> None:
@@ -61,12 +82,14 @@ class TestBoxSizeCalculation:
             calculate_boxsize(test_files['pdb'])
 
 class TestGenerateMsmdSystem:
+    @_skip_no_ambertools_expected
     def test_generate_msmd_system_parm7(self, test_files):
         """Verify generated parm7 file matches expected output"""
         settings = parse_yaml(test_files['setting'])
         parm7, _ = generate_msmd_system(settings, seed=1)
         compare_file_contents(parm7, test_files['expected_parm7'], skip_first_line=True)
 
+    @_skip_no_ambertools_expected
     def test_generate_msmd_system_rst7(self, test_files):
         """Verify generated rst7 file matches expected output"""
         settings = parse_yaml(test_files['setting'])
@@ -92,6 +115,7 @@ class TestGenerateMsmdSystem:
         assert "ANISOU" not in lines[0]
 
 class TestCreateFrcmod:
+    @_skip_no_ambertools_expected
     def test_create_frcmod(self, test_files):
         """Verify frcmod file is generated correctly"""
         atomtype: Literal["gaff", "gaff2"] = "gaff2"
