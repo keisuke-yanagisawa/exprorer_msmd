@@ -1,6 +1,7 @@
 import collections
 import os
 import shutil
+import subprocess
 import tempfile
 import warnings
 from pathlib import Path
@@ -164,7 +165,15 @@ class Packmol(object):
             _, logfile = tempfile.mkstemp(suffix=".log")
         command = Command(f"{self.exe} < {inp} > {logfile}")
         logger.debug(command)
-        command.run()
+        try:
+            command.run()
+        except subprocess.CalledProcessError:
+            stdout_str = open(logfile).read()
+            if "There are only fixed molecules" in stdout_str:
+                warnings.warn("There is only a protein molecule.", RuntimeWarning)
+                logger.info(stdout_str)
+                return self
+            raise
 
         stdout_str = open(logfile).read()
         if stdout_str.find("ENDED WITHOUT PERFECT PACKING") != -1:
