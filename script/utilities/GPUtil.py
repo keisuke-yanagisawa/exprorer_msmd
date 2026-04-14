@@ -24,7 +24,13 @@ def get_gpuids(ignore_cuda_visible_devices=False):
             list of int:
                     A list of GPU IDs to be used, or [-1] if no GPUs are available.
     """
-    gpuids = set(GPUtil.getAvailable(maxLoad=math.inf, maxMemory=math.inf, limit=sys.maxsize))
+    # GPUtil.getAvailable() rejects GPUs with load=nan (e.g. MIG-enabled GPUs),
+    # so we use getGPUs() directly and treat nan as available.
+    gpuids = set(
+        gpu.id for gpu in GPUtil.getGPUs()
+        if (math.isnan(gpu.load) or gpu.load <= 1.0)
+        and (math.isnan(gpu.memoryUtil) or gpu.memoryUtil <= 1.0)
+    )
     logger.info(f"{len(gpuids)} GPUs are detected")
     
     if (ignore_cuda_visible_devices is False) and (os.getenv("CUDA_VISIBLE_DEVICES") is not None):
