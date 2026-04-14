@@ -40,7 +40,7 @@ class Logger:
 
     def setLevel(self, level):
         if not isinstance(level, str):
-            raise TypeError(f"ログレベルは文字列で指定してください: {level}")
+            raise TypeError(f"Log level must be specified as a string: {level}")
 
         level_lower = level.lower().strip()
         valid_levels = {
@@ -54,8 +54,8 @@ class Logger:
 
         if level_lower not in valid_levels:
             raise ValueError(
-                f"無効なログレベルです: {level}\n"
-                f"有効なログレベル: {', '.join(sorted(set(valid_levels.keys())))}"
+                f"Invalid log level: {level}\n"
+                f"Valid log levels: {', '.join(sorted(set(valid_levels.keys())))}"
             )
 
         log_level = valid_levels[level_lower]
