@@ -8,10 +8,8 @@ from scipy import constants
 VERSION = "2.0.0"
 
 
-def __position_restraint(atom_id_list: npt.ArrayLike, prefix: str, weight) -> str:
-    """
-    generate a string defining position restraint records
-    """
+def _position_restraint(atom_id_list: npt.ArrayLike, prefix: str, weight) -> str:
+    """Generate a position restraint #ifdef block using Jinja2 template."""
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
     template = env.get_template("./template/position_restraints")
     return template.render(
@@ -24,9 +22,19 @@ def __position_restraint(atom_id_list: npt.ArrayLike, prefix: str, weight) -> st
     )
 
 
+def _insert_posre_block(lines: List[str], atom_id_list: npt.ArrayLike, prefix: str, strength: list[int]):
+    """Append position restraint blocks to the output lines."""
+    lines.append("")
+    lines.append("; Position restraints")
+    for s in strength:
+        lines.append(_position_restraint(atom_id_list, prefix, s))
+
+
 def embed_posre(top_string: str, atom_id_list: npt.ArrayLike, prefix: str, strength: list[int]) -> str:
-    """
-    embed position restraint records into a given topology string
+    """Embed position restraint records into a given topology string.
+
+    #ifdef ブロックは GROMACS 固有のプリプロセッサ指令のためテキスト挿入で対応。
+    Position restraints are only inserted into the first molecule type.
     """
     ret = []
     curr_section = None
@@ -34,28 +42,23 @@ def embed_posre(top_string: str, atom_id_list: npt.ArrayLike, prefix: str, stren
     in_first_molecule = False
 
     for line in top_string.split("\n"):
-        if line.startswith("["):
-            # 新しいセクションが始まる前に、必要なら position_restraints を追加
+        content = line.split(";", 1)[0].strip() if ";" in line else line.strip()
+
+        if content.startswith("[") and "]" in content:
+            # セクション遷移時に位置拘束を挿入
             if curr_section == "atoms" and in_first_molecule and strength:
-                ret.append("")
-                ret.append("; Position restraints")
-                for s in strength:
-                    ret.append(__position_restraint(atom_id_list, prefix, s))
+                _insert_posre_block(ret, atom_id_list, prefix, strength)
                 ret.append("")
 
-            curr_section = line[line.find("[") + 1 : line.find("]")].strip()
+            curr_section = content[content.find("[") + 1 : content.find("]")].strip()
             if curr_section == "moleculetype":
                 mol_count += 1
-                in_first_molecule = (mol_count == 1)
+                in_first_molecule = mol_count == 1
 
         ret.append(line)
 
     # ファイルの最後が atoms セクションの場合の処理
     if curr_section == "atoms" and in_first_molecule and strength:
-        ret.append("")
-        ret.append("; Position restraints")
-        for s in strength:
-            ret.append(__position_restraint(atom_id_list, prefix, s))
+        _insert_posre_block(ret, atom_id_list, prefix, strength)
 
-    ret = "\n".join(ret)
-    return ret
+    return "\n".join(ret)
