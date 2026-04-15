@@ -2,7 +2,6 @@ import copy
 from pathlib import Path
 
 import numpy as np
-from Bio import PDB
 from tqdm import tqdm
 
 from script.utilities.Bio import PDB as uPDB

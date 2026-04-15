@@ -84,19 +84,21 @@ class Cpptraj(object):
         try:
             logger.info(command.run())
         except Exception as e:
-            Command(f"cat {self.inp}")
+            logger.error(f"cpptraj input file contents:\n{self.inp.read_text()}")
             raise e
 
         for i in range(len(maps)):
             maps[i]["grid"] = self.basedir / f"{self.prefix}_{maps[i]['suffix']}.dx"
 
-        self.frames = len(open(f"{self.basedir}/{rmsdfile}").readlines()) - 1  # -1 for header line
-        self.last_volume = float(open(tmp_volumefile).readlines()[-1].split()[1])
-        os.system(f"rm {tmp_volumefile}")
+        rmsd_path = self.basedir / rmsdfile
+        self.frames = len(rmsd_path.read_text().splitlines()) - 1  # -1 for header line
+        volume_lines = tmp_volumefile.read_text().splitlines()
+        self.last_volume = float(volume_lines[-1].split()[1])
+        tmp_volumefile.unlink()
         for i in range(len(maps)):
-            maps[i]["num_probe_atoms"] = len(open(maps[i]["atominfofile"]).readlines()) - 1  # -1 for header line
-            # os.system(f"rm {maps[i]['atominfofile']}")
-            # del self.maps[i]["atominfofile"] # it makes errors with multiprocessing
+            atominfo_lines = maps[i]["atominfofile"].read_text().splitlines()
+            maps[i]["num_probe_atoms"] = len(atominfo_lines) - 1  # -1 for header line
+            # NOTE: atominfofile is kept on disk; deleting it breaks multiprocessing callers.
             logger.debug(f"num_probe_atoms {i} {maps[i]['num_probe_atoms']} {maps[i]['atominfofile']}")
         logger.debug(f"{self.trajectory}")
 

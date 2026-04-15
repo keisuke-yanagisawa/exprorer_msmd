@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import argparse
-import glob
 from pathlib import Path
 
 from script import maxpmap
@@ -12,16 +11,15 @@ VERSION = "0.1.0"
 
 
 def protein_hotspot(setting):
-    basedirpath = setting["general"]["workdir"]
+    basedirpath = Path(setting["general"]["workdir"])
     JOB_NAME = setting["general"]["name"]
 
     logger.info("PMAP aggregation: mapPMAP")
     for map in setting["map"]["maps"]:
-        maxpmap.gen_max_pmap(
-            glob.glob(f"{basedirpath}/system*/PMAP_{JOB_NAME}_{map['suffix']}.dx"),
-            f"{basedirpath}/maxPMAP_{JOB_NAME}_{map['suffix']}.dx",
-        )
-        logger.info(f"Output file: {basedirpath}/maxPMAP_{JOB_NAME}_{map['suffix']}.dx")
+        inpaths = [str(p) for p in basedirpath.glob(f"system*/PMAP_{JOB_NAME}_{map['suffix']}.dx")]
+        outpath = basedirpath / f"maxPMAP_{JOB_NAME}_{map['suffix']}.dx"
+        maxpmap.gen_max_pmap(inpaths, str(outpath))
+        logger.info(f"Output file: {outpath}")
 
 
 if __name__ == "__main__":

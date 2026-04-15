@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
-import os
+import re
 from pathlib import Path
-from typing import Optional, Literal
+from typing import Literal, Optional
 
 import gridData
 import numpy as np
@@ -15,6 +15,8 @@ from script.utilities.executable import Cpptraj
 
 VERSION = "1.0.0"
 
+_SNAPSHOT_PATTERN = re.compile(r"^(\d+)-(\d+)(?::(\d+))?$")
+
 
 def mask_generator(ref_struct: Path, reference_grid: gridData.Grid, distance: Optional[float] = None) -> gridData.Grid:
     """
@@ -26,7 +28,6 @@ def mask_generator(ref_struct: Path, reference_grid: gridData.Grid, distance: Op
         mask: gridData.Grid object containing boolean values
     """
     mask = GridUtil.gen_distance_grid(reference_grid, ref_struct)
-    # print(np.max(mask.grid), np.min(mask.grid), distance)
     if distance is not None:
         mask.grid = mask.grid < distance
     else:
@@ -35,11 +36,13 @@ def mask_generator(ref_struct: Path, reference_grid: gridData.Grid, distance: Op
 
 
 def convert_to_proba(
-    g: gridData.Grid, mask_grid: Optional[npt.NDArray] = None, normalize: Literal["total", "snapshot"] = "snapshot", frames: int = 1
+    g: gridData.Grid,
+    mask_grid: Optional[npt.NDArray] = None,
+    normalize: Literal["total", "snapshot"] = "snapshot",
+    frames: int = 1,
 ) -> gridData.Grid:
     if mask_grid is not None:
         values = g.grid[np.where(mask_grid)]
-        # print(np.sum(g.grid), np.sum(values), np.where(mask_grid))
         if normalize == "snapshot":
             values /= frames
         elif normalize == "total":
@@ -59,54 +62,54 @@ def convert_to_gfe(grid_path: str, mean_proba: float, temperature: float = 300) 
     pmap.grid = -(constants.R / constants.calorie / constants.kilo) * temperature * np.log(pmap.grid / mean_proba)
     pmap.grid = np.where(pmap.grid > 3, 3, pmap.grid)  # Definition of GFE in the paper Raman et al., JCIM, 2013
 
-    gfe_path = os.path.dirname(grid_path) + "/" + "GFE" + "_" + os.path.basename(grid_path)
+    grid_p = Path(grid_path)
+    gfe_path = str(grid_p.with_name(f"GFE_{grid_p.name}"))
     pmap.export(gfe_path, type="double")
 
     pmap.grid = -pmap.grid
-    invgfe_path = os.path.dirname(grid_path) + "/" + "InvGFE" + "_" + os.path.basename(grid_path)
+    invgfe_path = str(grid_p.with_name(f"InvGFE_{grid_p.name}"))
     pmap.export(invgfe_path, type="double")
 
     return gfe_path
 
 
 def convert_to_pmap(
-    grid_path: Path, ref_struct: Path, valid_distance: float, normalize: Literal["total", "snapshot"] = "snapshot", frames: int = 1
+    grid_path: Path,
+    ref_struct: Path,
+    valid_distance: float,
+    normalize: Literal["total", "snapshot"] = "snapshot",
+    frames: int = 1,
 ):
     grid = gridData.Grid(grid_path)
     mask = mask_generator(ref_struct, grid, valid_distance)
     pmap = convert_to_proba(grid, mask.grid, frames=frames, normalize=normalize)
 
-    pmap_path = os.path.dirname(grid_path) + "/" + "PMAP" + "_" + os.path.basename(grid_path)
+    grid_p = Path(grid_path)
+    pmap_path = str(grid_p.with_name(f"PMAP_{grid_p.name}"))
     pmap.export(pmap_path, type="double")
     return pmap_path
 
 
 def parse_snapshot_setting(string: str):
-    if not string or ":" not in string and "-" not in string:
+    """Parse a snapshot range specification.
+
+    Accepted formats:
+        "start-stop"           -> offset defaults to "1"
+        "start-stop:offset"    -> explicit offset
+
+    Returns (start, stop, offset) as strings. Raises ValueError on
+    malformed input (non-numeric tokens, reversed range, zero/negative
+    offset, etc.).
+    """
+    if not isinstance(string, str):
         raise ValueError("Invalid format. Expected 'start-stop' or 'start-stop:offset'")
 
-    offset = "1"  # default parameter
-    if ":" in string:  # offset is an option
-        if string.count(":") > 1:
-            raise ValueError("Too many ':' characters")
-        string, offset = string.split(":")
-        if not offset.isdigit():
-            raise ValueError("Offset must be a positive integer")
+    match = _SNAPSHOT_PATTERN.match(string)
+    if match is None:
+        raise ValueError("Invalid format. Expected 'start-stop' or 'start-stop:offset'")
 
-    if "-" not in string:
-        raise ValueError("Missing '-' separator")
-    if string.count("-") > 1:
-        raise ValueError("Too many '-' characters")
-    
-    try:
-        start, stop = string.split("-")
-    except ValueError:
-        raise ValueError("Invalid format. Expected 'start-stop'")
+    start, stop, offset = match.group(1), match.group(2), match.group(3) or "1"
 
-    if not start or not stop:
-        raise ValueError("Start and stop values must not be empty")
-    if not start.isdigit() or not stop.isdigit():
-        raise ValueError("Start and stop must be positive integers")
     if int(start) > int(stop):
         raise ValueError("Start frame must be less than or equal to stop frame")
     if int(offset) < 1:
@@ -166,7 +169,7 @@ def gen_pmap(
             ref_struct,
             setting_pmap["valid_dist"],
             frames=cpptraj_obj.frames,
-            normalize=setting_pmap["normalization"] if setting_pmap["normalization"] != "GFE" else "snapshot"
+            normalize=setting_pmap["normalization"] if setting_pmap["normalization"] != "GFE" else "snapshot",
         )
         if setting_pmap["normalization"] == "GFE":
             struct_obj = uPDB.get_structure(ref_struct)
