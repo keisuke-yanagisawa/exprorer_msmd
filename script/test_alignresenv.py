@@ -54,3 +54,46 @@ class TestAlignResEnv(TestCase):
         expected_coord = [[-0.603, 65.642, 77.183], [-0.883, 67.005, 76.630]]
         aligned_coord = [a.get_coord() for a in struct.get_atoms()]
         np.testing.assert_array_almost_equal(expected_coord, aligned_coord, decimal=3)
+
+    def test_two_models_stable_focus_coords(self):
+        """Characterization test: verify coords of all models after stable (3-atom) alignment.
+
+        Snapshot captured before refactoring of alignresenv tempfile handling
+        to ensure the refactored implementation produces identical output.
+        """
+        struct = alignresenv.align_res_env(
+            self.two_models_struct,
+            self.two_models_struct[0],
+            "PRO",
+            focused=[" CA ", " N  ", " C  "],
+        )
+        # Expected coords per model: model0 and model1 both have (N, CA)
+        expected = [
+            [4.524, 9.887, -0.667],
+            [5.918, 10.123, -0.175],
+            [4.524, 9.887, -0.667],
+            [5.918, 10.123, -0.175],
+        ]
+        actual = [a.get_coord() for a in struct.get_atoms()]
+        np.testing.assert_array_almost_equal(expected, actual, decimal=3)
+
+    def test_two_models_unstable_focus_coords(self):
+        """Characterization test: verify coords after unstable (single-atom) alignment.
+
+        With only CA atom as focus, non-focused atoms (N) may differ between
+        models due to rotational ambiguity. Snapshot captured before refactoring.
+        """
+        struct = alignresenv.align_res_env(
+            self.two_models_struct,
+            self.two_models_struct[0],
+            "PRO",
+            focused=[" CA "],
+        )
+        expected = [
+            [4.524, 9.887, -0.667],
+            [5.918, 10.123, -0.175],
+            [5.259, 11.002, -1.193],
+            [5.918, 10.123, -0.175],
+        ]
+        actual = [a.get_coord() for a in struct.get_atoms()]
+        np.testing.assert_array_almost_equal(expected, actual, decimal=3)
