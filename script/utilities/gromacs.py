@@ -1,47 +1,19 @@
+import tempfile
 import warnings
 from typing import List
 
 import numpy as np
+import parmed as pmd
 from scipy import constants
 
-ATOMIC_NUMBER = {
-    "H": 1,
-    "C": 6,
-    "N": 7,
-    "O": 8,
-    "F": 9,
-    "Na": 11,
-    "Si": 14,
-    "P": 15,
-    "S": 16,
-    "Cl": 17,
-    "K": 19,
-    "Ca": 20,
-    "Br": 35,
-    "I": 53,
-}
-ATOMIC_STR_LEN = {1: 1, 6: 1, 7: 1, 8: 1, 9: 1, 11: 2, 14: 2, 15: 1, 16: 1, 17: 2, 19: 1, 20: 2, 35: 2, 53: 2}
-ATOMIC_WEIGHT = {
-    1: 1.008,
-    6: 12.01,
-    7: 14.01,
-    8: 16.00,
-    9: 19.00,
-    11: 22.99,
-    14: 28.09,
-    15: 30.97,
-    16: 32.07,
-    17: 35.45,
-    19: 39.10,
-    20: 40.08,
-    35: 79.90,
-    53: 126.9,
-    -1: 0.000,
-}  # for dummy atoms
+_NM_PER_ANGSTROM = 0.1
+_ANGSTROM_PER_NM = 10.0
 
 
 class GroAtom:
-    def __init__(self, string=""):
+    """Atom data compatible with GRO format. Coordinates in nanometers."""
+
+    def __init__(self):
         self.resi = -1
         self.resn = ""
         self.atomtype = ""
@@ -51,117 +23,130 @@ class GroAtom:
         self.comment = ""
         self.atomic_mass = 0.0
 
-        if string:  # 空文字列でない場合のみparseを呼び出す
-            self.parse(string)
-
-    def parse(self, string):
-        if len(string) < 20:  # Minimum length for valid GRO format
-            raise RuntimeError("the dimension of atom coordinates/velocities are wrong: []")
-
-        if len(string.split(";")) > 1:  # there is a comment
-            info = string.split(";")
-            string = info[0].rstrip()
-            self.comment = ";".join(info[1:]).strip()
-
-        self.resi = int(string[0:5])
-        self.resn = string[5:10].strip()
-        self.atomtype = string[10:15].strip()
-        self.atom_id = int(string[15:20])
-        tmp = np.array([float(s) for s in string[20:].split()])
-        if len(tmp) == 3:
-            self.point = tmp
-            self.velocity = np.array([0, 0, 0])
-        elif len(tmp) == 6:
-            self.point = tmp[:3]
-            self.velocity = tmp[3:]
-        else:
-            raise RuntimeError("the dimension of atom coordinates/velocities are wrong: {}".format(tmp))
-
-        temp = [i for atype, i in ATOMIC_NUMBER.items() if self.atomtype.startswith(atype)]
-        if len(temp) == 1:
-            self.atomic_num = temp[0]
-        elif len(temp) >= 2:
-            self.atomic_num = temp[np.argmax([ATOMIC_STR_LEN[i] for i in temp])]
-        else:  # len == 0
-            warnings.warn(
-                f"""atomtype {self.atomtype} is not matched to any atom names. 
-                          Assume it is a kind of pseudo atom""",
-                RuntimeWarning,
-            )
-            self.atomic_num = -1
-
-        self.atomic_mass = ATOMIC_WEIGHT[self.atomic_num]
-
-    def __repr__(self):
-        ret_str = "{:>5}{:>5}{:>5}{:>5}{:8.3f}{:8.3f}{:8.3f}".format(
-            self.resi, self.resn, self.atomtype, self.atom_id % 100000, *self.point
-        )
-        if self.comment != "":
-            ret_str += " ; {}".format(self.comment)
-        return ret_str
+    @classmethod
+    def from_parmed(cls, atom: pmd.Atom) -> "GroAtom":
+        """Create GroAtom from a ParmEd Atom. Converts Angstrom to nm."""
+        ga = cls()
+        ga.resi = atom.residue.number
+        ga.resn = atom.residue.name
+        ga.atomtype = atom.name
+        ga.atom_id = atom.idx + 1
+        ga.point = np.array([atom.xx, atom.xy, atom.xz]) * _NM_PER_ANGSTROM
+        ga.atomic_mass = atom.mass
+        return ga
 
 
 class Gro:
+    """GRO file handler backed by ParmEd.
+
+    Coordinates and box dimensions are stored in nanometers (GRO convention).
+    ParmEd handles file I/O, converting between Angstrom and nm internally.
+    """
+
     def __init__(self, path=""):
-        self.description: str = ""
-        self.natoms: int = 0
-        self.box_size: List[float] = [0, 0, 0]
-        self.atoms: List[GroAtom] = []
+        self._structure: pmd.Structure = pmd.Structure()
+        self._description: str = ""
         if path != "":
             self.parse(path)
 
+    @property
+    def description(self) -> str:
+        return self._description
+
+    @description.setter
+    def description(self, value: str):
+        self._description = value
+
+    @property
+    def natoms(self) -> int:
+        return len(self._structure.atoms)
+
+    @property
+    def box_size(self) -> List[float]:
+        if self._structure.box is not None:
+            return [float(b * _NM_PER_ANGSTROM) for b in self._structure.box[:3]]
+        return [0.0, 0.0, 0.0]
+
+    @box_size.setter
+    def box_size(self, value: List[float]):
+        self._structure.box = np.array(
+            [value[0] * _ANGSTROM_PER_NM, value[1] * _ANGSTROM_PER_NM, value[2] * _ANGSTROM_PER_NM, 90.0, 90.0, 90.0]
+        )
+
+    @property
+    def atoms(self) -> List[GroAtom]:
+        return [GroAtom.from_parmed(a) for a in self._structure.atoms]
+
     def parse(self, path):
-        with open(path) as fin:
-            lines = [line.rstrip() for line in fin.readlines()]
-        self.description = lines[0]
-        self.natoms = int(lines[1])
-        self.box_size = [float(s) for s in lines[-1].split()]
-        for line in lines[2:-1]:
-            self.atoms.append(GroAtom(line))
+        """Parse GRO file using ParmEd."""
+        with open(path) as f:
+            self._description = f.readline().rstrip()
+            natoms = int(f.readline().strip())
+            if natoms == 0:
+                # ParmEd cannot parse empty GRO files; read box from last line
+                box_line = f.readline().strip()
+                box_vals = [float(s) for s in box_line.split()]
+                self._structure = pmd.Structure()
+                self.box_size = box_vals[:3]
+                return
+        self._structure = pmd.load_file(path)
 
-    def __update_atomid(self):
-        for i in range(len(self.atoms)):
-            self.atoms[i].atom_id = i + 1
-
-    def get_atoms(self, resi=-1, resn="", atomtype="", atom_id=-1, atomic_num=-1):
-        ret_atoms = []
-        for atom in self.atoms:
-            if resi != -1 and atom.resi != resi:
+    def get_atoms(self, resi=-1, resn="", atomtype="", atom_id=-1) -> List[GroAtom]:
+        """Filter atoms by criteria. All coordinates in nm."""
+        ret = []
+        for atom in self._structure.atoms:
+            if resi != -1 and atom.residue.number != resi:
                 continue
-            elif resn != "" and atom.resn != resn:
+            if resn != "" and atom.residue.name != resn:
                 continue
-            elif atomtype != "" and atom.atomtype != atomtype:
+            if atomtype != "" and atom.name != atomtype:
                 continue
-            elif atom_id != -1 and atom.atom_id != atom_id:
+            if atom_id != -1 and (atom.idx + 1) != atom_id:
                 continue
-            elif atomic_num != -1 and atom.atomic_num != atomic_num:
-                continue
-            else:
-                ret_atoms.append(atom)
-        return ret_atoms
+            ret.append(GroAtom.from_parmed(atom))
+        return ret
 
     def add_atom(self, atom):
+        """Add a GroAtom to the structure."""
         if not isinstance(atom, GroAtom):
             raise TypeError("the input is NON-GRO_ATOM")
-        atom.atom_id = max([a.atom_id for a in self.atoms]) + 1
-        self.atoms.append(atom)
-        self.natoms = len(self.atoms)
-        self.__sort_atoms()
-        self.__update_atomid()
 
-    def __sort_atoms(self):
-        self.atoms = sorted(self.atoms, key=lambda a: a.resi)
+        pmd_atom = pmd.Atom(name=atom.atomtype, mass=atom.atomic_mass)
+        pmd_atom.xx = atom.point[0] * _ANGSTROM_PER_NM
+        pmd_atom.xy = atom.point[1] * _ANGSTROM_PER_NM
+        pmd_atom.xz = atom.point[2] * _ANGSTROM_PER_NM
 
-    def __repr__(self):
-        ret_str = "{}\n".format(self.description)
-        ret_str += "{:>6}\n".format(self.natoms)
-        for a in self.atoms:
-            ret_str += "{}\n".format(a)
-        ret_str += "{: 10.5f}  {: 10.5f}  {: 10.5f}\n".format(*self.box_size)
-        return ret_str
+        # Find existing residue or create new one
+        target_res = None
+        for res in self._structure.residues:
+            if res.number == atom.resi and res.name == atom.resn:
+                target_res = res
+                break
+
+        if target_res is not None:
+            self._structure.add_atom_to_residue(pmd_atom, target_res)
+        else:
+            self._structure.add_atom(pmd_atom, atom.resn, atom.resi)
 
     def molar(self, resn):
-        focused_atoms = self.get_atoms(resn=resn)
-        resis = {a.resi for a in focused_atoms}
-        volume = self.box_size[0] * self.box_size[1] * self.box_size[2]  # in nanometer
+        """Calculate molar concentration of a given residue type."""
+        resis = {a.residue.number for a in self._structure.atoms if a.residue.name == resn}
+        box = self.box_size
+        volume = box[0] * box[1] * box[2]  # nm^3
         return (len(resis) / constants.N_A) / (volume * 1e-24)  # nm^3 -> cm^3
+
+    def __repr__(self):
+        """Serialize to GRO format string using ParmEd."""
+        with tempfile.NamedTemporaryFile(suffix=".gro", delete=False) as f:
+            tmppath = f.name
+        self._structure.save(tmppath, overwrite=True, combine="all")
+        with open(tmppath) as f:
+            content = f.read()
+        import os
+
+        os.unlink(tmppath)
+        # Replace ParmEd's default title with our description
+        lines = content.split("\n")
+        if self._description:
+            lines[0] = self._description
+        return "\n".join(lines)

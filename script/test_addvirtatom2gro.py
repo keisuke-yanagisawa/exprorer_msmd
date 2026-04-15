@@ -1,9 +1,10 @@
-import pytest
-import numpy as np
 from pathlib import Path
 
+import numpy as np
+import pytest
+
+from script.addvirtatom2gro import addvirtatom2gro, center_of_mass
 from script.utilities import gromacs
-from script.addvirtatom2gro import center_of_mass, addvirtatom2gro
 
 
 @pytest.fixture
@@ -57,9 +58,7 @@ def test_multiple_atoms(water_molecule):
     """Test for center of mass calculation of multiple atoms (water molecule)"""
     result = center_of_mass(water_molecule)
     # Manual calculation of water molecule's center of mass
-    expected = (16.0 * water_molecule[0].point +
-               1.0 * water_molecule[1].point +
-               1.0 * water_molecule[2].point) / 18.0
+    expected = (16.0 * water_molecule[0].point + 1.0 * water_molecule[1].point + 1.0 * water_molecule[2].point) / 18.0
     np.testing.assert_array_almost_equal(result, expected)
 
 
@@ -110,7 +109,7 @@ def empty_gro():
 def test_basic_conversion(basic_gro):
     """Test for basic GRO file conversion"""
     result = addvirtatom2gro(basic_gro, "WAT")
-    
+
     # Verify virtual atom is added
     assert "VIS" in result
     # Verify virtual atom coordinates are near center of mass
@@ -120,11 +119,11 @@ def test_basic_conversion(basic_gro):
 def test_multiple_probes(multi_probe_gro):
     """Test for GRO file conversion with multiple probe molecules"""
     result = addvirtatom2gro(multi_probe_gro, "WAT")
-    
+
     # Verify two virtual atoms are added
     vis_count = result.count("VIS")
     assert vis_count == 2
-    
+
     # Verify virtual atoms are placed at center of mass of both water molecules
     assert "0.006   0.006   0.000" in result  # First water molecule
     assert "1.006   1.006   1.000" in result  # Second water molecule
@@ -133,7 +132,7 @@ def test_multiple_probes(multi_probe_gro):
 def test_no_probe(basic_gro):
     """Test for when probe does not exist"""
     result = addvirtatom2gro(basic_gro, "ETH")  # Non-existent probe ID
-    
+
     # Verify no virtual atoms are added
     assert "VIS" not in result
     # Verify original GRO file content is preserved
@@ -143,13 +142,13 @@ def test_no_probe(basic_gro):
 def test_empty_gro(empty_gro):
     """Test for processing empty GRO file"""
     result = addvirtatom2gro(empty_gro, "WAT")
-    
-    # Compare normalized expected and actual output
-    def normalize_gro(gro_str):
-        lines = gro_str.strip().split("\n")
-        return "\n".join([
-            lines[0],  # System name
-            lines[1].strip(),  # Number of atoms
-            lines[2].strip()  # Box size
-        ])
-    assert normalize_gro(result) == normalize_gro(empty_gro)
+
+    result_lines = result.strip().split("\n")
+    expected_lines = empty_gro.strip().split("\n")
+
+    assert result_lines[0] == expected_lines[0]  # System name
+    assert int(result_lines[1].strip()) == int(expected_lines[1].strip())  # Number of atoms
+    # Compare box values numerically (formatting may differ between ParmEd and original)
+    result_box = [float(s) for s in result_lines[2].split()]
+    expected_box = [float(s) for s in expected_lines[2].split()]
+    assert result_box == pytest.approx(expected_box)
