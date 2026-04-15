@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 
 import pytest
@@ -246,6 +247,12 @@ class TestDetectMdrunThreadFlag:
                 stderr=""
             )
             assert detect_mdrun_thread_flag(Path("gmx_no_mpi_line")) == "-nt"
+
+    @pytest.mark.skipif(shutil.which("gmx") is None, reason="gmx not found in PATH")
+    def test_real_gromacs_detection(self):
+        """Verify detect_mdrun_thread_flag works with the real installed GROMACS"""
+        result = detect_mdrun_thread_flag(Path("gmx"))
+        assert result in ("-nt", "-ntomp"), f"Unexpected thread flag: {result}"
 
 
 class TestRunMdSequence:

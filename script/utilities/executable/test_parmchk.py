@@ -1,28 +1,13 @@
-import glob
-import json
-import os
 import tempfile
 from pathlib import Path
 from unittest import TestCase
 
 import pytest
 
+from conftest import AMBERTOOLS_VERSION
 from script.utilities.executable.parmchk import Parmchk
 
 _TESTDATA_DIR = Path("script/utilities/executable/test_data")
-
-
-def _get_ambertools_version() -> str:
-    """Get the installed AmberTools version from conda metadata."""
-    conda_prefix = os.environ.get("CONDA_PREFIX", "")
-    meta_files = glob.glob(f"{conda_prefix}/conda-meta/ambertools-*.json")
-    if meta_files:
-        with open(meta_files[0]) as f:
-            return json.load(f).get("version", "unknown")
-    return "unknown"
-
-
-AMBERTOOLS_VERSION = _get_ambertools_version()
 AMBERTOOLS_EXPECTED_DIR = _TESTDATA_DIR / f"ambertools_{AMBERTOOLS_VERSION}"
 
 
