@@ -1,5 +1,5 @@
+import os
 import tempfile
-import warnings
 from typing import List
 
 import numpy as np
@@ -19,7 +19,6 @@ class GroAtom:
         self.atomtype = ""
         self.atom_id = -1
         self.point = np.zeros((3,))
-        self.velocity = np.zeros((3,))
         self.comment = ""
         self.atomic_mass = 0.0
 
@@ -139,12 +138,12 @@ class Gro:
         """Serialize to GRO format string using ParmEd."""
         with tempfile.NamedTemporaryFile(suffix=".gro", delete=False) as f:
             tmppath = f.name
-        self._structure.save(tmppath, overwrite=True, combine="all")
-        with open(tmppath) as f:
-            content = f.read()
-        import os
-
-        os.unlink(tmppath)
+        try:
+            self._structure.save(tmppath, overwrite=True, combine="all")
+            with open(tmppath) as f:
+                content = f.read()
+        finally:
+            os.unlink(tmppath)
         # Replace ParmEd's default title with our description
         lines = content.split("\n")
         if self._description:

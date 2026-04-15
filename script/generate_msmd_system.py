@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-import os
 import tempfile
 from pathlib import Path
 from subprocess import getoutput as gop
@@ -68,9 +67,9 @@ def __calculate_boxsize(pdbfile: Path) -> float:
         size = calculate_boxsize(Path(f"{tmp_prefix}.rst7"))
     except ValueError as e:
         logger.error("====tleap input commands====")
-        logger.error(gop(f"cat {tmp_prefix}.in"))
+        logger.error(Path(f"{tmp_prefix}.in").read_text())
         logger.error("====tleap output====")
-        logger.error(gop(f"cat {tmp_prefix}.in.result"))
+        logger.error(Path(f"{tmp_prefix}.in.result").read_text())
         logger.error("failed to calculate box size: tleap error")
         raise e
     return size
@@ -125,8 +124,11 @@ def create_system(
     tleap_obj = TLeap(debug=debug).set(cid, cmol, probe_frcmod, box_pdb, boxsize, ssbonds, atomtype)
 
     while True:
+        # tleap expects `fileprefix` to not exist (it will generate
+        # `{fileprefix}.parm7` and `{fileprefix}.rst7`). mkstemp creates
+        # the file, so we unlink it immediately.
         _, fileprefix = tempfile.mkstemp(suffix="")
-        os.system(f"rm {fileprefix}")
+        Path(fileprefix).unlink(missing_ok=True)
         tleap_obj.run(fileprefix)
         system_charge = tleap_obj._final_charge_value
 

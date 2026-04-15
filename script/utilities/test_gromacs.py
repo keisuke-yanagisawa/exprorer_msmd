@@ -14,7 +14,6 @@ class TestGroAtom:
         assert atom.atomtype == ""
         assert atom.atom_id == -1
         assert atom.point == pytest.approx(np.zeros(3))
-        assert atom.velocity == pytest.approx(np.zeros(3))
         assert atom.comment == ""
         assert atom.atomic_mass == pytest.approx(0.0)
 
