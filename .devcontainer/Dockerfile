@@ -1,7 +1,7 @@
 FROM kyanagis/exprorer_msmd:2025.01.25
 
-RUN mamba install -y pytest
 RUN pip install mypy pytest isort ipykernel
+RUN apt update
 RUN apt install -y openssh-client
 
 # ====== settings for git / ssh =======
