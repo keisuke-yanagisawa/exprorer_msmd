@@ -1,6 +1,7 @@
-import pytest
 from pathlib import Path
 from typing import Literal, cast
+
+import pytest
 
 from conftest import AMBERTOOLS_VERSION
 from script.generate_msmd_system import (
@@ -17,20 +18,22 @@ AMBERTOOLS_EXPECTED_DIR = TEST_DATA_DIR / f"ambertools_{AMBERTOOLS_VERSION}"
 
 _skip_no_ambertools_expected = pytest.mark.skipif(
     not AMBERTOOLS_EXPECTED_DIR.is_dir(),
-    reason=f"No expected data for AmberTools {AMBERTOOLS_VERSION} (missing {AMBERTOOLS_EXPECTED_DIR})"
+    reason=f"No expected data for AmberTools {AMBERTOOLS_VERSION} (missing {AMBERTOOLS_EXPECTED_DIR})",
 )
+
 
 @pytest.fixture
 def test_files():
     return {
-        'rst7': TEST_DATA_DIR / "tripeptide.rst7",
-        'pdb': TEST_DATA_DIR / "tripeptide.pdb",
-        'setting': TEST_DATA_DIR / "setting.yaml",
-        'expected_parm7': AMBERTOOLS_EXPECTED_DIR / "tripeptide_A11.parm7",
-        'expected_rst7': AMBERTOOLS_EXPECTED_DIR / "tripeptide_A11.rst7",
-        'mol2': TEST_DATA_DIR / "A11.mol2",
-        'expected_frcmod': AMBERTOOLS_EXPECTED_DIR / "A11.frcmod"
+        "rst7": TEST_DATA_DIR / "tripeptide.rst7",
+        "pdb": TEST_DATA_DIR / "tripeptide.pdb",
+        "setting": TEST_DATA_DIR / "setting.yaml",
+        "expected_parm7": AMBERTOOLS_EXPECTED_DIR / "tripeptide_A11.parm7",
+        "expected_rst7": AMBERTOOLS_EXPECTED_DIR / "tripeptide_A11.rst7",
+        "mol2": TEST_DATA_DIR / "A11.mol2",
+        "expected_frcmod": AMBERTOOLS_EXPECTED_DIR / "A11.frcmod",
     }
+
 
 def compare_file_contents(file1: Path, file2: Path, skip_first_line: bool = False) -> None:
     """Compare contents of two files
@@ -44,7 +47,7 @@ def compare_file_contents(file1: Path, file2: Path, skip_first_line: bool = Fals
         with open(file1) as f1, open(file2) as f2:
             content1 = f1.readlines()[1:] if skip_first_line else f1.readlines()
             content2 = f2.readlines()[1:] if skip_first_line else f2.readlines()
-            
+
             assert content1 == content2, (
                 f"File contents do not match:\n"
                 f"File 1 ({file1}): {len(content1)} lines\n"
@@ -55,31 +58,33 @@ def compare_file_contents(file1: Path, file2: Path, skip_first_line: bool = Fals
     except Exception as e:
         raise AssertionError(f"Error comparing files: {str(e)}")
 
+
 class TestBoxSizeCalculation:
     def test_calculate_boxsize(self, test_files):
-        box_size = calculate_boxsize(test_files['rst7'])
+        box_size = calculate_boxsize(test_files["rst7"])
         expected = 16.4927710
         assert box_size == pytest.approx(expected, rel=1e-6)
 
     def test_calculate_boxsize_error(self, test_files):
         """Verify box size calculation fails because PDB file is not in rst7 format"""
         with pytest.raises(ValueError):
-            calculate_boxsize(test_files['pdb'])
+            calculate_boxsize(test_files["pdb"])
+
 
 class TestGenerateMsmdSystem:
     @_skip_no_ambertools_expected
     def test_generate_msmd_system_parm7(self, test_files):
         """Verify generated parm7 file matches expected output"""
-        settings = parse_yaml(test_files['setting'])
+        settings = parse_yaml(test_files["setting"])
         parm7, _ = generate_msmd_system(settings, seed=1)
-        compare_file_contents(parm7, test_files['expected_parm7'], skip_first_line=True)
+        compare_file_contents(parm7, test_files["expected_parm7"], skip_first_line=True)
 
     @_skip_no_ambertools_expected
     def test_generate_msmd_system_rst7(self, test_files):
         """Verify generated rst7 file matches expected output"""
-        settings = parse_yaml(test_files['setting'])
+        settings = parse_yaml(test_files["setting"])
         _, rst7 = generate_msmd_system(settings, seed=1)
-        compare_file_contents(rst7, test_files['expected_rst7'])
+        compare_file_contents(rst7, test_files["expected_rst7"])
 
     def test_protein_pdb_preparation(self, test_files, tmp_path):
         # Create temporary PDB file for testing
@@ -90,27 +95,29 @@ class TestGenerateMsmdSystem:
             f.write("ANISOU    1  N   ALA A   1     2406   2304   2278    -28     54   -167       N  \n")
 
         result_path = protein_pdb_preparation(test_pdb)
-        
+
         # Verify results
         with open(result_path) as f:
-            lines = f.readlines()
-        
-        assert len(lines) == 1
-        assert "OXT" not in lines[0]
-        assert "ANISOU" not in lines[0]
+            content = f.read()
+        atom_lines = [line for line in content.splitlines() if line.startswith("ATOM")]
+
+        assert len(atom_lines) == 1
+        assert "OXT" not in content
+        assert "ANISOU" not in content
+
 
 class TestCreateFrcmod:
     @_skip_no_ambertools_expected
     def test_create_frcmod(self, test_files):
         """Verify frcmod file is generated correctly"""
         atomtype: Literal["gaff", "gaff2"] = "gaff2"
-        frcmod_path = _create_frcmod(test_files['mol2'], atomtype)
-        compare_file_contents(frcmod_path, test_files['expected_frcmod'])
+        frcmod_path = _create_frcmod(test_files["mol2"], atomtype)
+        compare_file_contents(frcmod_path, test_files["expected_frcmod"])
 
     def test_invalid_atomtype(self, test_files):
         with pytest.raises(ValueError):
             invalid_type = cast(Literal["gaff", "gaff2"], "invalid")
-            _create_frcmod(test_files['mol2'], invalid_type)
+            _create_frcmod(test_files["mol2"], invalid_type)
 
     def test_mol2file_does_not_exist(self):
         atomtype: Literal["gaff", "gaff2"] = "gaff2"
@@ -120,4 +127,4 @@ class TestCreateFrcmod:
     def test_invalid_mol2file(self, test_files):
         atomtype: Literal["gaff", "gaff2"] = "gaff2"
         with pytest.raises(ValueError):
-            _create_frcmod(test_files['pdb'], atomtype)
+            _create_frcmod(test_files["pdb"], atomtype)

@@ -6,6 +6,10 @@ from pathlib import Path
 from subprocess import getoutput as gop
 from typing import Literal, Tuple
 
+from Bio.PDB import PDBIO, PDBParser, Select
+from parmed.amber import Rst7
+from parmed.exceptions import AmberError
+
 from script.utilities import const
 from script.utilities.executable import Packmol, Parmchk, TLeap
 from script.utilities.logger import logger
@@ -30,17 +34,26 @@ quit
 """
 
 
+class _ExcludeOXT(Select):
+    """Biopython Select class to exclude OXT atoms from PDB output."""
+
+    def accept_atom(self, atom):
+        return atom.get_name().strip() != "OXT"
+
+
 def protein_pdb_preparation(pdbfile: Path) -> Path:
     """
-    remove OXT and ANISOU from pdbfile to avoid tleap error
-    -----
-    input
-        pdbfile: path to pdb file
-    output
-        tmp1: path to pdb file without OXT and ANISOU
+    remove OXT and ANISOU from pdbfile to avoid tleap error.
+    Uses Biopython PDB parser: ANISOU records are excluded by default,
+    and OXT atoms are filtered via _ExcludeOXT selector.
     """
+    parser = PDBParser(QUIET=True)
+    structure = parser.get_structure("protein", str(pdbfile))
+
     tmp1 = Path(tempfile.mkstemp(prefix=const.TMP_PREFIX, suffix=const.EXT_PDB)[1])
-    gop(f"grep -v OXT {pdbfile} | grep -v ANISOU > {tmp1}")
+    io = PDBIO()
+    io.set_structure(structure)
+    io.save(str(tmp1), _ExcludeOXT())
     return tmp1
 
 
@@ -65,13 +78,15 @@ def __calculate_boxsize(pdbfile: Path) -> float:
 
 def calculate_boxsize(rst7: Path) -> float:
     """
-    get longest box size from rst7 file
+    get longest box size from rst7 file using ParmEd
     """
-
-    box_size_str = gop(f"tail -n 1 {rst7} | cut -c -36")
-    box_size = [float(s) for s in box_size_str.split()]
-    box_size = max(box_size)
-    return box_size
+    try:
+        rst = Rst7(str(rst7))
+    except AmberError as e:
+        raise ValueError(str(e)) from e
+    if rst.box is None:
+        raise ValueError(f"No box information found in {rst7}")
+    return float(max(rst.box[:3]))
 
 
 def _create_frcmod(mol2file: Path, atomtype: Literal["gaff", "gaff2"], debug: bool = False) -> Path:
