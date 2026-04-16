@@ -18,6 +18,11 @@ Output: residue environments
 """
 
 
+def _probe_heavy_atom_selector(resn: str):
+    """Return a selector function that matches non-hydrogen atoms of the given residue name."""
+    return lambda a: uPDB.get_resname(a) == resn and not uPDB.is_hydrogen(a)
+
+
 def compute_SR_probe_resis(
     model: Union[Structure, Model], dx: gridData.Grid, resn: str, threshold: float, lt: bool = False
 ):
@@ -41,8 +46,9 @@ def compute_SR_probe_resis(
         resis: set
             A set of residue numbers of probe molecules
     """
-    resis = uPDB.get_attr(model, "resid", sele=lambda a: uPDB.get_resname(a) == resn and not uPDB.is_hydrogen(a))
-    coords = uPDB.get_attr(model, "coord", sele=lambda a: uPDB.get_resname(a) == resn and not uPDB.is_hydrogen(a))
+    sele = _probe_heavy_atom_selector(resn)
+    resis = uPDB.get_attr(model, "resid", sele=sele)
+    coords = uPDB.get_attr(model, "coord", sele=sele)
     interp = RegularGridInterpolator(dx.midpoints, dx.grid, method="nearest", fill_value=-1, bounds_error=False)
     values = interp(np.array(coords))
 
@@ -76,9 +82,8 @@ def __wrapper(
     env_distance: float = 4.0,
 ) -> Optional[Structure]:
     focused_residue_resis = set(
-        uPDB.get_attr(model_wo_water, "resid", sele=lambda a: uPDB.get_resname(a) == focused_resname)
+        uPDB.get_attr(model_wo_water, "resid", sele=_probe_heavy_atom_selector(focused_resname))
     )
-    # TODO: remove un-focusing atoms (not res_atomnames atoms)
 
     resi_set = compute_SR_probe_resis(model_wo_water, dx, focused_resname, threshold, lt)
 
