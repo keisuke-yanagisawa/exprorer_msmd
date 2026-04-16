@@ -59,8 +59,12 @@ def preprocess(index: int, setting: dict, debug=False) -> tuple[Path, Path, Path
     gro_string: str = addvirtatom2gro(gro_string, PROBE_ID)
 
     # define position restraints of heavy atoms
-    _posres = {int(m.group(1)) for s in setting["exprorer_msmd"]["sequence"]
-               for m in [re.match(r"-DPOSRES(\d+)", s.get("define", ""))] if m}
+    _posres = {
+        int(m.group(1))
+        for s in setting["exprorer_msmd"]["sequence"]
+        for m in [re.match(r"-DPOSRES(\d+)", s.get("define", ""))]
+        if m
+    }
     top_string = embed_posre(top_string, atom_ids_protein_nonH, prefix="POSRES", strength=sorted(_posres, reverse=True))
 
     top.write_text(top_string)
@@ -132,14 +136,22 @@ def execute_single_simulation(
     return run_md_sequence(gpuid, simdirpath, exe_gromacs, ncpus, JOB_NAME)
 
 
-
-
 def postprocess(index: int, setting, top: Path, traj: Path, debug: bool = False):
     workdir = Path(setting["general"]["workdir"])
     sysdirpath = workdir / f"system{index}"
 
     # generate pmap files
-    gen_pmap(sysdirpath, setting["general"], setting["input"], setting["map"], traj=traj, top=top, debug=debug)
+    temperature = setting["exprorer_msmd"]["general"]["temperature"]
+    gen_pmap(
+        sysdirpath,
+        setting["general"],
+        setting["input"],
+        setting["map"],
+        traj=traj,
+        top=top,
+        debug=debug,
+        temperature=temperature,
+    )
 
 
 if __name__ == "__main__":

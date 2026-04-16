@@ -119,7 +119,14 @@ def parse_snapshot_setting(string: str):
 
 
 def gen_pmap(
-    dirpath: Path, setting_general: dict, setting_input: dict, setting_pmap: dict, traj: Path, top: Path, debug=False
+    dirpath: Path,
+    setting_general: dict,
+    setting_input: dict,
+    setting_pmap: dict,
+    traj: Path,
+    top: Path,
+    debug=False,
+    temperature: float = 300,
 ):
 
     traj_start, traj_stop, traj_offset = parse_snapshot_setting(setting_pmap["snapshot"])
@@ -175,7 +182,7 @@ def gen_pmap(
             struct_obj = uPDB.get_structure(ref_struct)
             protein_volume = uPDB.estimate_exclute_volume(struct_obj)
             mean_proba = map["num_probe_atoms"] / (cpptraj_obj.last_volume - protein_volume)
-            pmap_path = convert_to_gfe(pmap_path, mean_proba, temperature=300)  # TODO: read temperature from setting
+            pmap_path = convert_to_gfe(pmap_path, mean_proba, temperature=temperature)
         pmap_paths.append(pmap_path)
 
     return pmap_paths
