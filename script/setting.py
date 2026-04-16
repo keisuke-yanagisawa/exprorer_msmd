@@ -94,6 +94,17 @@ def parse_yaml(yamlpath: Path) -> dict:
     setting["input"]["probe"]["pdb"] = _resolve_path(setting["input"]["probe"]["pdb"], YAML_DIR_PATH)
     setting["input"]["probe"]["mol2"] = _resolve_path(setting["input"]["probe"]["mol2"], YAML_DIR_PATH)
 
+    if "frcmod" in setting["input"]["probe"] and setting["input"]["probe"]["frcmod"] is not None:
+        setting["input"]["probe"]["frcmod"] = str(expandpath(Path(setting["input"]["probe"]["frcmod"])))
+        setting["input"]["probe"]["frcmod"] = (
+            setting["input"]["probe"]["frcmod"]
+            if setting["input"]["probe"]["frcmod"].startswith("/")
+            or setting["input"]["probe"]["frcmod"].startswith("$HOME")
+            or setting["input"]["probe"]["frcmod"].startswith("~")
+            else YAML_DIR_PATH / setting["input"]["probe"]["frcmod"]
+        )
+        setting["input"]["probe"]["frcmod"] = Path(setting["input"]["probe"]["frcmod"])
+
     if "ssbond" not in setting["input"]["protein"] or setting["input"]["protein"]["ssbond"] is None:
         setting["input"]["protein"]["ssbond"] = []
 

@@ -152,8 +152,12 @@ def generate_msmd_system(setting: dict, debug: bool = False, seed: int = -1) -> 
         parm7: path to parm7 file
         rst7: path to rst7 file
     """
-    cfrcmod = _create_frcmod(
-        Path(setting["input"]["probe"]["mol2"]), setting["input"]["probe"]["atomtype"], debug=debug
-    )
+    if "frcmod" in setting["input"]["probe"] and setting["input"]["probe"]["frcmod"] is not None:
+        cfrcmod = Path(setting["input"]["probe"]["frcmod"])
+        logger.info(f"Using pre-built frcmod: {cfrcmod}")
+    else:
+        cfrcmod = _create_frcmod(
+            Path(setting["input"]["probe"]["mol2"]), setting["input"]["probe"]["atomtype"], debug=debug
+        )
     parm7, rst7 = create_system(setting["input"]["protein"], setting["input"]["probe"], cfrcmod, debug=debug, seed=seed)
     return parm7, rst7
