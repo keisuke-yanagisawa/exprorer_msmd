@@ -14,6 +14,9 @@ from .utilities.logger import logger
 
 VERSION = "1.0.0"
 
+_TEMPLATE_DIR = str(Path(__file__).parent / "template")
+_TEMPLATE_LOADER = jinja2.FileSystemLoader(_TEMPLATE_DIR)
+
 
 @lru_cache(maxsize=4)
 def _detect_mpi_type(exe_str: str) -> str:
@@ -24,10 +27,7 @@ def _detect_mpi_type(exe_str: str) -> str:
         return "-nt"
 
     try:
-        result = subprocess.run(
-            [exe_path, "--version"],
-            capture_output=True, text=True, timeout=30
-        )
+        result = subprocess.run([exe_path, "--version"], capture_output=True, text=True, timeout=30)
         for line in (result.stdout + result.stderr).splitlines():
             if "MPI library:" in line:
                 if "thread_mpi" in line.lower():
@@ -51,21 +51,22 @@ def detect_mdrun_thread_flag(exe_gromacs: Path) -> str:
     """
     return _detect_mpi_type(str(exe_gromacs))
 
+
 def gen_mdp(protocol_dict: dict, MD_DIR: Path):
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
-    if not protocol_dict['type'] in ["minimization", "heating", "equilibration", "production"]:
+    env = jinja2.Environment(loader=_TEMPLATE_LOADER)
+    if protocol_dict["type"] not in ["minimization", "heating", "equilibration", "production"]:
         raise ValueError(f"Invalid simulation type: {protocol_dict['type']}")
-    template = env.get_template(f"./template/{protocol_dict['type']}.mdp")
+    template = env.get_template(f"{protocol_dict['type']}.mdp")
 
-    if protocol_dict["type"] == "heating":
-        if "target_temp" not in protocol_dict:
-            protocol_dict["target_temp"] = protocol_dict["temperature"]
-        if "initial_temp" not in protocol_dict:
-            protocol_dict["initial_temp"] = 0
-        protocol_dict["duration"] = protocol_dict["nsteps"] * protocol_dict["dt"]
+    # Avoid mutating the caller's dict: add heating defaults to a copy
+    render_dict = dict(protocol_dict)
+    if render_dict["type"] == "heating":
+        render_dict.setdefault("target_temp", render_dict["temperature"])
+        render_dict.setdefault("initial_temp", 0)
+        render_dict["duration"] = render_dict["nsteps"] * render_dict["dt"]
 
-    with open(MD_DIR / f"{protocol_dict['name']}.mdp", "w") as fout:
-        fout.write(template.render(protocol_dict))
+    with open(MD_DIR / f"{render_dict['name']}.mdp", "w") as fout:
+        fout.write(template.render(render_dict))
 
 
 def gen_mdrun_job(
@@ -80,8 +81,8 @@ def gen_mdrun_job(
         "STEP_NAMES": " ".join(step_names),
     }
 
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
-    template = env.get_template("./template/mdrun.sh")
+    env = jinja2.Environment(loader=_TEMPLATE_LOADER)
+    template = env.get_template("mdrun.sh")
     with open(path, "w") as fout:
         fout.write(template.render(data))
     logger.debug(f"generate {path}")
@@ -95,7 +96,7 @@ def prepare_sequence(sequence, general):
         tmp.update(step)
         step = tmp
         ret.append(step)
-        logger.info(ret)
+    logger.debug(f"Prepared sequence: {[s['name'] for s in ret]}")
     return ret
 
 
@@ -107,6 +108,7 @@ def prepare_md_files(
         gen_mdp(step, targetdir)
     gen_mdrun_job([d["name"] for d in sequence], jobname, targetdir / "mdrun.sh", top, gro, out_traj)
 
+
 def run_md_sequence(gpuid: int, simdirpath: Path, exe_gromacs: Path, ncpus: int, jobname: str) -> Path:
     """
     run a simulation sequence with os.system
@@ -114,11 +116,13 @@ def run_md_sequence(gpuid: int, simdirpath: Path, exe_gromacs: Path, ncpus: int,
     thread_flag = detect_mdrun_thread_flag(exe_gromacs)
 
     # execute simulation
-    os.system(f"""
+    os.system(
+        f"""
     unset OMP_NUM_THREADS ; \
     export CUDA_VISIBLE_DEVICES="{gpuid}" ; \
     cd {simdirpath} && \
     GMX={exe_gromacs} THREAD_FLAG={thread_flag} bash mdrun.sh {ncpus}
-    """)
+    """
+    )
 
     return simdirpath / f"{jobname}.xtc"
