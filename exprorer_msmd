@@ -45,18 +45,22 @@ def preprocess(index: int, setting: dict, debug=False) -> tuple[Path, Path, Path
     # create a protein-water-probe system
     tmptop: Path = Path(tempfile.mkstemp(suffix=".top")[1])
     tmpgro: Path = Path(tempfile.mkstemp(suffix=".gro")[1])
-    parm7, rst7 = generate_msmd_system(setting, debug=debug, seed=index)
-    system_obj = pmd.load_file(str(parm7), str(rst7))
-    atom_ids_protein_nonH = (
-        np.where(system_obj._get_selection_array(f"!@H* & !:WAT,{PROBE_ID},{','.join(IONS)}"))[0] + 1
-    )
+    try:
+        parm7, rst7 = generate_msmd_system(setting, debug=debug, seed=index)
+        system_obj = pmd.load_file(str(parm7), str(rst7))
+        atom_ids_protein_nonH = (
+            np.where(system_obj._get_selection_array(f"!@H* & !:WAT,{PROBE_ID},{','.join(IONS)}"))[0] + 1
+        )
 
-    # add virtual atoms for pseudo repulsion between probes
-    pmd_convert(parm7, tmptop, inxyz=rst7, outxyz=tmpgro)
-    top_string: str = tmptop.open().read()
-    top_string: str = addvirtatom2top(top_string, PROBE_ID)
-    gro_string: str = tmpgro.open().read()
-    gro_string: str = addvirtatom2gro(gro_string, PROBE_ID)
+        # add virtual atoms for pseudo repulsion between probes
+        pmd_convert(parm7, tmptop, inxyz=rst7, outxyz=tmpgro)
+        top_string: str = tmptop.read_text()
+        top_string: str = addvirtatom2top(top_string, PROBE_ID)
+        gro_string: str = tmpgro.read_text()
+        gro_string: str = addvirtatom2gro(gro_string, PROBE_ID)
+    finally:
+        tmptop.unlink(missing_ok=True)
+        tmpgro.unlink(missing_ok=True)
 
     # define position restraints of heavy atoms
     _posres = {
@@ -188,7 +192,7 @@ if __name__ == "__main__":
 
     num_process_per_gpu = setting["general"]["num_process_per_gpu"]
     gpuids = get_gpuids() * num_process_per_gpu
-    print(gpuids)
+    logger.debug(f"GPU IDs: {gpuids}")
     if num_process_per_gpu > 1:
         if not is_mps_control_running():
             raise RuntimeError("nvidia-cuda-mps-server is not running. Please start it before using MPS.")
@@ -199,7 +203,6 @@ if __name__ == "__main__":
     if not setting["general"]["multiprocessing"]:
         ngpus = 1
     ncpus = len(os.sched_getaffinity(0))
-    ncpus = 1 if ncpus is None else ncpus
 
     ratio_available_gpus = len(get_gpuids(ignore_cuda_visible_devices=False)) / len(
         get_gpuids(ignore_cuda_visible_devices=True)
