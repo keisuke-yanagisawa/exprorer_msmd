@@ -1,9 +1,20 @@
-import os
 from pathlib import Path
 
 import yaml
 
 from .utilities.util import expandpath, getabsolutepath, update_dict
+
+
+def _resolve_path(path_value, yaml_dir: Path) -> Path:
+    """Resolve a path from YAML setting relative to the YAML file's directory.
+
+    Absolute paths (starting with /, $HOME, or ~) are kept as-is.
+    Relative paths are resolved against yaml_dir.
+    """
+    expanded = str(expandpath(Path(path_value)))
+    if expanded.startswith(("/", "$HOME", "~")):
+        return Path(expanded)
+    return yaml_dir / expanded
 
 
 def ensure_compatibility_v1_1(setting: dict):
@@ -64,7 +75,7 @@ def parse_yaml(yamlpath: Path) -> dict:
         raise FileNotFoundError("YAML file not found: %s" % YAML_PATH)
     if YAML_PATH.is_dir():
         raise IsADirectoryError("Given YAML file path %s is a directory" % YAML_PATH)
-    if not os.path.splitext(YAML_PATH)[1][1:] == "yaml":
+    if YAML_PATH.suffix != ".yaml":
         raise ValueError("YAML file must have .yaml extension: %s" % YAML_PATH)
     with YAML_PATH.open() as fin:
         yaml_dict: dict = yaml.safe_load(fin)  # type: ignore
@@ -78,45 +89,10 @@ def parse_yaml(yamlpath: Path) -> dict:
     if "pdb" not in setting["input"]["probe"] or setting["input"]["probe"]["pdb"] is None:
         setting["input"]["probe"]["pdb"] = setting["input"]["probe"]["cid"] + ".pdb"
 
-    setting["general"]["workdir"] = str(expandpath(Path(setting["general"]["workdir"])))
-    setting["general"]["workdir"] = (
-        setting["general"]["workdir"]
-        if setting["general"]["workdir"].startswith("/")
-        or setting["general"]["workdir"].startswith("$HOME")
-        or setting["general"]["workdir"].startswith("~")
-        else YAML_DIR_PATH / setting["general"]["workdir"]
-    )
-    setting["general"]["workdir"] = Path(setting["general"]["workdir"])
-
-    setting["input"]["protein"]["pdb"] = str(expandpath(Path(setting["input"]["protein"]["pdb"])))
-    setting["input"]["protein"]["pdb"] = (
-        setting["input"]["protein"]["pdb"]
-        if setting["input"]["protein"]["pdb"].startswith("/")
-        or setting["input"]["protein"]["pdb"].startswith("$HOME")
-        or setting["input"]["protein"]["pdb"].startswith("~")
-        else YAML_DIR_PATH / setting["input"]["protein"]["pdb"]
-    )
-    setting["input"]["protein"]["pdb"] = Path(setting["input"]["protein"]["pdb"])
-
-    setting["input"]["probe"]["pdb"] = str(expandpath(Path(setting["input"]["probe"]["pdb"])))
-    setting["input"]["probe"]["pdb"] = (
-        setting["input"]["probe"]["pdb"]
-        if setting["input"]["probe"]["pdb"].startswith("/")
-        or setting["input"]["probe"]["pdb"].startswith("$HOME")
-        or setting["input"]["probe"]["pdb"].startswith("~")
-        else YAML_DIR_PATH / setting["input"]["probe"]["pdb"]
-    )
-    setting["input"]["probe"]["pdb"] = Path(setting["input"]["probe"]["pdb"])
-
-    setting["input"]["probe"]["mol2"] = str(expandpath(Path(setting["input"]["probe"]["mol2"])))
-    setting["input"]["probe"]["mol2"] = (
-        setting["input"]["probe"]["mol2"]
-        if setting["input"]["probe"]["mol2"].startswith("/")
-        or setting["input"]["probe"]["mol2"].startswith("$HOME")
-        or setting["input"]["probe"]["mol2"].startswith("~")
-        else YAML_DIR_PATH / setting["input"]["probe"]["mol2"]
-    )
-    setting["input"]["probe"]["mol2"] = Path(setting["input"]["probe"]["mol2"])
+    setting["general"]["workdir"] = _resolve_path(setting["general"]["workdir"], YAML_DIR_PATH)
+    setting["input"]["protein"]["pdb"] = _resolve_path(setting["input"]["protein"]["pdb"], YAML_DIR_PATH)
+    setting["input"]["probe"]["pdb"] = _resolve_path(setting["input"]["probe"]["pdb"], YAML_DIR_PATH)
+    setting["input"]["probe"]["mol2"] = _resolve_path(setting["input"]["probe"]["mol2"], YAML_DIR_PATH)
 
     if "ssbond" not in setting["input"]["protein"] or setting["input"]["protein"]["ssbond"] is None:
         setting["input"]["protein"]["ssbond"] = []
