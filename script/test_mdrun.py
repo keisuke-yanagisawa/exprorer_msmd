@@ -239,11 +239,30 @@ class TestDetectMdrunThreadFlag:
 
 
 class TestRunMdSequence:
-    """Tests for run_md_sequence THREAD_FLAG passing"""
+    """Tests for run_md_sequence subprocess invocation"""
 
-    def test_thread_flag_passed_to_shell(self):
-        """Verify THREAD_FLAG environment variable is set in os.system command"""
-        with patch("script.mdrun.detect_mdrun_thread_flag", return_value="-ntomp"), patch("os.system") as mock_system:
-            run_md_sequence(0, Path("/tmp/sim"), Path("gmx_mpi"), 4, "test")
-            call_args = mock_system.call_args[0][0]
-            assert "THREAD_FLAG=-ntomp" in call_args
+    def test_env_and_cwd_passed_to_subprocess(self):
+        """Verify environment variables and cwd are correctly set"""
+        with patch("script.mdrun.detect_mdrun_thread_flag", return_value="-ntomp"), patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            run_md_sequence(2, Path("/tmp/sim"), Path("gmx_mpi"), 4, "test")
+
+            mock_run.assert_called_once()
+            call_kwargs = mock_run.call_args
+            # Verify command
+            assert call_kwargs[0][0] == ["bash", "mdrun.sh", "4"]
+            # Verify cwd
+            assert call_kwargs[1]["cwd"] == "/tmp/sim"
+            # Verify environment variables
+            env = call_kwargs[1]["env"]
+            assert env["CUDA_VISIBLE_DEVICES"] == "2"
+            assert env["GMX"] == "gmx_mpi"
+            assert env["THREAD_FLAG"] == "-ntomp"
+            assert "OMP_NUM_THREADS" not in env
+
+    def test_return_trajectory_path(self):
+        """Verify the returned trajectory path is correct"""
+        with patch("script.mdrun.detect_mdrun_thread_flag", return_value="-nt"), patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            result = run_md_sequence(0, Path("/tmp/sim"), Path("gmx"), 2, "JOB")
+            assert result == Path("/tmp/sim/JOB.xtc")

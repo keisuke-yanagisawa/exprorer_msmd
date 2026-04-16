@@ -4,6 +4,7 @@ import argparse
 import os
 import re
 import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 
@@ -75,14 +76,11 @@ def preprocess(index: int, setting: dict, debug=False) -> tuple[Path, Path, Path
     gro.write_text(gro_string)
 
     # create a pdb file with virtual atoms
-    os.system(
-        f"""
-    {exe_gromacs} trjconv -s {gro} \
-    -f {gro} \
-    -o {pdb} <<EOF
-    0
-    EOF
-    """
+    subprocess.run(
+        [str(exe_gromacs), "trjconv", "-s", str(gro), "-f", str(gro), "-o", str(pdb)],
+        input="0\n",
+        text=True,
+        check=True,
     )
 
     return top, gro, pdb
@@ -113,13 +111,12 @@ def execute_single_simulation(
     pdb = new_pdb
 
     # generate a gromacs index file
-    os.system(
-        f"""
-    cd {simdirpath} &&
-    {exe_gromacs} make_ndx -f {gro} << EOF
-    q
-    EOF
-    """
+    subprocess.run(
+        [str(exe_gromacs), "make_ndx", "-f", str(gro)],
+        input="q\n",
+        text=True,
+        check=True,
+        cwd=str(simdirpath),
     )
 
     setting["exprorer_msmd"]["sequence"] = prepare_sequence(

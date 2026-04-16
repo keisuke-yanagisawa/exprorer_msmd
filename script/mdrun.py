@@ -110,19 +110,21 @@ def prepare_md_files(
 
 
 def run_md_sequence(gpuid: int, simdirpath: Path, exe_gromacs: Path, ncpus: int, jobname: str) -> Path:
-    """
-    run a simulation sequence with os.system
-    """
+    """Run a simulation sequence via mdrun.sh with explicit environment variables."""
     thread_flag = detect_mdrun_thread_flag(exe_gromacs)
 
-    # execute simulation
-    os.system(
-        f"""
-    unset OMP_NUM_THREADS ; \
-    export CUDA_VISIBLE_DEVICES="{gpuid}" ; \
-    cd {simdirpath} && \
-    GMX={exe_gromacs} THREAD_FLAG={thread_flag} bash mdrun.sh {ncpus}
-    """
+    env = os.environ.copy()
+    env.pop("OMP_NUM_THREADS", None)
+    env["CUDA_VISIBLE_DEVICES"] = str(gpuid)
+    env["GMX"] = str(exe_gromacs)
+    env["THREAD_FLAG"] = thread_flag
+
+    result = subprocess.run(
+        ["bash", "mdrun.sh", str(ncpus)],
+        cwd=str(simdirpath),
+        env=env,
     )
+    if result.returncode != 0:
+        logger.warn(f"mdrun.sh exited with code {result.returncode} in {simdirpath}")
 
     return simdirpath / f"{jobname}.xtc"
