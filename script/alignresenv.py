@@ -52,20 +52,18 @@ def align_res_env(
     ref_probe_c_coords = uPDB.get_attr(reference, "coord", sele=selector)
     if len(ref_probe_c_coords) == 0:
         raise ValueError("No reference atom to align")
-    # print(ref_probe_c_coords)
 
     sup = SuperImposer()
     tmppdb = Path(tempfile.mkstemp(suffix=".pdb")[1])
-    with uPDB.PDBIOhelper(tmppdb) as pdbio:
-        for model in tqdm(struct, desc="[align res. env.]", disable=not verbose):
+    try:
+        with uPDB.PDBIOhelper(tmppdb) as pdbio:
+            for model in tqdm(struct, desc="[align res. env.]", disable=not verbose):
+                probe_coords = uPDB.get_attr(model, "coord", sele=selector)
+                sup.fit(probe_coords, ref_probe_c_coords)
+                all_coords = uPDB.get_attr(model, "coord")
+                uPDB.set_attr(model, "coord", sup.transform(all_coords))
+                pdbio.save(model)
 
-            # print(struct, i)
-            probe_coords = uPDB.get_attr(model, "coord", sele=selector)
-            sup.fit(probe_coords, ref_probe_c_coords)
-            all_coords = uPDB.get_attr(model, "coord")
-            uPDB.set_attr(model, "coord", sup.transform(all_coords))
-
-            pdbio.save(model)
-            # print(len(pdbio))
-
-    return uPDB.get_structure(tmppdb)
+        return uPDB.get_structure(tmppdb)
+    finally:
+        tmppdb.unlink(missing_ok=True)
